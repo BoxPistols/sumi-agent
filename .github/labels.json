@@ -1,0 +1,75 @@
+{
+  "version": "1.0.0",
+  "labels": [
+    {
+      "name": "bug",
+      "color": "d73a4a",
+      "description": "不具合の報告"
+    },
+    {
+      "name": "feature",
+      "color": "0e8a16",
+      "description": "新機能の提案・実装"
+    },
+    {
+      "name": "enhancement",
+      "color": "a2eeef",
+      "description": "既存機能の改善"
+    },
+    {
+      "name": "refactor",
+      "color": "d4c5f9",
+      "description": "リファクタリング（機能変更なし）"
+    },
+    {
+      "name": "docs",
+      "color": "0075ca",
+      "description": "ドキュメントの追加・修正"
+    },
+    {
+      "name": "test",
+      "color": "bfd4f2",
+      "description": "テストの追加・修正"
+    },
+    {
+      "name": "security",
+      "color": "e11d48",
+      "description": "セキュリティに関する問題・改善"
+    },
+    {
+      "name": "performance",
+      "color": "f9d0c4",
+      "description": "パフォーマンス改善"
+    },
+    {
+      "name": "detection",
+      "color": "fbca04",
+      "description": "PII検出エンジンに関する変更"
+    },
+    {
+      "name": "ai",
+      "color": "7057ff",
+      "description": "AI連携（Claude / OpenAI / Gemini）に関する変更"
+    },
+    {
+      "name": "ui",
+      "color": "1d76db",
+      "description": "UI/UXの変更"
+    },
+    {
+      "name": "priority:high",
+      "color": "b60205",
+      "description": "優先度: 高"
+    },
+    {
+      "name": "priority:low",
+      "color": "c2e0c6",
+      "description": "優先度: 低"
+    },
+    {
+      "name": "wontfix",
+      "color": "ffffff",
+      "description": "対応しない"
+    }
+  ]
+}
