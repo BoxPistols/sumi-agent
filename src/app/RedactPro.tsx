@@ -104,58 +104,19 @@ body{background:var(--rp-bg)}
 @media(max-width:768px){.rp-header-badges{display:none!important}.rp-editor-wrap{flex-direction:column!important}.rp-editor-left{border-right:none!important;border-bottom:1px solid var(--rp-border)!important;max-height:45vh!important}.rp-editor-right{max-width:none!important;min-width:0!important}.rp-upload-grid{grid-template-columns:1fr!important}.rp-upload-main{grid-template-columns:1fr!important}.rp-modal-inner{max-width:100%!important;max-height:100vh!important;border-radius:0!important}.rp-settings-models{grid-template-columns:1fr!important}.rp-view-tabs{flex-wrap:wrap!important}.rp-cat-grid{grid-template-columns:1fr!important}.rp-input-tabs button{font-size:11px!important;padding:10px 4px!important}.rp-design-controls{width:100%!important;max-height:40vh!important;border-right:none!important;border-bottom:1px solid var(--rp-border)!important}}
 @media(max-width:480px){.rp-header{padding:0 12px!important}.rp-header h1{font-size:14px!important}}`;
 
-// ═══ Unified AI Call ═══
+// ═══ Unified AI Call (via server-side proxy) ═══
 async function callAI({provider,model,messages,maxTokens=4000,apiKey,system}){
-  if(provider==="openai"){
-    if(!apiKey)throw new Error("OpenAI APIキーが必要です");
-    const msgs=[];
-    if(system)msgs.push({role:"system",content:system});
-    for(const m of messages){
-      if(typeof m.content==="string"){msgs.push(m);}
-      else{
-        // Convert Anthropic multimodal format to OpenAI format
-        const parts=m.content.map(c=>{
-          if(c.type==="text")return{type:"text",text:c.text};
-          if(c.type==="image")return{type:"image_url",image_url:{url:`data:${c.source.media_type};base64,${c.source.data}`}};
-          if(c.type==="document")return{type:"text",text:"[PDF document attached - please extract text from it]"};
-          return{type:"text",text:JSON.stringify(c)};
-        });
-        msgs.push({role:m.role,content:parts});
-      }
-    }
-    const res=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${apiKey}`},body:JSON.stringify({model,messages:msgs,max_tokens:maxTokens})});
-    if(!res.ok){const e=await res.text().catch(()=>"");throw new Error(`OpenAI ${res.status}: ${e.slice(0,150)}`);}
-    const d=await res.json();
-    return d.choices?.[0]?.message?.content||"";
+  const res=await fetch("/api/ai",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({provider,model,messages,maxTokens,system,apiKey}),
+  });
+  if(!res.ok){
+    const e=await res.json().catch(()=>({error:`HTTP ${res.status}`}));
+    throw new Error(e.error||`AI API error: ${res.status}`);
   }
-  if(provider==="google"){
-    if(!apiKey)throw new Error("Gemini APIキーが必要です");
-    const parts=[];
-    if(system)parts.push({text:system+"\n\n"});
-    for(const m of messages){
-      if(typeof m.content==="string"){parts.push({text:m.content});}
-      else{
-        for(const c of m.content){
-          if(c.type==="text")parts.push({text:c.text});
-          else if(c.type==="image")parts.push({inlineData:{mimeType:c.source.media_type,data:c.source.data}});
-          else if(c.type==="document")parts.push({inlineData:{mimeType:"application/pdf",data:c.source.data}});
-        }
-      }
-    }
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts}],generationConfig:{maxOutputTokens:maxTokens}})});
-    if(!res.ok){const e=await res.text().catch(()=>"");throw new Error(`Gemini ${res.status}: ${e.slice(0,150)}`);}
-    const d=await res.json();
-    return d.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("")||"";
-  }
-  // Default: Anthropic (works in artifact env without key)
-  const h={"Content-Type":"application/json"};
-  if(apiKey){h["x-api-key"]=apiKey;h["anthropic-version"]="2023-06-01";}
-  const body={model:model||"claude-sonnet-4-20250514",max_tokens:maxTokens,messages};
-  if(system)body.system=system;
-  const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:h,body:JSON.stringify(body)});
-  if(!res.ok){const e=await res.text().catch(()=>"");throw new Error(`Claude ${res.status}: ${e.slice(0,150)}`);}
   const d=await res.json();
-  return d.content?.map(c=>c.type==="text"?c.text:"").join("")||"";
+  return d.text||"";
 }
 
 function getProviderForModel(modelId){
@@ -2063,7 +2024,7 @@ export default function App(){
   const[data,setData]=useState(null);
   const[showSettings,setShowSettings]=useState(false);
   const[isDark,setIsDark]=useState(true);
-  const[settings,setSettings]=useState({apiKey:process.env.NEXT_PUBLIC_OPENAI_API_KEY||"",model:"gpt-5-nano",aiDetect:true,provider:"openai",proxyUrl:""});
+  const[settings,setSettings]=useState({apiKey:"",model:"gpt-5-nano",aiDetect:true,provider:"openai",proxyUrl:""});
   useEffect(()=>{(async()=>{
     const safeGet=async(key)=>storage.get(key);
     const k=await safeGet("rp_api_key");if(k)setSettings(p=>({...p,apiKey:k}));
