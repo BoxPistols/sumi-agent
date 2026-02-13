@@ -115,8 +115,14 @@ function validateTargetURL(raw: string): { valid: boolean; error?: string; parse
 // ═══ CORS Helper ═══
 function getCorsHeaders(request: NextRequest): Record<string, string> {
   const origin = request.headers.get('origin') || ''
-  // In development, allow localhost origins
-  const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1')
+  // In development, allow localhost origins (strict hostname check)
+  let isLocalhost = false
+  try {
+    const url = new URL(origin)
+    isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1'
+  } catch {
+    isLocalhost = false
+  }
   const allowedOrigin = isLocalhost ? origin : ''
 
   return {

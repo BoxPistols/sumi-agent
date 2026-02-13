@@ -115,6 +115,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30_000)
+
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -122,7 +125,10 @@ export async function POST(request: NextRequest) {
           Authorization: `Bearer ${key}`,
         },
         body: JSON.stringify({ model, messages: msgs, max_tokens: maxTokens }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeout)
 
       if (!res.ok) {
         const e = await res.text().catch(() => '')
@@ -160,6 +166,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30_000)
+
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
         {
@@ -169,8 +178,11 @@ export async function POST(request: NextRequest) {
             contents: [{ parts }],
             generationConfig: { maxOutputTokens: maxTokens },
           }),
+          signal: controller.signal,
         }
       )
+
+      clearTimeout(timeout)
 
       if (!res.ok) {
         const e = await res.text().catch(() => '')
@@ -190,10 +202,13 @@ export async function POST(request: NextRequest) {
 
     if (provider === 'anthropic') {
       const key = userKey || process.env.ANTHROPIC_API_KEY
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (key) {
-        headers['x-api-key'] = key
-        headers['anthropic-version'] = '2023-06-01'
+      if (!key) {
+        return NextResponse.json({ error: 'Anthropic APIキーが未設定です' }, { status: 400 })
+      }
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
       }
 
       const reqBody: Record<string, unknown> = {
@@ -203,11 +218,17 @@ export async function POST(request: NextRequest) {
       }
       if (system) reqBody.system = system
 
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30_000)
+
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers,
         body: JSON.stringify(reqBody),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeout)
 
       if (!res.ok) {
         const e = await res.text().catch(() => '')
@@ -227,6 +248,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: `Unknown provider: ${provider}` }, { status: 400 })
   } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return NextResponse.json({ error: 'AI APIリクエストがタイムアウトしました (30s)' }, { status: 504 })
+    }
     const msg = err instanceof Error ? err.message : 'Unknown error'
     return NextResponse.json({ error: msg }, { status: 500 })
   }
