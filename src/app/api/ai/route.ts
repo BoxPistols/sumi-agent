@@ -124,7 +124,14 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${key}`,
         },
-        body: JSON.stringify({ model, messages: msgs, max_completion_tokens: maxTokens }),
+        body: JSON.stringify({
+          model,
+          messages: msgs,
+          // GPT-4.1以降/GPT-5系は max_completion_tokens、GPT-4系は max_tokens
+          ...(/^(gpt-4\.1|gpt-4o|gpt-5|o[1-9])/.test(model)
+            ? { max_completion_tokens: maxTokens }
+            : { max_tokens: maxTokens }),
+        }),
         signal: controller.signal,
       })
 
