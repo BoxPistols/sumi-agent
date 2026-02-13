@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${key}`,
         },
-        body: JSON.stringify({ model, messages: msgs, max_tokens: maxTokens }),
+        body: JSON.stringify({ model, messages: msgs, max_completion_tokens: maxTokens }),
         signal: controller.signal,
       })
 
