@@ -190,7 +190,7 @@ export const EXPORT_FORMATS = [
   { id: 'csv', label: 'CSV', ext: '.csv', icon: 'C' },
   { id: 'xlsx', label: 'Excel', ext: '.xlsx', icon: 'X' },
   { id: 'pdf', label: 'PDF', ext: '.pdf', icon: 'P' },
-  { id: 'docx', label: 'Word', ext: '.doc', icon: 'W' },
+  { id: 'docx', label: 'Word', ext: '.docx', icon: 'W' },
 ] as const
 
 // SPA sites that can't be scraped

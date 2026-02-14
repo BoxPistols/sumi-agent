@@ -675,10 +675,10 @@ function applyRedaction(text,dets,opts){
   return r;
 }
 
-function buildNonOverlappingMatches(text,dets){
+function buildNonOverlappingMatches(text,dets,occupied){
   const matches=[];
-  const occupied=[];
-  const overlaps=(s,e)=>occupied.some(o=>!(e<=o.s||s>=o.e));
+  const occ=occupied||[];
+  const overlaps=(s,e)=>occ.some(o=>!(e<=o.s||s>=o.e));
   for(const d of dets){
     const v=d?.value;
     if(typeof v!=="string"||v.length<2)continue;
@@ -689,7 +689,7 @@ function buildNonOverlappingMatches(text,dets){
       const s=p,e=p+v.length;
       if(!overlaps(s,e)){
         matches.push({s,e,det:d});
-        occupied.push({s,e});
+        occ.push({s,e});
       }
       idx=p+v.length;
     }
@@ -700,8 +700,8 @@ function buildNonOverlappingMatches(text,dets){
 
 function renderTextWithDetectionAnchors(text,dets,opts,showRedacted,focusId,focusPulse){
   if(typeof text!=="string"||!text)return text||"";
-  const enabled=[...dets].filter(d=>d&&d.enabled&&typeof d.value==="string"&&d.value.length>=2).sort((a,b)=>(b.value?.length||0)-(a.value?.length||0));
-  if(enabled.length===0)return text;
+  const all=[...dets].filter(d=>d&&typeof d.value==="string"&&d.value.length>=2).sort((a,b)=>(b.value?.length||0)-(a.value?.length||0));
+  if(all.length===0)return text;
 
   const keepPref=opts?.keepPrefecture||false;
   const nameInit=opts?.nameInitial||false;
@@ -710,7 +710,17 @@ function renderTextWithDetectionAnchors(text,dets,opts,showRedacted,focusId,focu
   const placeholderStyle={background:T.redDim,color:T.red,padding:"1px 6px",borderRadius:4,fontWeight:600,fontSize:"0.92em"};
   const rawHitStyle={background:"rgba(76,133,246,0.16)",borderRadius:3,boxShadow:"inset 0 -1px 0 rgba(76,133,246,0.55)"};
 
-  const matches=buildNonOverlappingMatches(text,enabled);
+  let matches=[];
+  if(showRedacted){
+    const occ=[];
+    const en=all.filter(d=>d.enabled);
+    const dis=all.filter(d=>!d.enabled);
+    const m1=buildNonOverlappingMatches(text,en,occ);
+    const m2=buildNonOverlappingMatches(text,dis,occ);
+    matches=[...m1,...m2].sort((a,b)=>a.s-b.s);
+  }else{
+    matches=buildNonOverlappingMatches(text,all);
+  }
   if(matches.length===0)return text;
 
   const out=[];
@@ -724,30 +734,40 @@ function renderTextWithDetectionAnchors(text,dets,opts,showRedacted,focusId,focu
     const anim=focused?{animation:`${animName} 1.25s ease-in-out 1`}:{};
 
     if(showRedacted){
-      // Replacement rendering (keeps privacy; value is not shown)
-      let node=null;
-      const isNameType=d.category==="name";
-      const isAddrType=d.type==="address";
-      if(isNameType&&nameInit){
-        const rep=nameToInitial(d.value,readingMap)||PH[d.type]||"[非公開]";
-        node=<span style={placeholderStyle}>{rep}</span>;
-      }else if(isAddrType&&keepPref){
-        const pref=extractPrefecture(d.value);
-        node=pref?(<><span>{pref}</span><span style={placeholderStyle}>[住所詳細非公開]</span></>):(<span style={placeholderStyle}>[住所非公開]</span>);
+      if(d.enabled){
+        // Masked rendering (keeps privacy; value is not shown)
+        let node=null;
+        const isNameType=d.category==="name";
+        const isAddrType=d.type==="address";
+        if(isNameType&&nameInit){
+          const rep=nameToInitial(d.value,readingMap)||PH[d.type]||"[非公開]";
+          node=<span style={placeholderStyle}>{rep}</span>;
+        }else if(isAddrType&&keepPref){
+          const pref=extractPrefecture(d.value);
+          node=pref?(<><span>{pref}</span><span style={placeholderStyle}>[住所詳細非公開]</span></>):(<span style={placeholderStyle}>[住所非公開]</span>);
+        }else{
+          const rep=PH[d.type]||"[非公開]";
+          node=<span style={placeholderStyle}>{rep}</span>;
+        }
+        out.push(
+          <span key={`det_${d.id}_${m.s}`} data-det-id={d.id} style={{borderRadius:6,...anim}}>
+            {node}
+          </span>
+        );
       }else{
-        const rep=PH[d.type]||"[非公開]";
-        node=<span style={placeholderStyle}>{rep}</span>;
+        // Unmasked detection: keep original text; only highlight when focused
+        const hit=text.slice(m.s,m.e);
+        out.push(
+          <span key={`det_${d.id}_${m.s}`} data-det-id={d.id} style={{...(focused?rawHitStyle:{}),...anim}}>
+            {hit}
+          </span>
+        );
       }
-      out.push(
-        <span key={`det_${d.id}_${m.s}_${animName}`} data-det-id={d.id} style={{borderRadius:6,...anim}}>
-          {node}
-        </span>
-      );
     }else{
-      // Raw/original rendering (value is visible; highlight it)
+      // Raw/original rendering (value is visible; highlight only when focused)
       const hit=text.slice(m.s,m.e);
       out.push(
-        <span key={`det_${d.id}_${m.s}_${animName}`} data-det-id={d.id} style={{...rawHitStyle,...anim}}>
+        <span key={`det_${d.id}_${m.s}`} data-det-id={d.id} style={{...(focused?rawHitStyle:{}),...anim}}>
           {hit}
         </span>
       );
@@ -1464,7 +1484,12 @@ function generateExport(rawContent,format,baseName){
     case"md":return{data:bom+`# ${baseName}\n\n> Exported: ${ts}\n\n---\n\n${content}`,mime:"text/markdown;charset=utf-8",name:baseName+".md"};
     case"csv":{const rows=content.split("\n").map((l,i)=>`"${i+1}","${l.replace(/"/g,'""')}"`);return{data:bom+"行番号,内容\n"+rows.join("\n"),mime:"text/csv;charset=utf-8",name:baseName+".csv"};}
     case"xlsx":{const lines=content.split("\n");const ws=XLSX.utils.aoa_to_sheet(lines.map((l,i)=>[i+1,l]));ws["!cols"]=[{wch:6},{wch:100}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"マスキング済み");const out=XLSX.write(wb,{type:"base64",bookType:"xlsx"});return{dataUri:"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+out,name:baseName+".xlsx"};}
-    case"pdf":{const esc=content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>${baseName}</title><style>@media print{@page{margin:15mm}}body{font-family:'Noto Sans JP','Hiragino Sans',sans-serif;font-size:11pt;line-height:1.8;color:#222;max-width:750px;margin:20px auto;padding:20px}h1{font-size:14pt;border-bottom:2px solid #333;padding-bottom:6px;margin-bottom:16px}pre{white-space:pre-wrap;word-break:break-word;font-family:inherit}.meta{font-size:9pt;color:#888;margin-bottom:12px}.rd{background:#fee;color:#c33;padding:1px 4px;border-radius:3px;font-weight:bold}</style></head><body><h1>${baseName}</h1><div class="meta">出力日時: ${ts}</div><pre>${esc.replace(/\[([^\]]*非公開[^\]]*|[^\]]*Redacted[^\]]*)\]/g,'<span class="rd">[$1]</span>')}</pre><script>window.onload=function(){window.print();setTimeout(()=>{window.close()},1000)}<\/script></body></html>`;return{data:html,mime:"text/html;charset=utf-8",name:baseName+".html",isPrintPdf:true};}
+    case"pdf":{
+      const doc=`# ${baseName}\n\n**出力日時:** ${ts}\n\n---\n\n${content}`;
+      const html=generatePDFHTML(doc,"gothic",{stripRedactions:false,highlightRedactions:true,removeRedactionOnlyLines:false});
+      const printHTML=html.replace("</body>",`<script>window.onload=function(){window.print();setTimeout(()=>{window.close()},1000)}<\/script></body>`);
+      return{data:printHTML,mime:"text/html;charset=utf-8",name:baseName+".html",isPrintPdf:true};
+    }
     case"docx":{const esc=content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");const doc=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><style>body{font-family:'Noto Sans JP','MS Gothic',sans-serif;font-size:10.5pt;line-height:1.8;color:#222}h1{font-size:14pt;border-bottom:1.5pt solid #333;padding-bottom:4pt}.rd{background:#fee;color:#c33;font-weight:bold}</style></head><body><h1>${baseName}</h1><p style="font-size:8pt;color:#888">出力: ${ts}</p><div>${esc.replace(/\[([^\]]*非公開[^\]]*|[^\]]*Redacted[^\]]*)\]/g,'<span class="rd">[$1]</span>')}</div></body></html>`;return{data:bom+doc,mime:"application/msword;charset=utf-8",name:baseName+".doc"};}
     default:return{data:content,mime:"text/plain;charset=utf-8",name:baseName+".txt"};
   }
@@ -1494,7 +1519,7 @@ function Badge({ children, color, bg, style: sx }) {
     )
 }
 function Btn({children,variant="primary",onClick,disabled,style:sx}){const base={display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 22px",borderRadius:10,fontSize:14,fontWeight:600,fontFamily:T.font,cursor:disabled?"default":"pointer",border:"none",transition:"all .15s",opacity:disabled?.35:1};const v={primary:{background:T.accent,color:"#fff"},ghost:{background:"transparent",color:T.text2,border:`1px solid ${T.border}`},danger:{background:T.redDim,color:T.red},success:{background:T.greenDim,color:T.green}};return <button onClick={disabled?undefined:onClick} style={{...base,...v[variant],...sx}}>{children}</button>;}
-function Toggle({checked,onChange,size="md"}){const w=size==="sm"?32:38,h=size==="sm"?18:22,d=size==="sm"?12:16;return <button onClick={(e)=>{e.stopPropagation();onChange&&onChange();}} style={{width:w,height:h,borderRadius:h/2,border:"none",cursor:"pointer",background:checked?T.accent:T.border,position:"relative",transition:"background .2s",flexShrink:0}}><span style={{position:"absolute",top:(h-d)/2,left:checked?w-d-3:3,width:d,height:d,borderRadius:d/2,background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.25)"}}/></button>;}
+function Toggle({checked,onChange,size="md",disabled=false}){const w=size==="sm"?32:38,h=size==="sm"?18:22,d=size==="sm"?12:16;return <button onClick={(e)=>{if(disabled)return;e.stopPropagation();onChange&&onChange();}} style={{width:w,height:h,borderRadius:h/2,border:"none",cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,background:checked?T.accent:T.border,position:"relative",transition:"background .2s",flexShrink:0}}><span style={{position:"absolute",top:(h-d)/2,left:checked?w-d-3:3,width:d,height:d,borderRadius:d/2,background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.25)"}}/></button>;}
 function Pill({ children, active, onClick, color }) {
     return (
         <button
@@ -2344,29 +2369,37 @@ ${text.slice(0,6000)}`}]
 const escHTML=t=>(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const isPIIValue=v=>/^\s*(\[[^\]]*非公開[^\]]*\]\s*)+$/.test(v);
 
-function cleanContent(text){
+function cleanContent(text,opts){
+  const removeRedactionOnlyLines=opts?.removeRedactionOnlyLines!==false;
   return text.split("\n").filter(line=>{
     const trimmed=line.trim();
     if(!trimmed)return true;
     // Remove page markers (internal use only)
     if(/^-{2,}\s*Page\s+\d+\s*-{2,}$/.test(trimmed))return false;
     if(/^-{2,}\s*Sheet:\s*.+\s*-{2,}$/.test(trimmed))return false;
-    const kv=trimmed.match(/^(.+?)[：:]\s*(.+)$/);
-    if(kv&&isPIIValue(kv[2]))return false;
-    if(isPIIValue(trimmed))return false;
+    if(removeRedactionOnlyLines){
+      const kv=trimmed.match(/^(.+?)[：:]\s*(.+)$/);
+      if(kv&&isPIIValue(kv[2]))return false;
+      if(isPIIValue(trimmed))return false;
+    }
     return true;
   }).join("\n");
 }
 
 // --- Markdown → HTML ---
-function mdToHTML(text){
-  const cleaned=cleanContent(text);
+function mdToHTML(text,opts){
+  const stripRedactions=opts?.stripRedactions!==false;
+  const highlightRedactions=!!opts?.highlightRedactions;
+  const cleaned=cleanContent(text,{removeRedactionOnlyLines:opts?.removeRedactionOnlyLines});
   const lines=cleaned.split("\n");
   const out=[];
   let prevBlank=false;
+  const redRe=new RegExp(PH_RE.source,"g");
   for(const line of lines){
     let t=line;
-    t=t.replace(/\[([^\]]*非公開[^\]]*|[^\]]*Redacted[^\]]*)\]/g,'');
+    if(stripRedactions){
+      t=t.replace(redRe,"");
+    }
     const trimmed=t.trim();
     if(!trimmed){
       // Collapse consecutive blanks to max 1
@@ -2375,6 +2408,33 @@ function mdToHTML(text){
       continue;
     }
     prevBlank=false;
+    // Heuristic headings (for non-markdown AI output)
+    const numHead=trimmed.match(/^(?:\(|（)\s*\d+\s*(?:\)|）)\s*(.+)$/)||trimmed.match(/^\(\s*\d+\s*\)\s*(.+)$/);
+    if(numHead){
+      out.push(`<h2>${escHTML(numHead[1])}</h2>`);continue;
+    }
+    const bracketHead=trimmed.match(/^【(.+?)】$/);
+    if(bracketHead){
+      out.push(`<h2>${escHTML(bracketHead[1])}</h2>`);continue;
+    }
+    const symbolHead=trimmed.match(/^[■●◆◇▶▷☆★]+\s*(.+)$/);
+    if(symbolHead){
+      out.push(`<h2>${escHTML(symbolHead[1])}</h2>`);continue;
+    }
+    if(/^(?:職務経歴書|履歴書|基本情報|職務要約|職務経歴|学歴|資格|スキル|自己PR|志望動機|プロフィール|連絡先|Contact)\s*$/i.test(trimmed)){
+      out.push(`<h2>${escHTML(trimmed)}</h2>`);continue;
+    }
+    // Horizontal rule
+    if(/^-{3,}$/.test(trimmed)){
+      out.push(`<hr class="hr">`);continue;
+    }
+    // Company/project-ish line: treat as subheading
+    // Guard: do NOT upgrade list items or key-value lines into headings
+    const isListLike=/^[-*]\s+/.test(trimmed)||/^・\s*/.test(trimmed);
+    const isKvLike=/^(.{1,30}?)[：:]\s*(.+)$/.test(trimmed);
+    if(!isListLike&&!isKvLike&&!/[：:]/.test(trimmed)&&/.+（\d{4}.*?）/.test(trimmed)&&trimmed.length<=48){
+      out.push(`<h3>${escHTML(trimmed)}</h3>`);continue;
+    }
     // Headers (no extra <br> needed — CSS margin handles spacing)
     if(/^###\s+(.+)$/.test(trimmed)){
       const m=trimmed.match(/^###\s+(.+)$/);
@@ -2393,11 +2453,29 @@ function mdToHTML(text){
       const m=trimmed.match(/^[-*]\s+(.+)$/);
       let html=escHTML(m[1]);
       html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      if(!stripRedactions&&highlightRedactions)html=html.replace(redRe,'<span class="rd">$&</span>');
       out.push(`<div class="li">・${html}</div>`);continue;
+    }
+    if(/^・\s*(.+)$/.test(trimmed)){
+      const m=trimmed.match(/^・\s*(.+)$/);
+      let html=escHTML(m[1]);
+      html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      if(!stripRedactions&&highlightRedactions)html=html.replace(redRe,'<span class="rd">$&</span>');
+      out.push(`<div class="li">・${html}</div>`);continue;
+    }
+    // Key: Value lines (resume fields)
+    const kv=trimmed.match(/^(.{1,30}?)[：:]\s*(.+)$/);
+    if(kv){
+      let k=escHTML(kv[1]).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      let v=escHTML(kv[2]).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+      if(stripRedactions)v=v.replace(redRe,"");
+      if(!stripRedactions&&highlightRedactions)v=v.replace(redRe,'<span class="rd">$&</span>');
+      out.push(`<div class="kv"><div class="k">${k}</div><div class="v">${v||"&nbsp;"}</div></div>`);continue;
     }
     // Bold **text**
     let html=escHTML(t);
     html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    if(!stripRedactions&&highlightRedactions)html=html.replace(redRe,'<span class="rd">$&</span>');
     out.push(`<div>${html}</div>`);
   }
   // Remove leading/trailing <br>
@@ -2424,25 +2502,30 @@ const FONT_FAMILIES={
   mincho:"'Noto Serif JP',serif",
 };
 
-function generatePDFHTML(text,fontType){
+function generatePDFHTML(text,fontType,mdOpts){
   const fontCSS=FONT_IMPORTS[fontType]||FONT_IMPORTS.gothic;
   const fontFamily=FONT_FAMILIES[fontType]||FONT_FAMILIES.gothic;
-  const body=mdToHTML(text);
+  const body=mdToHTML(text,mdOpts);
   return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>Resume</title>
 <style>
 ${fontCSS}
 @page{size:A4;margin:18mm 20mm}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:${fontFamily};color:#1A1D26;background:#fff;font-size:9.5pt;line-height:1.7}
-.page{max-width:660px;margin:0 auto;padding:24px 28px}
-h2{font-size:11pt;font-weight:600;color:#222;margin:14px 0 5px;padding-bottom:3px;border-bottom:1.5px solid #333;letter-spacing:.5px}
-h3{font-size:9.5pt;font-weight:600;color:#444;margin:10px 0 3px}
-h4{font-size:9pt;font-weight:600;color:#555;margin:8px 0 2px}
-strong{font-weight:600}
-.body{font-size:9pt;word-break:break-word}
-.body div{line-height:1.7}
-.body br.sp{display:block;content:"";margin-top:6px}
-.li{padding-left:1em;text-indent:-1em;line-height:1.7}
+body{font-family:${fontFamily};color:#111827;background:#fff;font-size:10.2pt;line-height:1.75}
+.page{max-width:660px;margin:0 auto;padding:26px 30px}
+h2{font-size:14pt;font-weight:700;color:#0f172a;margin:18px 0 8px;padding-bottom:7px;border-bottom:1.8px solid #0f172a;letter-spacing:.2px}
+h3{font-size:11.5pt;font-weight:700;color:#111827;margin:14px 0 6px}
+h4{font-size:10.6pt;font-weight:700;color:#1f2937;margin:12px 0 4px}
+strong{font-weight:700}
+.body{font-size:10pt;word-break:break-word}
+.body div{line-height:1.75}
+.body br.sp{display:block;content:"";margin-top:8px}
+.kv{display:grid;grid-template-columns:minmax(110px,160px) 1fr;gap:12px;padding:2.5px 0}
+.k{color:#475569;font-weight:700}
+.v{color:#0f172a}
+.li{padding-left:1em;text-indent:-1em;line-height:1.75;margin:1px 0}
+.rd{background:#fee;color:#c33;padding:0 4px;border-radius:3px;font-weight:700}
+.hr{border:0;border-top:1px solid #e5e7eb;margin:12px 0}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body><div class="page"><div class="body">${body}</div></div></body></html>`;
 }
@@ -2883,6 +2966,7 @@ function DesignExportModal({text,apiKey,model,onClose}){
 function PreviewModal({title,content,baseName,onClose}){
   const[copied,setCopied]=useState(false);
   const[fmt,setFmt]=useState("txt");
+  const[view,setView]=useState("layout"); // "layout" | "text"
 
   useEffect(() => {
       const h = (e) => {
@@ -2896,6 +2980,12 @@ function PreviewModal({title,content,baseName,onClose}){
   const handleDownload=()=>{const ex=generateExport(content,fmt,baseName);if(ex.isPrintPdf){triggerDownload(ex);}else triggerDownload(ex);};
   const lines=content.split("\n").length;const chars=content.length;
   const curFmt=EXPORT_FORMATS.find(f=>f.id===fmt);
+
+  useEffect(()=>{
+    if(fmt==="csv"||fmt==="xlsx")setView("text");
+  },[fmt]);
+
+  const layoutHtml=useMemo(()=>generatePDFHTML(content,"gothic",{stripRedactions:false,highlightRedactions:true,removeRedactionOnlyLines:false}),[content]);
   return (
       <div
           style={{
@@ -2952,98 +3042,191 @@ function PreviewModal({title,content,baseName,onClose}){
                           {lines} 行 / {chars.toLocaleString()} 文字
                       </div>
                   </div>
-                  <button
-                      onClick={onClose}
-                      style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 7,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          color: T.text2,
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                      }}
-                  >
-                      x
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                          style={{
+                              display: 'flex',
+                              border: `1px solid ${T.border}`,
+                              borderRadius: 10,
+                              overflow: 'hidden',
+                          }}
+                      >
+                          <button
+                              onClick={() => setView('layout')}
+                              style={{
+                                  padding: '6px 10px',
+                                  border: 'none',
+                                  background:
+                                      view === 'layout'
+                                          ? T.accentDim
+                                          : 'transparent',
+                                  color: view === 'layout' ? T.accent : T.text3,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                              }}
+                          >
+                              レイアウト
+                          </button>
+                          <button
+                              onClick={() => setView('text')}
+                              style={{
+                                  padding: '6px 10px',
+                                  border: 'none',
+                                  background:
+                                      view === 'text'
+                                          ? T.accentDim
+                                          : 'transparent',
+                                  color: view === 'text' ? T.accent : T.text3,
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                              }}
+                          >
+                              テキスト
+                          </button>
+                      </div>
+                      <button
+                          onClick={onClose}
+                          style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 7,
+                              border: `1px solid ${T.border}`,
+                              background: 'transparent',
+                              color: T.text2,
+                              cursor: 'pointer',
+                              fontSize: 13,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                          }}
+                      >
+                          x
+                      </button>
+                  </div>
               </div>
               <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
-                  <pre
-                      style={{
-                          padding: '16px 24px',
-                          fontFamily: T.mono,
-                          fontSize: 12,
-                          lineHeight: 1.8,
-                          color: T.text,
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word',
-                          margin: 0,
-                      }}
-                  >
-                      {content.split('\n').map((line, i) => {
-                          const re = new RegExp(PH_RE.source, 'g')
-                          const parts = []
-                          let last = 0
-                          let m
-                          while ((m = re.exec(line)) !== null) {
-                              if (m.index > last)
+                  {view === 'layout' ? (
+                      <div
+                          style={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              padding: 24,
+                              background: T.bg,
+                          }}
+                      >
+                          <div
+                              style={{
+                                  width: 595,
+                                  minHeight: 842,
+                                  background: '#fff',
+                                  boxShadow: '0 4px 24px rgba(0,0,0,.12)',
+                                  borderRadius: 8,
+                                  overflow: 'hidden',
+                                  transform: 'scale(0.9)',
+                                  transformOrigin: 'top center',
+                                  maxWidth: '100%',
+                              }}
+                          >
+                              <iframe
+                                  srcDoc={layoutHtml}
+                                  style={{
+                                      width: '100%',
+                                      minHeight: 842,
+                                      border: 'none',
+                                      pointerEvents: 'none',
+                                  }}
+                                  title='LayoutPreview'
+                                  onLoad={(e) => {
+                                      try {
+                                          const h =
+                                              e.target.contentDocument
+                                                  ?.documentElement
+                                                  ?.scrollHeight
+                                          if (h && h > 842)
+                                              e.target.style.height = h + 'px'
+                                      } catch (ex) {}
+                                  }}
+                              />
+                          </div>
+                      </div>
+                  ) : (
+                      <pre
+                          style={{
+                              padding: '16px 24px',
+                              fontFamily: T.mono,
+                              fontSize: 12,
+                              lineHeight: 1.8,
+                              color: T.text,
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              margin: 0,
+                          }}
+                      >
+                          {content.split('\n').map((line, i) => {
+                              const re = new RegExp(PH_RE.source, 'g')
+                              const parts = []
+                              let last = 0
+                              let m
+                              while ((m = re.exec(line)) !== null) {
+                                  if (m.index > last)
+                                      parts.push(
+                                          <span key={`t${i}-${last}`}>
+                                              {line.slice(last, m.index)}
+                                          </span>,
+                                      )
                                   parts.push(
-                                      <span key={`t${i}-${last}`}>
-                                          {line.slice(last, m.index)}
+                                      <span
+                                          key={`r${i}-${m.index}`}
+                                          style={{
+                                              background: T.redDim,
+                                              color: T.red,
+                                              padding: '0 4px',
+                                              borderRadius: 3,
+                                              fontWeight: 600,
+                                          }}
+                                      >
+                                          {m[0]}
                                       </span>,
                                   )
-                              parts.push(
-                                  <span
-                                      key={`r${i}-${m.index}`}
-                                      style={{
-                                          background: T.redDim,
-                                          color: T.red,
-                                          padding: '0 4px',
-                                          borderRadius: 3,
-                                          fontWeight: 600,
-                                      }}
+                                  last = m.index + m[0].length
+                              }
+                              if (last < line.length)
+                                  parts.push(
+                                      <span key={`e${i}-${last}`}>
+                                          {line.slice(last)}
+                                      </span>,
+                                  )
+                              return (
+                                  <div
+                                      key={i}
+                                      style={{ display: 'flex', minHeight: 20 }}
                                   >
-                                      {m[0]}
-                                  </span>,
+                                      <span
+                                          style={{
+                                              width: 36,
+                                              flexShrink: 0,
+                                              textAlign: 'right',
+                                              paddingRight: 10,
+                                              color: T.text3,
+                                              fontSize: 12,
+                                              userSelect: 'none',
+                                              lineHeight: '20px',
+                                          }}
+                                      >
+                                          {i + 1}
+                                      </span>
+                                      <span style={{ flex: 1 }}>
+                                          {parts.length
+                                              ? parts
+                                              : line || '\u00A0'}
+                                      </span>
+                                  </div>
                               )
-                              last = m.index + m[0].length
-                          }
-                          if (last < line.length)
-                              parts.push(
-                                  <span key={`e${i}-${last}`}>
-                                      {line.slice(last)}
-                                  </span>,
-                              )
-                          return (
-                              <div
-                                  key={i}
-                                  style={{ display: 'flex', minHeight: 20 }}
-                              >
-                                  <span
-                                      style={{
-                                          width: 36,
-                                          flexShrink: 0,
-                                          textAlign: 'right',
-                                          paddingRight: 10,
-                                          color: T.text3,
-                                          fontSize: 12,
-                                          userSelect: 'none',
-                                          lineHeight: '20px',
-                                      }}
-                                  >
-                                      {i + 1}
-                                  </span>
-                                  <span style={{ flex: 1 }}>
-                                      {parts.length ? parts : line || '\u00A0'}
-                                  </span>
-                              </div>
-                          )
-                      })}
-                  </pre>
+                          })}
+                      </pre>
+                  )}
               </div>
               <div
                   style={{
@@ -3190,6 +3373,18 @@ function PreviewModal({title,content,baseName,onClose}){
                           {curFmt?.label} で保存
                       </Btn>
                   </div>
+                  {view === 'layout' && (
+                      <div
+                          style={{
+                              marginTop: 10,
+                              fontSize: 10,
+                              color: T.text3,
+                              lineHeight: 1.5,
+                          }}
+                      >
+                          レイアウトはPDF/Word表示のイメージです（閲覧環境により余白や改ページが微調整されることがあります）。
+                      </div>
+                  )}
               </div>
           </div>
       </div>
@@ -3579,6 +3774,28 @@ function UploadScreen({onAnalyze,settings}){
   },[pasteValue,processText]);
   const toggleCat=cat=>setMask(p=>({...p,[cat]:!p[cat]}));
 
+  const visibleStages = STAGES.filter((s) => s !== '--')
+  const lastStageIndex = Math.max(0, visibleStages.length - 1)
+  const stageIdx = Math.min(Math.max(stage, 0), lastStageIndex)
+  const pctMatch = aiStatus?.match(/(\d{1,3})\s*%/)
+  const subPct = pctMatch
+      ? Math.min(100, Math.max(0, parseInt(pctMatch[1], 10)))
+      : null
+  const progressPct =
+      lastStageIndex === 0
+          ? 100
+          : Math.max(
+                0,
+                Math.min(
+                    100,
+                    Math.round(
+                        ((stageIdx + (subPct != null ? subPct / 100 : 0)) /
+                            lastStageIndex) *
+                            100,
+                    ),
+                ),
+            )
+
   if (loading)
       return (
           <div
@@ -3619,6 +3836,61 @@ function UploadScreen({onAnalyze,settings}){
                   <p style={{ fontSize: 13, color: T.text2, marginBottom: 20 }}>
                       解析中...
                   </p>
+                  <div style={{ padding: '0 20px', marginBottom: 14 }}>
+                      <div
+                          style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              marginBottom: 8,
+                          }}
+                      >
+                          <span style={{ fontSize: 11, color: T.text3 }}>
+                              進捗（{Math.min(stageIdx + 1, visibleStages.length)}/
+                              {visibleStages.length}）
+                          </span>
+                          <span
+                              style={{
+                                  fontSize: 12,
+                                  fontFamily: T.mono,
+                                  color: T.text2,
+                                  fontWeight: 700,
+                              }}
+                          >
+                              {progressPct}%
+                          </span>
+                      </div>
+                      <div
+                          style={{
+                              height: 8,
+                              borderRadius: 999,
+                              background: T.surfaceAlt,
+                              overflow: 'hidden',
+                              border: `1px solid ${T.border}`,
+                          }}
+                      >
+                          <div
+                              style={{
+                                  height: '100%',
+                                  width: `${progressPct}%`,
+                                  background: `linear-gradient(90deg,${T.accent},${T.purple})`,
+                                  transition: 'width .25s ease',
+                              }}
+                          />
+                      </div>
+                      <div
+                          style={{
+                              fontSize: 10,
+                              color: T.text3,
+                              marginTop: 8,
+                              textAlign: 'left',
+                              lineHeight: 1.4,
+                          }}
+                      >
+                          現在: {visibleStages[stageIdx] || '処理中'}
+                          {subPct != null ? `（${subPct}%）` : ''}
+                      </div>
+                  </div>
                   {aiStatus && (
                       <div
                           style={{
@@ -3641,7 +3913,7 @@ function UploadScreen({onAnalyze,settings}){
                       </div>
                   )}
                   <div style={{ textAlign: 'left', padding: '0 20px' }}>
-                      {STAGES.filter((s) => s !== '--').map((s, i) => (
+                      {visibleStages.map((s, i) => (
                           <div
                               key={i}
                               style={{
@@ -5067,6 +5339,8 @@ function EditorScreen({data,onReset,apiKey,model}){
   const[showAI,setShowAI]=useState(false);const[aiResult,setAiResult]=useState(null);
   const[viewMode,setViewMode]=useState("original");const[preview,setPreview]=useState(null);
   const[showDesign,setShowDesign]=useState(false);
+  const[focusDetId,setFocusDetId]=useState(null);
+  const[focusPulse,setFocusPulse]=useState(0);
   const hasRawText=data.rawText&&data.rawText!==data.fullText&&data.rawText!==data.text_preview;
 
   const toggle=id=>setDetections(p=>p.map(d=>d.id===id?{...d,enabled:!d.enabled}:d));
@@ -5081,6 +5355,21 @@ function EditorScreen({data,onReset,apiKey,model}){
   const baseName=data.file_name.replace(/\.[^.]+$/,"")+"_redacted";
   const buildTxt=()=>`# マスキング済み\n# 元ファイル: ${data.file_name}\n# 日時: ${new Date().toLocaleString("ja-JP")}\n# マスク: ${enabledCount}件\n\n${viewMode==="ai"&&aiResult?aiResult:redacted}`;
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
+
+  const focusDetection=useCallback((id)=>{
+    setFocusDetId(id);
+    setFocusPulse(p=>p+1);
+    setViewMode(vm=>vm==="original"?vm:"original");
+  },[]);
+
+  useEffect(()=>{
+    if(!focusDetId)return;
+    // Wait for the text to render (viewMode or showRedacted may have changed)
+    requestAnimationFrame(()=>{
+      const el=document.querySelector(`[data-det-id="${focusDetId}"]`);
+      if(el&&el.scrollIntoView)el.scrollIntoView({behavior:"smooth",block:"center"});
+    });
+  },[focusDetId,focusPulse,viewMode,showRedacted]);
 
   function renderText(text){if(!showRedacted&&viewMode!=="ai")return text;const parts=[];let last=0;let m;const re=new RegExp(PH_RE.source,"g");while((m=re.exec(text))!==null){if(m.index>last)parts.push(<span key={`t${last}`}>{text.slice(last,m.index)}</span>);parts.push(<span key={`r${m.index}`} style={{background:T.redDim,color:T.red,padding:"1px 6px",borderRadius:4,fontWeight:600,fontSize:"0.92em"}}>{m[0]}</span>);last=m.index+m[0].length;}if(last<text.length)parts.push(<span key={`e${last}`}>{text.slice(last)}</span>);return parts.length?parts:text;}
 
@@ -5374,7 +5663,16 @@ function EditorScreen({data,onReset,apiKey,model}){
                               maxWidth: 740,
                           }}
                       >
-                          {renderText(displayText)}
+                          {viewMode === 'original'
+                              ? renderTextWithDetectionAnchors(
+                                    data.text_preview,
+                                    detections,
+                                    data.maskOpts,
+                                    showRedacted,
+                                    focusDetId,
+                                    focusPulse,
+                                )
+                              : renderText(displayText)}
                       </pre>
                   </div>
               )}
@@ -5666,6 +5964,8 @@ function EditorScreen({data,onReset,apiKey,model}){
                                   {items.map((item) => (
                                       <div
                                           key={item.id}
+                                          onClick={() => focusDetection(item.id)}
+                                          title='クリックで本文の該当箇所へジャンプ'
                                           style={{
                                               display: 'flex',
                                               alignItems: 'center',
@@ -5677,6 +5977,11 @@ function EditorScreen({data,onReset,apiKey,model}){
                                                   ? `${meta.color}0D`
                                                   : 'transparent',
                                               border: `1px solid ${item.enabled ? `${meta.color}1A` : 'transparent'}`,
+                                              boxShadow:
+                                                  focusDetId === item.id
+                                                      ? '0 0 0 2px rgba(76,133,246,.35), 0 0 0 8px rgba(76,133,246,.10)'
+                                                      : 'none',
+                                              cursor: 'pointer',
                                               transition: 'all .2s',
                                           }}
                                       >
@@ -6112,4 +6417,11 @@ export default function App(){
           )}
       </div>
   )
+}
+
+// For unit tests (Node env): pure formatting helpers
+export const __test__ = {
+  cleanContent,
+  mdToHTML,
+  generatePDFHTML,
 }

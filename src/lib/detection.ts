@@ -163,6 +163,7 @@ export function nameToInitial(
   name: string,
   readingMap?: Map<string, string> | null
 ): string {
+  if (!name) return ''
   const isKana = /^[\u30a0-\u30ff\u3040-\u309fー\s\u3000]+$/.test(name)
   const reading = isKana ? name : readingMap?.get(name) || ''
   if (reading) {
