@@ -72,6 +72,78 @@ const AI_PROVIDERS=[
 // Backward-compat flat list
 const AI_MODELS=AI_PROVIDERS.flatMap(p=>p.models.map(m=>({...m,provider:p.id})));
 
+function getProviderConfig(providerId) {
+    return AI_PROVIDERS.find((p) => p.id === providerId) || null
+}
+
+function getProviderMaxTier(providerId) {
+    const prov = getProviderConfig(providerId)
+    if (!prov || !prov.models || prov.models.length === 0) return 1
+    return Math.max(...prov.models.map((m) => m.tier || 1))
+}
+
+function getPreferredTierModel(providerId, tier) {
+    const prov = getProviderConfig(providerId)
+    if (!prov || !prov.models || prov.models.length === 0) return null
+    const candidates = prov.models.filter((m) => (m.tier || 1) === tier)
+    if (candidates.length === 0) return null
+    return candidates[candidates.length - 1].id
+}
+
+function getModelTier(providerId, modelId) {
+    const prov = getProviderConfig(providerId)
+    const m = prov?.models?.find((mm) => mm.id === modelId)
+    return m?.tier || null
+}
+
+function pickFormatModelForProfile(providerId, profile) {
+    const prov = getProviderConfig(providerId)
+    if (!prov || !prov.models || prov.models.length === 0) return null
+    const maxTier = getProviderMaxTier(providerId)
+    const targetTier =
+        profile === 'speed' ? 1 : profile === 'balanced' ? 2 : maxTier
+    return (
+        getPreferredTierModel(providerId, targetTier) ||
+        getPreferredTierModel(providerId, Math.min(2, maxTier)) ||
+        prov.defaultModel ||
+        prov.models[prov.models.length - 1]?.id ||
+        null
+    )
+}
+
+function getModelsForRun(settings) {
+    const providerId =
+        settings?.provider || getProviderForModel(settings?.model)
+    const profile = settings?.aiProfile || 'balanced'
+    const maxTier = getProviderMaxTier(providerId)
+    const formatModel =
+        settings?.model ||
+        pickFormatModelForProfile(providerId, profile) ||
+        'gpt-5-nano'
+    const formatTier = getModelTier(providerId, formatModel) || 1
+    const formatFallbackModel =
+        formatTier <= 1
+            ? getPreferredTierModel(providerId, Math.min(2, maxTier))
+            : null
+    const detectTier = profile === 'quality' ? Math.min(2, maxTier) : 1
+    const detectModel =
+        getPreferredTierModel(providerId, detectTier) ||
+        getPreferredTierModel(providerId, 1) ||
+        formatModel
+    const detectFallbackModel =
+        detectTier < maxTier
+            ? getPreferredTierModel(providerId, detectTier + 1)
+            : null
+    return {
+        providerId,
+        profile,
+        detectModel,
+        detectFallbackModel,
+        formatModel,
+        formatFallbackModel,
+    }
+}
+
 const CATEGORIES={name:{label:"氏名",color:C.red,bg:C.redDim},contact:{label:"連絡先",color:C.accent,bg:C.accentDim},address:{label:"住所・地名",color:C.amber,bg:C.amberDim},personal:{label:"個人情報",color:C.purple,bg:C.purpleDim},web:{label:"URL",color:C.cyan,bg:C.cyanDim},organization:{label:"組織名",color:"#8490A8",bg:"rgba(132,144,168,0.1)"},photo:{label:"顔写真",color:C.red,bg:C.redDim}};
 
 const DEFAULT_MASK={name:true,contact:true,address:true,personal:true,web:true,organization:false,keepPrefecture:true,nameInitial:false};
@@ -90,19 +162,21 @@ const EXPORT_FORMATS=[
   {id:"docx",label:"Word",ext:".doc",icon:"W"},
 ];
 
-const CSS=`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 [data-theme="dark"]{--rp-bg:#181A21;--rp-bg2:#1F222B;--rp-surface:#262A36;--rp-surfaceAlt:#2D3240;--rp-border:#3D4258;--rp-text:#D3D6E0;--rp-text2:#9DA1B3;--rp-text3:#6E7388;--rp-diffAdd:#1B3326;--rp-diffDel:#331B1B;--rp-diffAddBorder:#2A5A3A;--rp-diffDelBorder:#5A2A2A;--rp-scrollThumb:#3D4258}
 [data-theme="light"]{--rp-bg:#F5F6FA;--rp-bg2:#FFFFFF;--rp-surface:#FFFFFF;--rp-surfaceAlt:#EDEEF4;--rp-border:#D5D8E0;--rp-text:#1C1E27;--rp-text2:#5C6173;--rp-text3:#838799;--rp-diffAdd:#E8F5E9;--rp-diffDel:#FFEBEE;--rp-diffAddBorder:#A5D6A7;--rp-diffDelBorder:#EF9A9A;--rp-scrollThumb:#C4C7D0}
-body{background:var(--rp-bg)}
+body{background:var(--rp-bg);font-size:14px}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--rp-scrollThumb);border-radius:3px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
-@media(max-width:768px){.rp-header-badges{display:none!important}.rp-editor-wrap{flex-direction:column!important}.rp-editor-left{border-right:none!important;border-bottom:1px solid var(--rp-border)!important;max-height:45vh!important}.rp-editor-right{max-width:none!important;min-width:0!important}.rp-upload-grid{grid-template-columns:1fr!important}.rp-upload-main{grid-template-columns:1fr!important}.rp-modal-inner{max-width:100%!important;max-height:100vh!important;border-radius:0!important}.rp-settings-models{grid-template-columns:1fr!important}.rp-view-tabs{flex-wrap:wrap!important}.rp-cat-grid{grid-template-columns:1fr!important}.rp-input-tabs button{font-size:11px!important;padding:10px 4px!important}.rp-design-controls{width:100%!important;max-height:40vh!important;border-right:none!important;border-bottom:1px solid var(--rp-border)!important}}
-@media(max-width:480px){.rp-header{padding:0 12px!important}.rp-header h1{font-size:14px!important}}`;
+@keyframes detFlashA{0%{box-shadow:0 0 0 0 rgba(76,133,246,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(76,133,246,.45),0 0 0 10px rgba(76,133,246,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(76,133,246,.28),0 0 0 14px rgba(76,133,246,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(76,133,246,0);filter:saturate(1)}}
+@keyframes detFlashB{0%{box-shadow:0 0 0 0 rgba(76,133,246,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(76,133,246,.45),0 0 0 10px rgba(76,133,246,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(76,133,246,.28),0 0 0 14px rgba(76,133,246,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(76,133,246,0);filter:saturate(1)}}
+@media(max-width:768px){.rp-header-badges{display:none!important}.rp-editor-wrap{flex-direction:column!important}.rp-editor-left{border-right:none!important;border-bottom:1px solid var(--rp-border)!important;max-height:45vh!important}.rp-editor-right{max-width:none!important;min-width:0!important}.rp-upload-grid{grid-template-columns:1fr!important}.rp-upload-main{grid-template-columns:1fr!important}.rp-modal-inner{max-width:100%!important;max-height:100vh!important;border-radius:0!important}.rp-settings-models{grid-template-columns:1fr!important}.rp-view-tabs{flex-wrap:wrap!important}.rp-cat-grid{grid-template-columns:1fr!important}.rp-input-tabs button{font-size:12px!important;padding:10px 4px!important}.rp-design-controls{width:100%!important;max-height:40vh!important;border-right:none!important;border-bottom:1px solid var(--rp-border)!important}}
+@media(max-width:480px){.rp-header{padding:0 12px!important}.rp-header h1{font-size:14px!important}}`
 
 // ═══ Unified AI Call (via server-side proxy) ═══
 async function callAI({provider,model,messages,maxTokens=4000,apiKey,system}){
@@ -121,7 +195,7 @@ async function callAI({provider,model,messages,maxTokens=4000,apiKey,system}){
 
 function getProviderForModel(modelId){
   for(const p of AI_PROVIDERS){if(p.models.some(m=>m.id===modelId))return p.id;}
-  return "anthropic";
+  return 'openai'
 }
 
 // ═══ Name Dictionaries (expanded) ═══
@@ -329,7 +403,16 @@ function detectJapaneseNames(text){
             const ok=p===0||NAME_BEF_OK.test(bef)||LABEL_ENDS.test(bef);
             if(ok){
               seen.add(k);
-              r.push({id:`nd_${p}`,type:"name_dict",label:"氏名（辞書）",category:"name",value:full,source:"dict",confidence:.92,enabled:true});
+              r.push({
+                  id: `nd_${p}_${gn.length}`,
+                  type: 'name_dict',
+                  label: '氏名（辞書）',
+                  category: 'name',
+                  value: full,
+                  source: 'dict',
+                  confidence: 0.92,
+                  enabled: true,
+              })
               matched=true;
             }
           }
@@ -394,12 +477,36 @@ function detectJapaneseNames(text){
   return r;
 }
 
+function ensureUniqueDetectionIds(detections) {
+    const seenIds = new Map()
+    return detections.map((d, index) => {
+        const baseId =
+            typeof d.id === 'string' && d.id.trim() ? d.id : `d_${index}`
+        const count = seenIds.get(baseId) || 0
+        seenIds.set(baseId, count + 1)
+        return count === 0
+            ? { ...d, id: baseId }
+            : { ...d, id: `${baseId}__${count}` }
+    })
+}
+
 // ═══ AI-Based PII Detection ═══
-async function detectWithAI(text, apiKey, model){
-  const truncated=text.slice(0,8000);
-  const provider=getProviderForModel(model);
-  try{
-    const raw=await callAI({provider,model:model||"claude-haiku-4-5-20251001",apiKey,maxTokens:1000,messages:[{role:"user",content:`以下の日本語テキストから個人を特定できる情報（PII）を全て抽出してJSON配列で返してください。
+function parseAIDetectionJson(raw) {
+    if (!raw || typeof raw !== 'string') return { ok: false, reason: 'empty' }
+    const jsonMatch = raw.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return { ok: false, reason: 'no_json' }
+    try {
+        const items = JSON.parse(jsonMatch[0])
+        if (!Array.isArray(items)) return { ok: false, reason: 'not_array' }
+        return { ok: true, items }
+    } catch {
+        return { ok: false, reason: 'json_parse' }
+    }
+}
+
+async function detectWithAI(text, apiKey, model, fallbackModel, onProgress) {
+    const truncated = text.slice(0, 8000)
+    const prompt = `以下の日本語テキストから個人を特定できる情報（PII）を全て抽出してJSON配列で返してください。
 
 検出対象：
 - person_name: 人名（姓名、フルネーム。フリガナも別エントリで）
@@ -414,32 +521,111 @@ async function detectWithAI(text, apiKey, model){
 [{"type":"person_name","value":"検出した文字列"},{"type":"sns_account","value":"@xxx"}]
 
 テキスト：
-${truncated}`}]});
-    const jsonMatch=raw.match(/\[[\s\S]*\]/);
-    if(!jsonMatch)return[];
-    const items=JSON.parse(jsonMatch[0]);
-    const results=[];
-    const seen=new Set();
-    for(const item of items){
-      if(!item.value||item.value.length<2)continue;
-      const k=`ai:${item.type}:${item.value}`;
-      if(seen.has(k))continue;
-      seen.add(k);
-      if(item.type==="person_name"){
-        if(text.includes(item.value)){
-          results.push({id:`ai_${results.length}`,type:"name_ai",label:"氏名（AI検出）",category:"name",value:item.value,source:"ai",confidence:.95,enabled:true});
+${truncated}`
+
+    const runOnce = async (m) => {
+        const provider = getProviderForModel(m)
+        const raw = await callAI({
+            provider,
+            model: m || 'gpt-5-nano',
+            apiKey,
+            maxTokens: 1000,
+            messages: [{ role: 'user', content: prompt }],
+        })
+        const parsed = parseAIDetectionJson(raw)
+        if (!parsed.ok)
+            return {
+                ok: false,
+                reason: parsed.reason,
+                rawLen: (raw || '').length,
+            }
+        const results = []
+        const seen = new Set()
+        for (const item of parsed.items) {
+            if (!item || typeof item !== 'object') continue
+            if (typeof item.value !== 'string' || item.value.length < 2)
+                continue
+            if (typeof item.type !== 'string') continue
+            const k = `ai:${item.type}:${item.value}`
+            if (seen.has(k)) continue
+            seen.add(k)
+            if (item.type === 'person_name') {
+                if (text.includes(item.value)) {
+                    results.push({
+                        id: `ai_${results.length}`,
+                        type: 'name_ai',
+                        label: '氏名（AI検出）',
+                        category: 'name',
+                        value: item.value,
+                        source: 'ai',
+                        confidence: 0.95,
+                        enabled: true,
+                    })
+                }
+            } else if (item.type === 'sns_account') {
+                if (text.includes(item.value)) {
+                    results.push({
+                        id: `ai_sns_${results.length}`,
+                        type: 'sns_ai',
+                        label: 'SNSアカウント',
+                        category: 'contact',
+                        value: item.value,
+                        source: 'ai',
+                        confidence: 0.9,
+                        enabled: true,
+                    })
+                }
+            }
         }
-      }else if(item.type==="sns_account"){
-        if(text.includes(item.value)){
-          results.push({id:`ai_sns_${results.length}`,type:"sns_ai",label:"SNSアカウント",category:"contact",value:item.value,source:"ai",confidence:.90,enabled:true});
-        }
-      }
+        return { ok: true, results, rawLen: (raw || '').length }
     }
-    return results;
-  }catch(e){
-    console.warn("AI detection failed:",e);
-    return[];
-  }
+
+    let primary
+    try {
+        primary = await runOnce(model)
+        if (primary.ok)
+            return {
+                detections: primary.results,
+                usedModel: model,
+                fallbackUsed: false,
+            }
+    } catch (e) {
+        primary = { ok: false, reason: e?.message || 'error', rawLen: 0 }
+    }
+
+    if (fallbackModel && fallbackModel !== model) {
+        try {
+            if (onProgress)
+                onProgress(`AI PII検出: ${fallbackModel} で再試行中...`)
+            const fb = await runOnce(fallbackModel)
+            if (fb.ok)
+                return {
+                    detections: fb.results,
+                    usedModel: fallbackModel,
+                    fallbackUsed: true,
+                }
+            return {
+                detections: [],
+                usedModel: fallbackModel,
+                fallbackUsed: true,
+                error: `AI検出失敗(${model}→${fallbackModel}): ${primary.reason || '不明'}`,
+            }
+        } catch (e) {
+            return {
+                detections: [],
+                usedModel: fallbackModel,
+                fallbackUsed: true,
+                error: `AI検出失敗(${model}→${fallbackModel}): ${e?.message || '不明'}`,
+            }
+        }
+    }
+
+    return {
+        detections: [],
+        usedModel: model,
+        fallbackUsed: false,
+        error: `AI検出失敗(${model}): ${primary.reason || '不明'}`,
+    }
 }
 
 function detectAll(text){
@@ -487,6 +673,89 @@ function applyRedaction(text,dets,opts){
     r=r.split(d.value).join(replacement);
   }
   return r;
+}
+
+function buildNonOverlappingMatches(text,dets){
+  const matches=[];
+  const occupied=[];
+  const overlaps=(s,e)=>occupied.some(o=>!(e<=o.s||s>=o.e));
+  for(const d of dets){
+    const v=d?.value;
+    if(typeof v!=="string"||v.length<2)continue;
+    let idx=0;
+    while(true){
+      const p=text.indexOf(v,idx);
+      if(p===-1)break;
+      const s=p,e=p+v.length;
+      if(!overlaps(s,e)){
+        matches.push({s,e,det:d});
+        occupied.push({s,e});
+      }
+      idx=p+v.length;
+    }
+  }
+  matches.sort((a,b)=>a.s-b.s);
+  return matches;
+}
+
+function renderTextWithDetectionAnchors(text,dets,opts,showRedacted,focusId,focusPulse){
+  if(typeof text!=="string"||!text)return text||"";
+  const enabled=[...dets].filter(d=>d&&d.enabled&&typeof d.value==="string"&&d.value.length>=2).sort((a,b)=>(b.value?.length||0)-(a.value?.length||0));
+  if(enabled.length===0)return text;
+
+  const keepPref=opts?.keepPrefecture||false;
+  const nameInit=opts?.nameInitial||false;
+  const readingMap=nameInit?buildReadingMap(text):null;
+
+  const placeholderStyle={background:T.redDim,color:T.red,padding:"1px 6px",borderRadius:4,fontWeight:600,fontSize:"0.92em"};
+  const rawHitStyle={background:"rgba(76,133,246,0.16)",borderRadius:3,boxShadow:"inset 0 -1px 0 rgba(76,133,246,0.55)"};
+
+  const matches=buildNonOverlappingMatches(text,enabled);
+  if(matches.length===0)return text;
+
+  const out=[];
+  let cur=0;
+  const animName=focusPulse%2? "detFlashA":"detFlashB";
+
+  for(const m of matches){
+    if(m.s>cur)out.push(text.slice(cur,m.s));
+    const d=m.det;
+    const focused=!!(focusId&&d?.id===focusId);
+    const anim=focused?{animation:`${animName} 1.25s ease-in-out 1`}:{};
+
+    if(showRedacted){
+      // Replacement rendering (keeps privacy; value is not shown)
+      let node=null;
+      const isNameType=d.category==="name";
+      const isAddrType=d.type==="address";
+      if(isNameType&&nameInit){
+        const rep=nameToInitial(d.value,readingMap)||PH[d.type]||"[非公開]";
+        node=<span style={placeholderStyle}>{rep}</span>;
+      }else if(isAddrType&&keepPref){
+        const pref=extractPrefecture(d.value);
+        node=pref?(<><span>{pref}</span><span style={placeholderStyle}>[住所詳細非公開]</span></>):(<span style={placeholderStyle}>[住所非公開]</span>);
+      }else{
+        const rep=PH[d.type]||"[非公開]";
+        node=<span style={placeholderStyle}>{rep}</span>;
+      }
+      out.push(
+        <span key={`det_${d.id}_${m.s}_${animName}`} data-det-id={d.id} style={{borderRadius:6,...anim}}>
+          {node}
+        </span>
+      );
+    }else{
+      // Raw/original rendering (value is visible; highlight it)
+      const hit=text.slice(m.s,m.e);
+      out.push(
+        <span key={`det_${d.id}_${m.s}_${animName}`} data-det-id={d.id} style={{...rawHitStyle,...anim}}>
+          {hit}
+        </span>
+      );
+    }
+    cur=m.e;
+  }
+  if(cur<text.length)out.push(text.slice(cur));
+  return out;
 }
 
 // ═══ File Parsers ═══
@@ -721,10 +990,28 @@ async function ocrSparsePages(pdfData,sparsePages,apiKey,model,onProgress){
 5. UIスクリーンショットやデザイン画像内の文字も読み取れる範囲で抽出
 6. テキストのみ出力（説明文や前置きは一切不要）
 7. テキストが無いページは「--- Page N ---」の後に「[画像のみ]」と記載`;
-      const txt=await callAI({provider,model:model||"claude-sonnet-4-20250514",apiKey,maxTokens:8000,messages:[{role:"user",content:[
-        {type:"document",source:{type:"base64",media_type:"application/pdf",data:pdfB64}},
-        {type:"text",text:ocrPrompt}
-      ]}]});
+      const txt = await callAI({
+          provider,
+          model: model || 'gpt-5-nano',
+          apiKey,
+          maxTokens: 8000,
+          messages: [
+              {
+                  role: 'user',
+                  content: [
+                      {
+                          type: 'document',
+                          source: {
+                              type: 'base64',
+                              media_type: 'application/pdf',
+                              data: pdfB64,
+                          },
+                      },
+                      { type: 'text', text: ocrPrompt },
+                  ],
+              },
+          ],
+      })
       console.log(`OCR API response (pages ${pageList}): ${txt.length} chars`);
       
       // Parse per-page results
@@ -772,44 +1059,65 @@ function mergeOcrResults(baseText,ocrResults){
 }
 
 // AI-based PDF text cleanup - processes per-page, non-destructive
-async function aiCleanupText(rawText,apiKey,model,onProgress){
-  const provider=getProviderForModel(model);
+async function aiCleanupText(
+    rawText,
+    apiKey,
+    model,
+    onProgress,
+    fallbackModel,
+) {
+    const primaryModel = model || 'gpt-5-nano'
+    const fbModel =
+        fallbackModel && fallbackModel !== primaryModel ? fallbackModel : null
 
-  // Split into pages
-  const pageChunks=rawText.split(/(?=--- Page \d+ ---)/);
-  if(pageChunks.length===0)return null;
+    // Split into pages
+    const pageChunks = rawText.split(/(?=--- Page \d+ ---)/)
+    if (pageChunks.length === 0) return null
 
-  // Group pages into batches (~5000 chars each to stay within token limits)
-  const batches=[];
-  let cur=[];
-  let curLen=0;
-  for(const chunk of pageChunks){
-    const trimmed=chunk.trim();
-    if(!trimmed)continue;
-    if(curLen+trimmed.length>5000&&cur.length>0){
-      batches.push(cur.join("\n\n"));
-      cur=[trimmed];
-      curLen=trimmed.length;
-    }else{
-      cur.push(trimmed);
-      curLen+=trimmed.length;
+    // Group pages into batches (~5000 chars each to stay within token limits)
+    const batches = []
+    let cur = []
+    let curLen = 0
+    for (const chunk of pageChunks) {
+        const trimmed = chunk.trim()
+        if (!trimmed) continue
+        if (curLen + trimmed.length > 5000 && cur.length > 0) {
+            batches.push(cur.join('\n\n'))
+            cur = [trimmed]
+            curLen = trimmed.length
+        } else {
+            cur.push(trimmed)
+            curLen += trimmed.length
+        }
     }
-  }
-  if(cur.length>0)batches.push(cur.join("\n\n"));
+    if (cur.length > 0) batches.push(cur.join('\n\n'))
 
-  const results=[];
-  for(let bi=0;bi<batches.length;bi++){
-    const batch=batches[bi];
-    const pct=Math.round(((bi+1)/batches.length)*100);
-    if(onProgress)onProgress(`AI再構成: ${pct}% (${bi+1}/${batches.length}バッチ)`);
-    // Skip batches that are mostly just page headers with no real content
-    const contentLines=batch.split("\n").filter(l=>!/^---\s*Page\s*\d+/.test(l)&&l.trim().length>0);
-    if(contentLines.length<2){
-      results.push(batch);
-      continue;
-    }
-    try{
-      const rawCleaned=await callAI({provider,model:model||"claude-sonnet-4-20250514",apiKey,maxTokens:4000,messages:[{role:"user",content:`以下はPDFから機械的に抽出したテキストです。レイアウト崩れを修正してください。
+    const results = []
+    for (let bi = 0; bi < batches.length; bi++) {
+        const batch = batches[bi]
+        const pct = Math.round(((bi + 1) / batches.length) * 100)
+        if (onProgress)
+            onProgress(`AI再構成: ${pct}% (${bi + 1}/${batches.length}バッチ)`)
+        // Skip batches that are mostly just page headers with no real content
+        const contentLines = batch
+            .split('\n')
+            .filter((l) => !/^---\s*Page\s*\d+/.test(l) && l.trim().length > 0)
+        if (contentLines.length < 2) {
+            results.push(batch)
+            continue
+        }
+
+        const runCleanup = async (m) => {
+            const provider = getProviderForModel(m)
+            return await callAI({
+                provider,
+                model: m,
+                apiKey,
+                maxTokens: 4000,
+                messages: [
+                    {
+                        role: 'user',
+                        content: `以下はPDFから機械的に抽出したテキストです。レイアウト崩れを修正してください。
 
 ルール：
 1. 元の情報を変更・追加・削除しない。情報量を減らさない
@@ -821,35 +1129,84 @@ async function aiCleanupText(rawText,apiKey,model,onProgress){
 7. 再構成テキストのみを出力（説明文や前置きは不要）
 
 テキスト：
-${batch}`}]});
-      // Strip AI preamble before first "--- Page" marker
-      let cleaned=rawCleaned;
-      const firstPage=rawCleaned.indexOf("--- Page");
-      if(firstPage>0)cleaned=rawCleaned.slice(firstPage);
-      cleaned=cleaned.trim();
+${batch}`,
+                    },
+                ],
+            })
+        }
 
-      // Validation: AI result must have at least 60% of original content lines
-      const origLines=batch.split("\n").filter(l=>l.trim().length>0).length;
-      const cleanLines=cleaned.split("\n").filter(l=>l.trim().length>0).length;
-      if(cleanLines>=origLines*0.6&&cleaned.length>batch.length*0.4){
-        results.push(cleaned);
-      }else{
-        // AI lost too much content, keep original
-        results.push(batch);
-      }
-    }catch(e){
-      results.push(batch);
+        const normalizeCleaned = (rawCleaned) => {
+            if (!rawCleaned || typeof rawCleaned !== 'string') return ''
+            // Strip AI preamble before first "--- Page" marker
+            let cleaned = rawCleaned
+            const firstPage = rawCleaned.indexOf('--- Page')
+            if (firstPage > 0) cleaned = rawCleaned.slice(firstPage)
+            return cleaned.trim()
+        }
+
+        const isValidCleaned = (cleaned) => {
+            if (!cleaned) return false
+            const origLines = batch
+                .split('\n')
+                .filter((l) => l.trim().length > 0).length
+            const cleanLines = cleaned
+                .split('\n')
+                .filter((l) => l.trim().length > 0).length
+            return (
+                cleanLines >= origLines * 0.6 &&
+                cleaned.length > batch.length * 0.4
+            )
+        }
+
+        try {
+            let rawCleaned = await runCleanup(primaryModel)
+            let cleaned = normalizeCleaned(rawCleaned)
+
+            // If invalid and we have a fallback model, retry once
+            if (!isValidCleaned(cleaned) && fbModel) {
+                if (onProgress)
+                    onProgress(`AI再構成: ${pct}% — ${fbModel} で再試行中...`)
+                try {
+                    rawCleaned = await runCleanup(fbModel)
+                    const fbCleaned = normalizeCleaned(rawCleaned)
+                    if (isValidCleaned(fbCleaned)) cleaned = fbCleaned
+                } catch {}
+            }
+
+            if (isValidCleaned(cleaned)) results.push(cleaned)
+            else results.push(batch)
+        } catch (e) {
+            // Network/model error: fallback once if available
+            if (fbModel) {
+                try {
+                    if (onProgress)
+                        onProgress(
+                            `AI再構成: ${pct}% — ${fbModel} で再試行中...`,
+                        )
+                    const rawCleaned = await runCleanup(fbModel)
+                    const cleaned = normalizeCleaned(rawCleaned)
+                    if (isValidCleaned(cleaned)) {
+                        results.push(cleaned)
+                        continue
+                    }
+                } catch {}
+            }
+            results.push(batch)
+        }
     }
-  }
 
-  const final=results.join("\n\n").trim();
-  // Final validation: result must retain most of original content
-  const origLineCount=rawText.split("\n").filter(l=>l.trim().length>0).length;
-  const finalLineCount=final.split("\n").filter(l=>l.trim().length>0).length;
-  if(finalLineCount<origLineCount*0.5){
-    return null; // Too much content lost, reject AI cleanup
-  }
-  return final;
+    const final = results.join('\n\n').trim()
+    // Final validation: result must retain most of original content
+    const origLineCount = rawText
+        .split('\n')
+        .filter((l) => l.trim().length > 0).length
+    const finalLineCount = final
+        .split('\n')
+        .filter((l) => l.trim().length > 0).length
+    if (finalLineCount < origLineCount * 0.5) {
+        return null // Too much content lost, reject AI cleanup
+    }
+    return final
 }
 // ═══ HTML Text Extraction (shared by parseHTML + URL scraping) ═══
 function extractTextFromHTML(html){
@@ -1083,7 +1440,18 @@ async function parseFile(file){const ext=file.name.split(".").pop().toLowerCase(
 // ═══ AI Reformat ═══
 async function aiReformat(redactedText,instruction,apiKey,model){
   const provider=getProviderForModel(model);
-  return await callAI({provider,model:model||"claude-sonnet-4-20250514",apiKey,maxTokens:4000,messages:[{role:"user",content:`あなたは人材紹介エージェントの書類作成アシスタントです。以下は個人情報をマスキング済みの職務経歴書テキストです。指定されたフォーマット指示に従って再構成してください。\n\n【重要】\n- [氏名非公開]等のマスキング箇所はそのまま維持\n- 新たな個人情報を推測・追加しない\n- 内容の事実を変更しない\n\n【フォーマット指示】\n${instruction}\n\n【マスキング済みテキスト】\n${redactedText.slice(0,6000)}`}]});
+  return await callAI({
+      provider,
+      model: model || 'gpt-5-nano',
+      apiKey,
+      maxTokens: 4000,
+      messages: [
+          {
+              role: 'user',
+              content: `あなたは人材紹介エージェントの書類作成アシスタントです。以下は個人情報をマスキング済みの職務経歴書テキストです。指定されたフォーマット指示に従って再構成してください。\n\n【重要】\n- [氏名非公開]等のマスキング箇所はそのまま維持\n- 新たな個人情報を推測・追加しない\n- 内容の事実を変更しない\n\n【フォーマット指示】\n${instruction}\n\n【マスキング済みテキスト】\n${redactedText.slice(0, 6000)}`,
+          },
+      ],
+  })
 }
 
 // ═══ Export generators ═══
@@ -1104,95 +1472,784 @@ function generateExport(rawContent,format,baseName){
 function triggerDownload(ex){try{if(ex.isPrintPdf){const blob=new Blob([ex.data],{type:ex.mime});const url=URL.createObjectURL(blob);const win=window.open(url,"_blank");if(win)win.focus();return;}const a=document.createElement("a");a.href=ex.dataUri||("data:"+ex.mime+","+encodeURIComponent(ex.data));a.download=ex.name;document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){}}
 
 // ═══ UI primitives ═══
-function Badge({children,color,bg,style:sx}){return <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:6,fontSize:11,fontWeight:600,color,background:bg,whiteSpace:"nowrap",...sx}}>{children}</span>;}
+function Badge({ children, color, bg, style: sx }) {
+    return (
+        <span
+            style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                padding: '3px 10px',
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                color,
+                background: bg,
+                whiteSpace: 'nowrap',
+                ...sx,
+            }}
+        >
+            {children}
+        </span>
+    )
+}
 function Btn({children,variant="primary",onClick,disabled,style:sx}){const base={display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 22px",borderRadius:10,fontSize:14,fontWeight:600,fontFamily:T.font,cursor:disabled?"default":"pointer",border:"none",transition:"all .15s",opacity:disabled?.35:1};const v={primary:{background:T.accent,color:"#fff"},ghost:{background:"transparent",color:T.text2,border:`1px solid ${T.border}`},danger:{background:T.redDim,color:T.red},success:{background:T.greenDim,color:T.green}};return <button onClick={disabled?undefined:onClick} style={{...base,...v[variant],...sx}}>{children}</button>;}
-function Toggle({checked,onChange,size="md"}){const w=size==="sm"?32:38,h=size==="sm"?18:22,d=size==="sm"?12:16;return <button onClick={onChange} style={{width:w,height:h,borderRadius:h/2,border:"none",cursor:"pointer",background:checked?T.accent:T.border,position:"relative",transition:"background .2s",flexShrink:0}}><span style={{position:"absolute",top:(h-d)/2,left:checked?w-d-3:3,width:d,height:d,borderRadius:d/2,background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.25)"}}/></button>;}
-function Pill({children,active,onClick,color}){return <button onClick={onClick} style={{padding:"4px 11px",borderRadius:7,border:"none",cursor:"pointer",fontSize:11,fontWeight:active?600:400,fontFamily:T.font,background:active?(color?`${color}1A`:T.accentDim):T.surfaceAlt,color:active?(color||T.accent):T.text3,transition:"all .15s"}}>{children}</button>;}
+function Toggle({checked,onChange,size="md"}){const w=size==="sm"?32:38,h=size==="sm"?18:22,d=size==="sm"?12:16;return <button onClick={(e)=>{e.stopPropagation();onChange&&onChange();}} style={{width:w,height:h,borderRadius:h/2,border:"none",cursor:"pointer",background:checked?T.accent:T.border,position:"relative",transition:"background .2s",flexShrink:0}}><span style={{position:"absolute",top:(h-d)/2,left:checked?w-d-3:3,width:d,height:d,borderRadius:d/2,background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.25)"}}/></button>;}
+function Pill({ children, active, onClick, color }) {
+    return (
+        <button
+            onClick={onClick}
+            style={{
+                padding: '4px 11px',
+                borderRadius: 7,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: active ? 600 : 400,
+                fontFamily: T.font,
+                background: active
+                    ? color
+                        ? `${color}1A`
+                        : T.accentDim
+                    : T.surfaceAlt,
+                color: active ? color || T.accent : T.text3,
+                transition: 'all .15s',
+            }}
+        >
+            {children}
+        </button>
+    )
+}
 
 // ═══ Settings Modal ═══
 function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
-  const[provider,setProvider]=useState(settings.provider||"anthropic");
-  const[model,setModel]=useState(settings.model||"claude-sonnet-4-20250514");
+  const [provider, setProvider] = useState(settings.provider || 'openai')
+  const [model, setModel] = useState(settings.model || 'gpt-5-nano')
   const[apiKey,setApiKey]=useState(settings.apiKey||"");
   const[aiDetect,setAiDetect]=useState(settings.aiDetect!==false);
+  const [aiProfile, setAiProfile] = useState(settings.aiProfile || 'balanced')
   const[proxyUrl,setProxyUrl]=useState(settings.proxyUrl||"");
   const[showKey,setShowKey]=useState(false);
   const[saved,setSaved]=useState(false);
+  const [testingKey, setTestingKey] = useState(false)
+  const [keyTest, setKeyTest] = useState(null)
   const safeSet=async(key,val)=>{await storage.set(key,val);};
-  const handleSave=()=>{onSave({apiKey,model,aiDetect,provider,proxyUrl});(async()=>{await safeSet("rp_api_key",apiKey);await safeSet("rp_model",model);await safeSet("rp_ai_detect",String(aiDetect));await safeSet("rp_provider",provider);await safeSet("rp_proxy_url",proxyUrl);await safeSet("rp_theme",isDark?"dark":"light");})();setSaved(true);setTimeout(()=>{setSaved(false);onClose();},600);};
+  const handleSave = () => {
+      onSave({ apiKey, model, aiDetect, aiProfile, provider, proxyUrl })
+      ;(async () => {
+          await safeSet('rp_api_key', apiKey)
+          await safeSet('rp_model', model)
+          await safeSet('rp_ai_detect', String(aiDetect))
+          await safeSet('rp_ai_profile', aiProfile)
+          await safeSet('rp_provider', provider)
+          await safeSet('rp_proxy_url', proxyUrl)
+          await safeSet('rp_theme', isDark ? 'dark' : 'light')
+      })()
+      setSaved(true)
+      setTimeout(() => {
+          setSaved(false)
+          onClose()
+      }, 600)
+  }
   const curProv=AI_PROVIDERS.find(p=>p.id===provider)||AI_PROVIDERS[0];
   const masked=apiKey?apiKey.slice(0,8)+"..."+apiKey.slice(-4):"";
+  const PROFILES = [
+      { id: 'speed', label: '速度', desc: '最速・低コスト' },
+      { id: 'balanced', label: 'バランス', desc: '検出は速く、整形は高品質' },
+      { id: 'quality', label: '品質', desc: '高品質（遅め）' },
+  ]
   // When switching provider, auto-select default model
-  const switchProvider=(pid)=>{setProvider(pid);const prov=AI_PROVIDERS.find(p=>p.id===pid);if(prov)setModel(prov.defaultModel);};
-  const keyPlaceholder=provider==="anthropic"?"sk-ant-api03-...（省略可）":provider==="openai"?"sk-...（必須）":"AIza...（必須）";
+  const switchProvider = (pid) => {
+      setProvider(pid)
+      setModel(pickFormatModelForProfile(pid, aiProfile) || 'gpt-5-nano')
+  }
+  const keyPlaceholder =
+      provider === 'anthropic'
+          ? 'sk-ant-api03-...（省略可）'
+          : provider === 'openai'
+            ? 'sk-proj-...（未入力ならサーバー環境変数）'
+            : 'AIza...（必須）'
+  const requiresKey = provider === 'google'
+  useEffect(() => {
+      setKeyTest(null)
+  }, [provider, model, apiKey])
+  useEffect(() => {
+      // Provider list may change defaults; if current model isn't in provider, snap to profile default.
+      if (!curProv.models.some((m) => m.id === model)) {
+          setModel(
+              pickFormatModelForProfile(provider, aiProfile) || 'gpt-5-nano',
+          )
+      }
+  }, [provider, aiProfile]) // eslint-disable-line
+  const testApiConnection = async () => {
+      const key = apiKey.trim()
+      if (requiresKey && !key) {
+          setKeyTest({
+              ok: false,
+              msg: 'このプロバイダーはAPIキーが必須です。先にキーを入力してください。',
+          })
+          return
+      }
+      setTestingKey(true)
+      setKeyTest(null)
+      try {
+          const text = await callAI({
+              provider,
+              model,
+              apiKey: key || undefined,
+              maxTokens: 32,
+              messages: [
+                  {
+                      role: 'user',
+                      content: '接続テストです。`OK` だけ返答してください。',
+                  },
+              ],
+          })
+          const short = (text || '').replace(/\s+/g, ' ').trim().slice(0, 48)
+          setKeyTest({
+              ok: true,
+              msg: `接続OK (${provider} / ${model})${short ? ` 返答: ${short}` : ''}`,
+          })
+      } catch (e) {
+          setKeyTest({
+              ok: false,
+              msg: `接続失敗: ${e?.message || '不明なエラー'}`,
+          })
+      } finally {
+          setTestingKey(false)
+      }
+  }
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:16,animation:"fadeIn .2s"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="rp-modal-inner" style={{width:"100%",maxWidth:560,maxHeight:"92vh",overflow:"auto",background:T.bg2,borderRadius:16,border:`1px solid ${T.border}`,animation:"fadeUp .3s ease"}}>
-        <div style={{padding:"14px 20px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,background:T.bg2,zIndex:1}}>
-          <span style={{fontSize:15,fontWeight:700,color:T.text}}>設定</span>
-          <button onClick={onClose} style={{width:28,height:28,borderRadius:7,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
-        </div>
-        <div style={{padding:"18px 20px",display:"flex",flexDirection:"column",gap:20}}>
-          {/* Theme */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
-            <div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:16}}>{isDark?"🌙":"☀️"}</span><div><div style={{fontSize:12,fontWeight:600,color:T.text}}>テーマ</div><div style={{fontSize:10,color:T.text3}}>{isDark?"ダークモード":"ライトモード"}</div></div></div>
-            <Toggle checked={!isDark} onChange={()=>setIsDark(!isDark)} size="sm"/>
+      <div
+          style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,.55)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+              padding: 16,
+              animation: 'fadeIn .2s',
+          }}
+          onClick={(e) => {
+              if (e.target === e.currentTarget) onClose()
+          }}
+      >
+          <div
+              className='rp-modal-inner'
+              style={{
+                  width: '100%',
+                  maxWidth: 560,
+                  maxHeight: '92vh',
+                  overflow: 'auto',
+                  background: T.bg2,
+                  borderRadius: 16,
+                  border: `1px solid ${T.border}`,
+                  animation: 'fadeUp .3s ease',
+              }}
+          >
+              <div
+                  style={{
+                      padding: '14px 20px',
+                      borderBottom: `1px solid ${T.border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      position: 'sticky',
+                      top: 0,
+                      background: T.bg2,
+                      zIndex: 1,
+                  }}
+              >
+                  <span
+                      style={{ fontSize: 15, fontWeight: 700, color: T.text }}
+                  >
+                      設定
+                  </span>
+                  <button
+                      onClick={onClose}
+                      style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 7,
+                          border: `1px solid ${T.border}`,
+                          background: 'transparent',
+                          color: T.text2,
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                      }}
+                  >
+                      ✕
+                  </button>
+              </div>
+              <div
+                  style={{
+                      padding: '18px 20px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 20,
+                  }}
+              >
+                  {/* Theme */}
+                  <div
+                      style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.surface,
+                      }}
+                  >
+                      <div
+                          style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                          }}
+                      >
+                          <span style={{ fontSize: 16 }}>
+                              {isDark ? '🌙' : '☀️'}
+                          </span>
+                          <div>
+                              <div
+                                  style={{
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      color: T.text,
+                                  }}
+                              >
+                                  テーマ
+                              </div>
+                              <div style={{ fontSize: 12, color: T.text3 }}>
+                                  {isDark ? 'ダークモード' : 'ライトモード'}
+                              </div>
+                          </div>
+                      </div>
+                      <Toggle
+                          checked={!isDark}
+                          onChange={() => setIsDark(!isDark)}
+                          size='sm'
+                      />
+                  </div>
+                  {/* Provider */}
+                  <div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 8,
+                          }}
+                      >
+                          AIプロバイダー
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                          {AI_PROVIDERS.map((p) => (
+                              <button
+                                  key={p.id}
+                                  onClick={() => switchProvider(p.id)}
+                                  style={{
+                                      flex: 1,
+                                      padding: '10px 8px',
+                                      borderRadius: 10,
+                                      border: `1.5px solid ${provider === p.id ? p.color : T.border}`,
+                                      background:
+                                          provider === p.id
+                                              ? `${p.color}15`
+                                              : 'transparent',
+                                      cursor: 'pointer',
+                                      textAlign: 'center',
+                                      transition: 'all .15s',
+                                  }}
+                              >
+                                  <div
+                                      style={{
+                                          fontSize: 14,
+                                          fontWeight: 700,
+                                          color:
+                                              provider === p.id
+                                                  ? p.color
+                                                  : T.text3,
+                                          marginBottom: 2,
+                                      }}
+                                  >
+                                      {p.icon}
+                                  </div>
+                                  <div
+                                      style={{
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          color:
+                                              provider === p.id
+                                                  ? p.color
+                                                  : T.text,
+                                      }}
+                                  >
+                                      {p.label}
+                                  </div>
+                                  {p.needsKey && (
+                                      <div
+                                          style={{
+                                              fontSize: 12,
+                                              color: T.text3,
+                                              marginTop: 2,
+                                          }}
+                                      >
+                                          要APIキー
+                                      </div>
+                                  )}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+                  {/* Models */}
+                  <div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 8,
+                          }}
+                      >
+                          モデル{' '}
+                          <span style={{ fontWeight: 400, color: T.text3 }}>
+                              — {curProv.label}
+                          </span>
+                      </div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              color: T.text3,
+                              marginBottom: 8,
+                              lineHeight: 1.6,
+                          }}
+                      >
+                          {aiProfile === 'balanced' && (
+                              <>
+                                  再フォーマット/再構成はこのモデル。PII検出は高速モデルを自動選択します。
+                              </>
+                          )}
+                          {aiProfile === 'speed' && (
+                              <>
+                                  全て高速モデル寄りで実行します（品質より速度優先）。
+                              </>
+                          )}
+                          {aiProfile === 'quality' && (
+                              <>
+                                  可能な限り高品質モデルで実行します（遅くなります）。
+                              </>
+                          )}
+                      </div>
+                      <div
+                          className='rp-settings-models'
+                          style={{
+                              display: 'grid',
+                              gridTemplateColumns:
+                                  curProv.models.length <= 2
+                                      ? '1fr 1fr'
+                                      : '1fr 1fr 1fr',
+                              gap: 6,
+                          }}
+                      >
+                          {curProv.models.map((m) => (
+                              <button
+                                  key={m.id}
+                                  onClick={() => setModel(m.id)}
+                                  style={{
+                                      padding: '9px 12px',
+                                      borderRadius: 9,
+                                      border: `1.5px solid ${model === m.id ? curProv.color : T.border}`,
+                                      background:
+                                          model === m.id
+                                              ? `${curProv.color}15`
+                                              : 'transparent',
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                      transition: 'all .15s',
+                                  }}
+                              >
+                                  <div
+                                      style={{
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          color:
+                                              model === m.id
+                                                  ? curProv.color
+                                                  : T.text,
+                                      }}
+                                  >
+                                      {m.label}
+                                  </div>
+                                  <div
+                                      style={{
+                                          fontSize: 12,
+                                          color: T.text3,
+                                          marginTop: 1,
+                                      }}
+                                  >
+                                      {m.desc}
+                                  </div>
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+                  {/* AI profile */}
+                  <div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 8,
+                          }}
+                      >
+                          AI品質プロファイル
+                      </div>
+                      <div
+                          style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr 1fr',
+                              gap: 6,
+                          }}
+                      >
+                          {PROFILES.map((p) => (
+                              <button
+                                  key={p.id}
+                                  onClick={() => {
+                                      setAiProfile(p.id)
+                                      setModel(
+                                          pickFormatModelForProfile(
+                                              provider,
+                                              p.id,
+                                          ) || model,
+                                      )
+                                  }}
+                                  style={{
+                                      padding: '10px 12px',
+                                      borderRadius: 10,
+                                      border: `1.5px solid ${aiProfile === p.id ? curProv.color : T.border}`,
+                                      background:
+                                          aiProfile === p.id
+                                              ? `${curProv.color}15`
+                                              : 'transparent',
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                      transition: 'all .15s',
+                                  }}
+                              >
+                                  <div
+                                      style={{
+                                          fontSize: 12,
+                                          fontWeight: 700,
+                                          color:
+                                              aiProfile === p.id
+                                                  ? curProv.color
+                                                  : T.text,
+                                          marginBottom: 2,
+                                      }}
+                                  >
+                                      {p.label}
+                                  </div>
+                                  <div
+                                      style={{
+                                          fontSize: 12,
+                                          color: T.text3,
+                                          lineHeight: 1.4,
+                                      }}
+                                  >
+                                      {p.desc}
+                                  </div>
+                              </button>
+                          ))}
+                      </div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              color: T.text3,
+                              marginTop: 8,
+                              lineHeight: 1.6,
+                          }}
+                      >
+                          バランス推奨:{' '}
+                          <span style={{ fontFamily: T.mono }}>
+                              PII検出=高速
+                          </span>{' '}
+                          /{' '}
+                          <span style={{ fontFamily: T.mono }}>
+                              再構成・再フォーマット=高品質
+                          </span>
+                          （例: OpenAIなら検出は GPT-5 Nano、整形は GPT-5 Mini）
+                      </div>
+                  </div>
+                  {/* AI detect toggle */}
+                  <div
+                      style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 14px',
+                          borderRadius: 10,
+                          border: `1px solid ${T.border}`,
+                          background: T.surface,
+                      }}
+                  >
+                      <div>
+                          <div
+                              style={{
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  color: T.text,
+                              }}
+                          >
+                              AI PII検出
+                          </div>
+                          <div style={{ fontSize: 12, color: T.text3 }}>
+                              アップロード時にAIで人名を自動検出
+                          </div>
+                      </div>
+                      <Toggle
+                          checked={aiDetect}
+                          onChange={() => setAiDetect(!aiDetect)}
+                          size='sm'
+                      />
+                  </div>
+                  {/* API Key */}
+                  <div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 4,
+                          }}
+                      >
+                          API Key
+                      </div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              color: T.text3,
+                              marginBottom: 8,
+                              lineHeight: 1.5,
+                          }}
+                      >
+                          {provider === 'anthropic'
+                              ? '未入力時はclaude.ai組み込みプロキシを使用。'
+                              : provider === 'openai'
+                                ? '未入力時はサーバー環境変数 OPENAI_API_KEY を使用します。'
+                                : 'APIキーが必須です。右のボタンで接続テストできます。'}
+                      </div>
+                      <div style={{ position: 'relative' }}>
+                          <input
+                              type={showKey ? 'text' : 'password'}
+                              value={apiKey}
+                              onChange={(e) => setApiKey(e.target.value)}
+                              placeholder={keyPlaceholder}
+                              style={{
+                                  width: '100%',
+                                  padding: '10px 14px',
+                                  paddingRight: 52,
+                                  borderRadius: 10,
+                                  border: `1px solid ${T.border}`,
+                                  background: T.surface,
+                                  color: T.text,
+                                  fontSize: 12,
+                                  fontFamily: T.mono,
+                                  outline: 'none',
+                              }}
+                          />
+                          <button
+                              onClick={() => setShowKey(!showKey)}
+                              style={{
+                                  position: 'absolute',
+                                  right: 8,
+                                  top: '50%',
+                                  transform: 'translateY(-50%)',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: T.text3,
+                                  cursor: 'pointer',
+                                  fontSize: 12,
+                                  fontFamily: T.font,
+                              }}
+                          >
+                              {showKey ? '隠す' : '表示'}
+                          </button>
+                      </div>
+                      {apiKey && !showKey && (
+                          <div
+                              style={{
+                                  fontSize: 12,
+                                  color: T.text3,
+                                  marginTop: 4,
+                                  fontFamily: T.mono,
+                              }}
+                          >
+                              {masked}
+                          </div>
+                      )}
+                      <div
+                          style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              marginTop: 8,
+                          }}
+                      >
+                          <Btn
+                              variant='ghost'
+                              onClick={testApiConnection}
+                              disabled={testingKey}
+                              style={{
+                                  padding: '6px 12px',
+                                  fontSize: 12,
+                                  borderRadius: 7,
+                              }}
+                          >
+                              {testingKey ? '接続テスト中...' : 'API接続テスト'}
+                          </Btn>
+                          {keyTest && (
+                              <span
+                                  style={{
+                                      fontSize: 12,
+                                      color: keyTest.ok ? T.green : T.red,
+                                      lineHeight: 1.4,
+                                  }}
+                              >
+                                  {keyTest.msg}
+                              </span>
+                          )}
+                      </div>
+                  </div>
+                  {/* Proxy URL for URL scraping */}
+                  <div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 4,
+                          }}
+                      >
+                          スクレイピング用プロキシURL{' '}
+                          <span
+                              style={{
+                                  fontSize: 12,
+                                  fontWeight: 400,
+                                  color: T.text3,
+                              }}
+                          >
+                              (任意)
+                          </span>
+                      </div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              color: T.text3,
+                              marginBottom: 8,
+                              lineHeight: 1.6,
+                          }}
+                      >
+                          URLタブでWebページ本文を取るときに使う「中継サーバー」のURLです。
+                          <br />
+                          例:{' '}
+                          <span style={{ fontFamily: T.mono }}>
+                              https://your-proxy.example.com/fetch?url={'{url}'}
+                          </span>
+                          （
+                          <span style={{ fontFamily: T.mono }}>{'{url}'}</span>{' '}
+                          は取得対象URLに自動置換）
+                          <br />
+                          未設定でも動作しますが、公開CORSプロキシ経由になるため取得失敗が増えることがあります。
+                      </div>
+                      <input
+                          value={proxyUrl}
+                          onChange={(e) => setProxyUrl(e.target.value)}
+                          placeholder='https://your-proxy.example.com/fetch?url={url}'
+                          style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              borderRadius: 10,
+                              border: `1px solid ${T.border}`,
+                              background: T.surface,
+                              color: T.text,
+                              fontSize: 12,
+                              fontFamily: T.mono,
+                              outline: 'none',
+                              boxSizing: 'border-box',
+                          }}
+                      />
+                      {!proxyUrl && (
+                          <div
+                              style={{
+                                  fontSize: 12,
+                                  color: T.amber,
+                                  marginTop: 6,
+                                  lineHeight: 1.5,
+                              }}
+                          >
+                              ⚠
+                              未設定時は無料CORSプロキシ(allOrigins等)を使用。取得失敗率が高めです。
+                          </div>
+                      )}
+                      {proxyUrl && !proxyUrl.includes('{url}') && (
+                          <div
+                              style={{
+                                  fontSize: 12,
+                                  color: T.red,
+                                  marginTop: 6,
+                                  lineHeight: 1.5,
+                              }}
+                          >
+                              ⚠ プロキシURLに {'{url}'}{' '}
+                              がありません。対象URLを渡せないため正しく動作しません。
+                          </div>
+                      )}
+                  </div>
+                  <div
+                      style={{
+                          display: 'flex',
+                          gap: 8,
+                          justifyContent: 'flex-end',
+                      }}
+                  >
+                      {apiKey && (
+                          <Btn
+                              variant='ghost'
+                              onClick={() => setApiKey('')}
+                              style={{
+                                  padding: '8px 16px',
+                                  fontSize: 12,
+                                  borderRadius: 8,
+                              }}
+                          >
+                              消去
+                          </Btn>
+                      )}
+                      <Btn
+                          variant={saved ? 'success' : 'primary'}
+                          onClick={handleSave}
+                          style={{
+                              padding: '8px 20px',
+                              fontSize: 12,
+                              borderRadius: 8,
+                          }}
+                      >
+                          {saved ? '✓ 保存済' : '保存'}
+                      </Btn>
+                  </div>
+              </div>
           </div>
-          {/* Provider */}
-          <div>
-            <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:8}}>AIプロバイダー</div>
-            <div style={{display:"flex",gap:6}}>
-              {AI_PROVIDERS.map(p=>(
-                <button key={p.id} onClick={()=>switchProvider(p.id)} style={{flex:1,padding:"10px 8px",borderRadius:10,border:`1.5px solid ${provider===p.id?p.color:T.border}`,background:provider===p.id?`${p.color}15`:"transparent",cursor:"pointer",textAlign:"center",transition:"all .15s"}}>
-                  <div style={{fontSize:14,fontWeight:700,color:provider===p.id?p.color:T.text3,marginBottom:2}}>{p.icon}</div>
-                  <div style={{fontSize:11,fontWeight:600,color:provider===p.id?p.color:T.text}}>{p.label}</div>
-                  {p.needsKey&&<div style={{fontSize:8,color:T.text3,marginTop:2}}>要APIキー</div>}
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* Models */}
-          <div>
-            <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:8}}>モデル <span style={{fontWeight:400,color:T.text3}}>— {curProv.label}</span></div>
-            <div className="rp-settings-models" style={{display:"grid",gridTemplateColumns:curProv.models.length<=2?"1fr 1fr":"1fr 1fr 1fr",gap:6}}>
-              {curProv.models.map(m=>(
-                <button key={m.id} onClick={()=>setModel(m.id)} style={{padding:"9px 12px",borderRadius:9,border:`1.5px solid ${model===m.id?curProv.color:T.border}`,background:model===m.id?`${curProv.color}15`:"transparent",cursor:"pointer",textAlign:"left",transition:"all .15s"}}>
-                  <div style={{fontSize:12,fontWeight:600,color:model===m.id?curProv.color:T.text}}>{m.label}</div>
-                  <div style={{fontSize:9,color:T.text3,marginTop:1}}>{m.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-          {/* AI detect toggle */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
-            <div><div style={{fontSize:12,fontWeight:600,color:T.text}}>AI PII検出</div><div style={{fontSize:10,color:T.text3}}>アップロード時にAIで人名を自動検出</div></div>
-            <Toggle checked={aiDetect} onChange={()=>setAiDetect(!aiDetect)} size="sm"/>
-          </div>
-          {/* API Key */}
-          <div>
-            <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:4}}>API Key</div>
-            <div style={{fontSize:10,color:T.text3,marginBottom:8,lineHeight:1.5}}>{provider==="anthropic"?"未入力時はclaude.ai組み込みプロキシを使用。":"APIキーが必須です。"}</div>
-            <div style={{position:"relative"}}>
-              <input type={showKey?"text":"password"} value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder={keyPlaceholder} style={{width:"100%",padding:"10px 14px",paddingRight:52,borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontFamily:T.mono,outline:"none"}}/>
-              <button onClick={()=>setShowKey(!showKey)} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"transparent",border:"none",color:T.text3,cursor:"pointer",fontSize:10,fontFamily:T.font}}>{showKey?"隠す":"表示"}</button>
-            </div>
-            {apiKey&&!showKey&&<div style={{fontSize:10,color:T.text3,marginTop:4,fontFamily:T.mono}}>{masked}</div>}
-          </div>
-          {/* Proxy URL for URL scraping */}
-          <div>
-            <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:4}}>スクレイピング用プロキシURL <span style={{fontSize:10,fontWeight:400,color:T.text3}}>(任意)</span></div>
-            <div style={{fontSize:10,color:T.text3,marginBottom:8,lineHeight:1.5}}>自前のCORSプロキシを設定するとURL取得が安定します。{"{url}"}部分がターゲットURLに置換されます。</div>
-            <input value={proxyUrl} onChange={e=>setProxyUrl(e.target.value)} placeholder="https://your-proxy.example.com/fetch?url={url}" style={{width:"100%",padding:"10px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:11,fontFamily:T.mono,outline:"none",boxSizing:"border-box"}}/>
-            {!proxyUrl&&<div style={{fontSize:10,color:T.amber,marginTop:6,lineHeight:1.5}}>⚠ 未設定時は無料CORSプロキシ(allOrigins等)を使用。取得失敗率が高めです。</div>}
-          </div>
-          <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-            {apiKey&&<Btn variant="ghost" onClick={()=>setApiKey("")} style={{padding:"8px 16px",fontSize:12,borderRadius:8}}>消去</Btn>}
-            <Btn variant={saved?"success":"primary"} onClick={handleSave} style={{padding:"8px 20px",fontSize:12,borderRadius:8}}>{saved?"✓ 保存済":"保存"}</Btn>
-          </div>
-        </div>
       </div>
-    </div>
-  );
+  )
 }
 
 // ═══ Design Export (Canva-like template PDF) ═══
@@ -1396,6 +2453,14 @@ function DesignExportModal({text,apiKey,model,onClose}){
   const[fontType,setFontType]=useState("gothic");
   const[saved,setSaved]=useState(false);
 
+  useEffect(() => {
+      const h = (e) => {
+          if (e.key === 'Escape') onClose()
+      }
+      window.addEventListener('keydown', h)
+      return () => window.removeEventListener('keydown', h)
+  }, [onClose])
+
   const htmlContent=useMemo(()=>generatePDFHTML(editText,fontType),[editText,fontType]);
 
   const handleExport=()=>{
@@ -1437,140 +2502,698 @@ function DesignExportModal({text,apiKey,model,onClose}){
   const charCount=editText.length;
   const lineCount=editText.split("\n").length;
 
-  return(<div style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,.65)",backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={e=>e.target===e.currentTarget&&onClose()}>
-    <div style={{width:"95vw",maxWidth:1300,height:"92vh",background:T.bg2,borderRadius:16,overflow:"hidden",display:"flex",flexDirection:"column",border:`1px solid ${T.border}`}}>
-      {/* Header */}
-      <div style={{padding:"12px 20px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",background:T.bg,flexShrink:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:16}}>📄</span>
-          <div>
-            <div style={{fontSize:14,fontWeight:700,color:T.text}}>PDF プレビュー・編集</div>
-            <div style={{fontSize:10,color:T.text3}}>最終確認 → テキスト編集 → 出力</div>
-          </div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:10,color:T.text3,fontFamily:T.mono}}>{lineCount}行 / {charCount}文字</span>
-          <button onClick={onClose} style={{background:"transparent",border:"none",color:T.text3,fontSize:18,cursor:"pointer",padding:4}}>✕</button>
-        </div>
-      </div>
+  return (
+      <div
+          style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1000,
+              background: 'rgba(0,0,0,.65)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+          }}
+          onClick={(e) => e.target === e.currentTarget && onClose()}
+      >
+          <div
+              style={{
+                  width: '95vw',
+                  maxWidth: 1300,
+                  height: '92vh',
+                  background: T.bg2,
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  border: `1px solid ${T.border}`,
+              }}
+          >
+              {/* Header */}
+              <div
+                  style={{
+                      padding: '12px 20px',
+                      borderBottom: `1px solid ${T.border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: T.bg,
+                      flexShrink: 0,
+                  }}
+              >
+                  <div
+                      style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+                  >
+                      <span style={{ fontSize: 16 }}>📄</span>
+                      <div>
+                          <div
+                              style={{
+                                  fontSize: 14,
+                                  fontWeight: 700,
+                                  color: T.text,
+                              }}
+                          >
+                              PDF プレビュー・編集
+                          </div>
+                          <div style={{ fontSize: 12, color: T.text3 }}>
+                              最終確認 → テキスト編集 → 出力
+                          </div>
+                      </div>
+                  </div>
+                  <div
+                      style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                  >
+                      <span
+                          style={{
+                              fontSize: 12,
+                              color: T.text3,
+                              fontFamily: T.mono,
+                          }}
+                      >
+                          {lineCount}行 / {charCount}文字
+                      </span>
+                      <button
+                          onClick={onClose}
+                          style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: T.text3,
+                              fontSize: 18,
+                              cursor: 'pointer',
+                              padding: 4,
+                          }}
+                      >
+                          ✕
+                      </button>
+                  </div>
+              </div>
 
-      {/* Body */}
-      <div style={{flex:1,display:"flex",overflow:"hidden"}}>
-        {/* Left: Editor */}
-        <div className="rp-design-controls" style={{width:"45%",minWidth:300,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          {/* Toolbar */}
-          <div style={{padding:"8px 14px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:8,flexShrink:0,flexWrap:"wrap"}}>
-            <span style={{fontSize:10,fontWeight:600,color:T.text2}}>フォント</span>
-            <button onClick={()=>setFontType("gothic")} style={{padding:"4px 10px",borderRadius:6,border:`1.5px solid ${fontType==="gothic"?T.accent:T.border}`,background:fontType==="gothic"?T.accentDim:"transparent",cursor:"pointer",fontSize:10,fontWeight:fontType==="gothic"?600:400,color:fontType==="gothic"?T.accent:T.text}}>ゴシック</button>
-            <button onClick={()=>setFontType("mincho")} style={{padding:"4px 10px",borderRadius:6,border:`1.5px solid ${fontType==="mincho"?T.accent:T.border}`,background:fontType==="mincho"?T.accentDim:"transparent",cursor:"pointer",fontSize:10,fontWeight:fontType==="mincho"?600:400,color:fontType==="mincho"?T.accent:T.text}}>明朝</button>
-            <div style={{flex:1}}/>
-            <button onClick={handleCopyText} style={{padding:"4px 10px",borderRadius:6,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:10,color:saved?T.green:T.text3}}>{saved?"✓ コピー済":"📋 コピー"}</button>
-          </div>
-          {/* Tips */}
-          <div style={{padding:"6px 14px",borderBottom:`1px solid ${T.border}`,fontSize:9,color:T.text3,lineHeight:1.6,flexShrink:0}}>
-            <span style={{fontWeight:600,color:T.text2}}>記法: </span>
-            <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono}}>**太字**</code>
-            <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono,marginLeft:6}}># 見出し</code>
-            <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono,marginLeft:6}}>## 小見出し</code>
-            　<span style={{opacity:.6}}>非公開タグは自動除去</span>
-          </div>
-          {/* Textarea */}
-          <textarea
-            value={editText}
-            onChange={e=>setEditText(e.target.value)}
-            spellCheck={false}
-            style={{
-              flex:1,padding:"14px 16px",border:"none",outline:"none",resize:"none",
-              fontFamily:T.mono,fontSize:12,lineHeight:1.8,color:T.text,
-              background:T.bg2,whiteSpace:"pre-wrap",wordBreak:"break-word"
-            }}
-          />
-          {/* Actions */}
-          <div style={{padding:12,borderTop:`1px solid ${T.border}`,display:"flex",flexDirection:"column",gap:6,flexShrink:0}}>
-            <Btn onClick={handleExport} style={{width:"100%",borderRadius:10,fontSize:13,background:"#222",gap:6}}>
-              🖨️ PDFとして印刷・保存
-            </Btn>
-            <div style={{fontSize:10,color:T.text3,textAlign:"center",lineHeight:1.4,padding:"0 4px",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-              <span>🖨️</span> 別タブで開き、ブラウザの印刷ダイアログから「PDFとして保存」を選択してください
-            </div>
-            <div style={{display:"flex",gap:6}}>
-              <Btn variant="ghost" onClick={handleDownloadWord} style={{flex:1,borderRadius:8,fontSize:11,padding:"9px 8px"}}>
-                Word (.doc)
-              </Btn>
-              <Btn variant="ghost" onClick={handleDownloadHTML} style={{flex:1,borderRadius:8,fontSize:11,padding:"9px 8px"}}>
-                HTML
-              </Btn>
-              <Btn variant="ghost" onClick={handleCopyText} style={{flex:1,borderRadius:8,fontSize:11,padding:"9px 8px"}}>
-                {saved?"✓ コピー済":"📋 テキスト"}
-              </Btn>
-            </div>
-          </div>
-        </div>
+              {/* Body */}
+              <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+                  {/* Left: Editor */}
+                  <div
+                      className='rp-design-controls'
+                      style={{
+                          width: '45%',
+                          minWidth: 300,
+                          borderRight: `1px solid ${T.border}`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          overflow: 'hidden',
+                      }}
+                  >
+                      {/* Toolbar */}
+                      <div
+                          style={{
+                              padding: '8px 14px',
+                              borderBottom: `1px solid ${T.border}`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              flexShrink: 0,
+                              flexWrap: 'wrap',
+                          }}
+                      >
+                          <span
+                              style={{
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  color: T.text2,
+                              }}
+                          >
+                              フォント
+                          </span>
+                          <button
+                              onClick={() => setFontType('gothic')}
+                              style={{
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: `1.5px solid ${fontType === 'gothic' ? T.accent : T.border}`,
+                                  background:
+                                      fontType === 'gothic'
+                                          ? T.accentDim
+                                          : 'transparent',
+                                  cursor: 'pointer',
+                                  fontSize: 12,
+                                  fontWeight: fontType === 'gothic' ? 600 : 400,
+                                  color:
+                                      fontType === 'gothic' ? T.accent : T.text,
+                              }}
+                          >
+                              ゴシック
+                          </button>
+                          <button
+                              onClick={() => setFontType('mincho')}
+                              style={{
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: `1.5px solid ${fontType === 'mincho' ? T.accent : T.border}`,
+                                  background:
+                                      fontType === 'mincho'
+                                          ? T.accentDim
+                                          : 'transparent',
+                                  cursor: 'pointer',
+                                  fontSize: 12,
+                                  fontWeight: fontType === 'mincho' ? 600 : 400,
+                                  color:
+                                      fontType === 'mincho' ? T.accent : T.text,
+                              }}
+                          >
+                              明朝
+                          </button>
+                          <div style={{ flex: 1 }} />
+                          <button
+                              onClick={handleCopyText}
+                              style={{
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: `1px solid ${T.border}`,
+                                  background: 'transparent',
+                                  cursor: 'pointer',
+                                  fontSize: 12,
+                                  color: saved ? T.green : T.text3,
+                              }}
+                          >
+                              {saved ? '✓ コピー済' : '📋 コピー'}
+                          </button>
+                      </div>
+                      {/* Tips */}
+                      <div
+                          style={{
+                              padding: '6px 14px',
+                              borderBottom: `1px solid ${T.border}`,
+                              fontSize: 12,
+                              color: T.text3,
+                              lineHeight: 1.6,
+                              flexShrink: 0,
+                          }}
+                      >
+                          <span style={{ fontWeight: 600, color: T.text2 }}>
+                              記法:{' '}
+                          </span>
+                          <code
+                              style={{
+                                  background: T.surface,
+                                  padding: '1px 4px',
+                                  borderRadius: 3,
+                                  fontFamily: T.mono,
+                              }}
+                          >
+                              **太字**
+                          </code>
+                          <code
+                              style={{
+                                  background: T.surface,
+                                  padding: '1px 4px',
+                                  borderRadius: 3,
+                                  fontFamily: T.mono,
+                                  marginLeft: 6,
+                              }}
+                          >
+                              # 見出し
+                          </code>
+                          <code
+                              style={{
+                                  background: T.surface,
+                                  padding: '1px 4px',
+                                  borderRadius: 3,
+                                  fontFamily: T.mono,
+                                  marginLeft: 6,
+                              }}
+                          >
+                              ## 小見出し
+                          </code>
+                          　
+                          <span style={{ opacity: 0.6 }}>
+                              非公開タグは自動除去
+                          </span>
+                      </div>
+                      {/* Textarea */}
+                      <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          spellCheck={false}
+                          style={{
+                              flex: 1,
+                              padding: '14px 16px',
+                              border: 'none',
+                              outline: 'none',
+                              resize: 'none',
+                              fontFamily: T.mono,
+                              fontSize: 12,
+                              lineHeight: 1.8,
+                              color: T.text,
+                              background: T.bg2,
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                          }}
+                      />
+                      {/* Actions */}
+                      <div
+                          style={{
+                              padding: 12,
+                              borderTop: `1px solid ${T.border}`,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 6,
+                              flexShrink: 0,
+                          }}
+                      >
+                          <Btn
+                              onClick={handleExport}
+                              style={{
+                                  width: '100%',
+                                  borderRadius: 10,
+                                  fontSize: 13,
+                                  background: '#222',
+                                  gap: 6,
+                              }}
+                          >
+                              🖨️ PDFとして印刷・保存
+                          </Btn>
+                          <div
+                              style={{
+                                  fontSize: 12,
+                                  color: T.text3,
+                                  textAlign: 'center',
+                                  lineHeight: 1.4,
+                                  padding: '0 4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 4,
+                              }}
+                          >
+                              <span>🖨️</span>{' '}
+                              別タブで開き、ブラウザの印刷ダイアログから「PDFとして保存」を選択してください
+                          </div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                              <Btn
+                                  variant='ghost'
+                                  onClick={handleDownloadWord}
+                                  style={{
+                                      flex: 1,
+                                      borderRadius: 8,
+                                      fontSize: 12,
+                                      padding: '9px 8px',
+                                  }}
+                              >
+                                  Word (.doc)
+                              </Btn>
+                              <Btn
+                                  variant='ghost'
+                                  onClick={handleDownloadHTML}
+                                  style={{
+                                      flex: 1,
+                                      borderRadius: 8,
+                                      fontSize: 12,
+                                      padding: '9px 8px',
+                                  }}
+                              >
+                                  HTML
+                              </Btn>
+                              <Btn
+                                  variant='ghost'
+                                  onClick={handleCopyText}
+                                  style={{
+                                      flex: 1,
+                                      borderRadius: 8,
+                                      fontSize: 12,
+                                      padding: '9px 8px',
+                                  }}
+                              >
+                                  {saved ? '✓ コピー済' : '📋 テキスト'}
+                              </Btn>
+                          </div>
+                      </div>
+                  </div>
 
-        {/* Right: Live Preview */}
-        <div style={{flex:1,background:"#e5e7eb",overflow:"auto",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:24}}>
-          <div style={{
-            width:595,minHeight:842,
-            background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,overflow:"hidden",
-            transform:"scale(0.88)",transformOrigin:"top center"
-          }}>
-            <iframe
-              srcDoc={htmlContent}
-              style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
-              title="Preview"
-              onLoad={e=>{try{const h=e.target.contentDocument?.documentElement?.scrollHeight;if(h&&h>842)e.target.style.height=h+"px";}catch(ex){}}}
-            />
+                  {/* Right: Live Preview */}
+                  <div
+                      style={{
+                          flex: 1,
+                          background: '#e5e7eb',
+                          overflow: 'auto',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          justifyContent: 'center',
+                          padding: 24,
+                      }}
+                  >
+                      <div
+                          style={{
+                              width: 595,
+                              minHeight: 842,
+                              background: '#fff',
+                              boxShadow: '0 4px 24px rgba(0,0,0,.12)',
+                              borderRadius: 4,
+                              overflow: 'hidden',
+                              transform: 'scale(0.88)',
+                              transformOrigin: 'top center',
+                          }}
+                      >
+                          <iframe
+                              srcDoc={htmlContent}
+                              style={{
+                                  width: '100%',
+                                  minHeight: 842,
+                                  border: 'none',
+                                  pointerEvents: 'none',
+                              }}
+                              title='Preview'
+                              onLoad={(e) => {
+                                  try {
+                                      const h =
+                                          e.target.contentDocument
+                                              ?.documentElement?.scrollHeight
+                                      if (h && h > 842)
+                                          e.target.style.height = h + 'px'
+                                  } catch (ex) {}
+                              }}
+                          />
+                      </div>
+                  </div>
+              </div>
           </div>
-        </div>
       </div>
-    </div>
-  </div>);
+  )
 }
 // ═══ Preview / Export Modal ═══
 function PreviewModal({title,content,baseName,onClose}){
   const[copied,setCopied]=useState(false);
   const[fmt,setFmt]=useState("txt");
+
+  useEffect(() => {
+      const h = (e) => {
+          if (e.key === 'Escape') onClose()
+      }
+      window.addEventListener('keydown', h)
+      return () => window.removeEventListener('keydown', h)
+  }, [onClose])
+
   const handleCopy=()=>{navigator.clipboard.writeText(content).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});};
   const handleDownload=()=>{const ex=generateExport(content,fmt,baseName);if(ex.isPrintPdf){triggerDownload(ex);}else triggerDownload(ex);};
   const lines=content.split("\n").length;const chars=content.length;
   const curFmt=EXPORT_FORMATS.find(f=>f.id===fmt);
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:110,padding:20,animation:"fadeIn .2s"}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="rp-modal-inner" style={{width:"100%",maxWidth:820,maxHeight:"92vh",background:T.bg2,borderRadius:16,border:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden",animation:"fadeUp .3s ease"}}>
-        <div style={{padding:"14px 22px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-          <div><div style={{fontSize:14,fontWeight:700,color:T.text}}>{title}</div><div style={{fontSize:11,color:T.text3}}>{lines} 行 / {chars.toLocaleString()} 文字</div></div>
-          <button onClick={onClose} style={{width:28,height:28,borderRadius:7,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>x</button>
-        </div>
-        <div style={{flex:1,overflow:"auto",padding:0}}>
-          <pre style={{padding:"16px 24px",fontFamily:T.mono,fontSize:12,lineHeight:1.8,color:T.text,whiteSpace:"pre-wrap",wordBreak:"break-word",margin:0}}>
-            {content.split("\n").map((line,i)=>{const re=new RegExp(PH_RE.source,"g");const parts=[];let last=0;let m;while((m=re.exec(line))!==null){if(m.index>last)parts.push(<span key={`t${i}-${last}`}>{line.slice(last,m.index)}</span>);parts.push(<span key={`r${i}-${m.index}`} style={{background:T.redDim,color:T.red,padding:"0 4px",borderRadius:3,fontWeight:600}}>{m[0]}</span>);last=m.index+m[0].length;}if(last<line.length)parts.push(<span key={`e${i}-${last}`}>{line.slice(last)}</span>);
-              return <div key={i} style={{display:"flex",minHeight:20}}><span style={{width:36,flexShrink:0,textAlign:"right",paddingRight:10,color:T.text3,fontSize:10,userSelect:"none",lineHeight:"20px"}}>{i+1}</span><span style={{flex:1}}>{parts.length?parts:line||"\u00A0"}</span></div>;
-            })}
-          </pre>
-        </div>
-        <div style={{padding:"12px 22px",borderTop:`1px solid ${T.border}`,flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:10}}>
-            <span style={{fontSize:11,fontWeight:600,color:T.text3,flexShrink:0}}>出力形式:</span>
-            <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
-              {EXPORT_FORMATS.map(f=>(
-                <button key={f.id} onClick={()=>setFmt(f.id)} style={{padding:"5px 12px",borderRadius:7,border:`1px solid ${fmt===f.id?T.accent:T.border}`,background:fmt===f.id?T.accentDim:"transparent",color:fmt===f.id?T.accent:T.text3,fontSize:11,fontWeight:fmt===f.id?600:400,cursor:"pointer",fontFamily:T.font,transition:"all .15s",display:"flex",alignItems:"center",gap:4}}>
-                  <span style={{width:14,height:14,borderRadius:3,background:fmt===f.id?T.accent:T.border,color:fmt===f.id?"#fff":T.text3,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700}}>{f.icon}</span>
-                  {f.label}
-                  {f.id==="pdf"&&<span title="ブラウザの印刷機能を使用してPDFを生成します" style={{fontSize:12,marginLeft:-2,opacity:0.8}}>🖨️</span>}
-                </button>
-              ))}
-            </div>
+      <div
+          style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,.7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 110,
+              padding: 20,
+              animation: 'fadeIn .2s',
+          }}
+          onClick={(e) => {
+              if (e.target === e.currentTarget) onClose()
+          }}
+      >
+          <div
+              className='rp-modal-inner'
+              style={{
+                  width: '100%',
+                  maxWidth: 820,
+                  maxHeight: '92vh',
+                  background: T.bg2,
+                  borderRadius: 16,
+                  border: `1px solid ${T.border}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden',
+                  animation: 'fadeUp .3s ease',
+              }}
+          >
+              <div
+                  style={{
+                      padding: '14px 22px',
+                      borderBottom: `1px solid ${T.border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexShrink: 0,
+                  }}
+              >
+                  <div>
+                      <div
+                          style={{
+                              fontSize: 14,
+                              fontWeight: 700,
+                              color: T.text,
+                          }}
+                      >
+                          {title}
+                      </div>
+                      <div style={{ fontSize: 12, color: T.text3 }}>
+                          {lines} 行 / {chars.toLocaleString()} 文字
+                      </div>
+                  </div>
+                  <button
+                      onClick={onClose}
+                      style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 7,
+                          border: `1px solid ${T.border}`,
+                          background: 'transparent',
+                          color: T.text2,
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                      }}
+                  >
+                      x
+                  </button>
+              </div>
+              <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
+                  <pre
+                      style={{
+                          padding: '16px 24px',
+                          fontFamily: T.mono,
+                          fontSize: 12,
+                          lineHeight: 1.8,
+                          color: T.text,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          margin: 0,
+                      }}
+                  >
+                      {content.split('\n').map((line, i) => {
+                          const re = new RegExp(PH_RE.source, 'g')
+                          const parts = []
+                          let last = 0
+                          let m
+                          while ((m = re.exec(line)) !== null) {
+                              if (m.index > last)
+                                  parts.push(
+                                      <span key={`t${i}-${last}`}>
+                                          {line.slice(last, m.index)}
+                                      </span>,
+                                  )
+                              parts.push(
+                                  <span
+                                      key={`r${i}-${m.index}`}
+                                      style={{
+                                          background: T.redDim,
+                                          color: T.red,
+                                          padding: '0 4px',
+                                          borderRadius: 3,
+                                          fontWeight: 600,
+                                      }}
+                                  >
+                                      {m[0]}
+                                  </span>,
+                              )
+                              last = m.index + m[0].length
+                          }
+                          if (last < line.length)
+                              parts.push(
+                                  <span key={`e${i}-${last}`}>
+                                      {line.slice(last)}
+                                  </span>,
+                              )
+                          return (
+                              <div
+                                  key={i}
+                                  style={{ display: 'flex', minHeight: 20 }}
+                              >
+                                  <span
+                                      style={{
+                                          width: 36,
+                                          flexShrink: 0,
+                                          textAlign: 'right',
+                                          paddingRight: 10,
+                                          color: T.text3,
+                                          fontSize: 12,
+                                          userSelect: 'none',
+                                          lineHeight: '20px',
+                                      }}
+                                  >
+                                      {i + 1}
+                                  </span>
+                                  <span style={{ flex: 1 }}>
+                                      {parts.length ? parts : line || '\u00A0'}
+                                  </span>
+                              </div>
+                          )
+                      })}
+                  </pre>
+              </div>
+              <div
+                  style={{
+                      padding: '12px 22px',
+                      borderTop: `1px solid ${T.border}`,
+                      flexShrink: 0,
+                  }}
+              >
+                  <div
+                      style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                          marginBottom: 10,
+                      }}
+                  >
+                      <span
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text3,
+                              flexShrink: 0,
+                          }}
+                      >
+                          出力形式:
+                      </span>
+                      <div
+                          style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}
+                      >
+                          {EXPORT_FORMATS.map((f) => (
+                              <button
+                                  key={f.id}
+                                  onClick={() => setFmt(f.id)}
+                                  style={{
+                                      padding: '5px 12px',
+                                      borderRadius: 7,
+                                      border: `1px solid ${fmt === f.id ? T.accent : T.border}`,
+                                      background:
+                                          fmt === f.id
+                                              ? T.accentDim
+                                              : 'transparent',
+                                      color: fmt === f.id ? T.accent : T.text3,
+                                      fontSize: 12,
+                                      fontWeight: fmt === f.id ? 600 : 400,
+                                      cursor: 'pointer',
+                                      fontFamily: T.font,
+                                      transition: 'all .15s',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                  }}
+                              >
+                                  <span
+                                      style={{
+                                          width: 16,
+                                          height: 16,
+                                          borderRadius: 4,
+                                          background:
+                                              fmt === f.id
+                                                  ? T.accent
+                                                  : T.border,
+                                          color:
+                                              fmt === f.id ? '#fff' : T.text3,
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          fontSize: 12,
+                                          fontWeight: 700,
+                                      }}
+                                  >
+                                      {f.icon}
+                                  </span>
+                                  {f.label}
+                                  {f.id === 'pdf' && (
+                                      <span
+                                          title='ブラウザの印刷機能を使用してPDFを生成します'
+                                          style={{
+                                              fontSize: 12,
+                                              marginLeft: -2,
+                                              opacity: 0.8,
+                                          }}
+                                      >
+                                          🖨️
+                                      </span>
+                                  )}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+                  <div
+                      style={{
+                          display: 'flex',
+                          gap: 8,
+                          justifyContent: 'flex-end',
+                          alignItems: 'center',
+                      }}
+                  >
+                      {fmt === 'pdf' && (
+                          <span
+                              style={{
+                                  fontSize: 12,
+                                  color: T.amber,
+                                  marginRight: 'auto',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                              }}
+                          >
+                              <span style={{ fontSize: 12 }}>🖨️</span>{' '}
+                              印刷ダイアログから「PDFとして保存」を選択してください
+                          </span>
+                      )}
+                      <Btn
+                          variant='ghost'
+                          onClick={onClose}
+                          style={{
+                              padding: '7px 16px',
+                              fontSize: 12,
+                              borderRadius: 8,
+                          }}
+                      >
+                          閉じる
+                      </Btn>
+                      <Btn
+                          variant='ghost'
+                          onClick={handleCopy}
+                          style={{
+                              padding: '7px 16px',
+                              fontSize: 12,
+                              borderRadius: 8,
+                          }}
+                      >
+                          {copied ? '\u2713 コピー済' : 'コピー'}
+                      </Btn>
+                      <Btn
+                          onClick={handleDownload}
+                          style={{
+                              padding: '7px 16px',
+                              fontSize: 12,
+                              borderRadius: 8,
+                          }}
+                      >
+                          {curFmt?.label} で保存
+                      </Btn>
+                  </div>
+              </div>
           </div>
-          <div style={{display:"flex",gap:8,justifyContent:"flex-end",alignItems:"center"}}>
-            {fmt==="pdf"&&<span style={{fontSize:10,color:T.amber,marginRight:"auto",display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:12}}>🖨️</span> 印刷ダイアログから「PDFとして保存」を選択してください</span>}
-            <Btn variant="ghost" onClick={onClose} style={{padding:"7px 16px",fontSize:12,borderRadius:8}}>閉じる</Btn>
-            <Btn variant="ghost" onClick={handleCopy} style={{padding:"7px 16px",fontSize:12,borderRadius:8}}>{copied?"\u2713 コピー済":"コピー"}</Btn>
-            <Btn onClick={handleDownload} style={{padding:"7px 16px",fontSize:12,borderRadius:8}}>{curFmt?.label} で保存</Btn>
-          </div>
-        </div>
       </div>
-    </div>
-  );
+  )
 }
 
 // ═══ Diff View ═══
@@ -1586,54 +3209,242 @@ function DiffView({original,modified,label}){
   }
   const changeCount=diffs.filter(d=>d.type==="changed").length;
   return (
-    <div style={{height:"100%",display:"flex",flexDirection:"column"}}>
-      <div style={{padding:"8px 16px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",background:T.bg2,flexShrink:0}}>
-        <div style={{fontSize:12,fontWeight:600,color:T.text}}>Diff: {label||"変更箇所"}</div>
-        <Badge color={T.amber} bg={T.amberDim}>{changeCount} 行変更</Badge>
-      </div>
-      <div style={{flex:1,overflow:"auto"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",minWidth:0}}>
-          <div style={{borderRight:`1px solid ${T.border}`,padding:"4px 0"}}>
-            <div style={{padding:"4px 12px",fontSize:10,fontWeight:600,color:T.text3,borderBottom:`1px solid ${T.border}`,marginBottom:4}}>元テキスト</div>
-            {diffs.map((d,i)=>(
-              <div key={i} style={{display:"flex",minHeight:22,padding:"1px 0",background:d.type==="changed"?T.diffDel:"transparent",borderLeft:d.type==="changed"?`3px solid ${T.red}`:"3px solid transparent"}}>
-                <span style={{width:32,flexShrink:0,textAlign:"right",paddingRight:8,color:T.text3,fontSize:9,userSelect:"none",lineHeight:"22px"}}>{i+1}</span>
-                <span style={{flex:1,fontSize:12,fontFamily:T.mono,lineHeight:"22px",color:d.type==="changed"?T.red:T.text,whiteSpace:"pre-wrap",wordBreak:"break-word",paddingRight:8}}>{d.orig||"\u00A0"}</span>
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div
+              style={{
+                  padding: '8px 16px',
+                  borderBottom: `1px solid ${T.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: T.bg2,
+                  flexShrink: 0,
+              }}
+          >
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
+                  Diff: {label || '変更箇所'}
               </div>
-            ))}
+              <Badge color={T.amber} bg={T.amberDim}>
+                  {changeCount} 行変更
+              </Badge>
           </div>
-          <div style={{padding:"4px 0"}}>
-            <div style={{padding:"4px 12px",fontSize:10,fontWeight:600,color:T.text3,borderBottom:`1px solid ${T.border}`,marginBottom:4}}>マスキング済み</div>
-            {diffs.map((d,i)=>{
-              const re=new RegExp(PH_RE.source,"g");const parts=[];let last=0;let m;const line=d.mod;
-              while((m=re.exec(line))!==null){if(m.index>last)parts.push(<span key={`t${last}`}>{line.slice(last,m.index)}</span>);parts.push(<span key={`r${m.index}`} style={{background:T.greenDim,color:T.green,padding:"0 3px",borderRadius:3,fontWeight:600}}>{m[0]}</span>);last=m.index+m[0].length;}
-              if(last<line.length)parts.push(<span key={`e${last}`}>{line.slice(last)}</span>);
-              return (
-                <div key={i} style={{display:"flex",minHeight:22,padding:"1px 0",background:d.type==="changed"?T.diffAdd:"transparent",borderLeft:d.type==="changed"?`3px solid ${T.green}`:"3px solid transparent"}}>
-                  <span style={{width:32,flexShrink:0,textAlign:"right",paddingRight:8,color:T.text3,fontSize:9,userSelect:"none",lineHeight:"22px"}}>{i+1}</span>
-                  <span style={{flex:1,fontSize:12,fontFamily:T.mono,lineHeight:"22px",color:d.type==="changed"?T.green:T.text,whiteSpace:"pre-wrap",wordBreak:"break-word",paddingRight:8}}>{parts.length?parts:line||"\u00A0"}</span>
-                </div>
-              );
-            })}
+          <div style={{ flex: 1, overflow: 'auto' }}>
+              <div
+                  style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      minWidth: 0,
+                  }}
+              >
+                  <div
+                      style={{
+                          borderRight: `1px solid ${T.border}`,
+                          padding: '4px 0',
+                      }}
+                  >
+                      <div
+                          style={{
+                              padding: '4px 12px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text3,
+                              borderBottom: `1px solid ${T.border}`,
+                              marginBottom: 4,
+                          }}
+                      >
+                          元テキスト
+                      </div>
+                      {diffs.map((d, i) => (
+                          <div
+                              key={i}
+                              style={{
+                                  display: 'flex',
+                                  minHeight: 22,
+                                  padding: '1px 0',
+                                  background:
+                                      d.type === 'changed'
+                                          ? T.diffDel
+                                          : 'transparent',
+                                  borderLeft:
+                                      d.type === 'changed'
+                                          ? `3px solid ${T.red}`
+                                          : '3px solid transparent',
+                              }}
+                          >
+                              <span
+                                  style={{
+                                      width: 32,
+                                      flexShrink: 0,
+                                      textAlign: 'right',
+                                      paddingRight: 8,
+                                      color: T.text3,
+                                      fontSize: 12,
+                                      userSelect: 'none',
+                                      lineHeight: '22px',
+                                  }}
+                              >
+                                  {i + 1}
+                              </span>
+                              <span
+                                  style={{
+                                      flex: 1,
+                                      fontSize: 12,
+                                      fontFamily: T.mono,
+                                      lineHeight: '22px',
+                                      color:
+                                          d.type === 'changed' ? T.red : T.text,
+                                      whiteSpace: 'pre-wrap',
+                                      wordBreak: 'break-word',
+                                      paddingRight: 8,
+                                  }}
+                              >
+                                  {d.orig || '\u00A0'}
+                              </span>
+                          </div>
+                      ))}
+                  </div>
+                  <div style={{ padding: '4px 0' }}>
+                      <div
+                          style={{
+                              padding: '4px 12px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text3,
+                              borderBottom: `1px solid ${T.border}`,
+                              marginBottom: 4,
+                          }}
+                      >
+                          マスキング済み
+                      </div>
+                      {diffs.map((d, i) => {
+                          const re = new RegExp(PH_RE.source, 'g')
+                          const parts = []
+                          let last = 0
+                          let m
+                          const line = d.mod
+                          while ((m = re.exec(line)) !== null) {
+                              if (m.index > last)
+                                  parts.push(
+                                      <span key={`t${last}`}>
+                                          {line.slice(last, m.index)}
+                                      </span>,
+                                  )
+                              parts.push(
+                                  <span
+                                      key={`r${m.index}`}
+                                      style={{
+                                          background: T.greenDim,
+                                          color: T.green,
+                                          padding: '0 3px',
+                                          borderRadius: 3,
+                                          fontWeight: 600,
+                                      }}
+                                  >
+                                      {m[0]}
+                                  </span>,
+                              )
+                              last = m.index + m[0].length
+                          }
+                          if (last < line.length)
+                              parts.push(
+                                  <span key={`e${last}`}>
+                                      {line.slice(last)}
+                                  </span>,
+                              )
+                          return (
+                              <div
+                                  key={i}
+                                  style={{
+                                      display: 'flex',
+                                      minHeight: 22,
+                                      padding: '1px 0',
+                                      background:
+                                          d.type === 'changed'
+                                              ? T.diffAdd
+                                              : 'transparent',
+                                      borderLeft:
+                                          d.type === 'changed'
+                                              ? `3px solid ${T.green}`
+                                              : '3px solid transparent',
+                                  }}
+                              >
+                                  <span
+                                      style={{
+                                          width: 32,
+                                          flexShrink: 0,
+                                          textAlign: 'right',
+                                          paddingRight: 8,
+                                          color: T.text3,
+                                          fontSize: 12,
+                                          userSelect: 'none',
+                                          lineHeight: '22px',
+                                      }}
+                                  >
+                                      {i + 1}
+                                  </span>
+                                  <span
+                                      style={{
+                                          flex: 1,
+                                          fontSize: 12,
+                                          fontFamily: T.mono,
+                                          lineHeight: '22px',
+                                          color:
+                                              d.type === 'changed'
+                                                  ? T.green
+                                                  : T.text,
+                                          whiteSpace: 'pre-wrap',
+                                          wordBreak: 'break-word',
+                                          paddingRight: 8,
+                                      }}
+                                  >
+                                      {parts.length ? parts : line || '\u00A0'}
+                                  </span>
+                              </div>
+                          )
+                      })}
+                  </div>
+              </div>
           </div>
-        </div>
       </div>
-    </div>
-  );
+  )
 }
 
 // ═══ Upload Screen ═══
 function UploadScreen({onAnalyze,settings}){
   const[dragOver,setDragOver]=useState(false);const[loading,setLoading]=useState(false);const[error,setError]=useState(null);const[fileName,setFileName]=useState("");const[stage,setStage]=useState(0);const[mask,setMask]=useState({...DEFAULT_MASK});const inputRef=useRef(null);
   const[aiStatus,setAiStatus]=useState("");
+  const [showUrlHelp, setShowUrlHelp] = useState(false)
+  const urlHelpTriggerRef = useRef(null)
+  const urlHelpCloseRef = useRef(null)
   const activePreset=MASK_PRESETS.findIndex(p=>Object.entries(p.mask).every(([k,v])=>mask[k]===v));
   const aiOn=settings?.aiDetect!==false;
   const STAGES=["ファイル読み込み","テキスト抽出",aiOn?"AI OCR (画像ページ)":"--",aiOn?"AI テキスト再構成":"--","正規表現マッチ","日本人名辞書照合",aiOn?"AI PII検出":"--","完了"];
   const lc=[null,T.green,T.amber,T.red];
+  const closeUrlHelp = useCallback(() => {
+      setShowUrlHelp(false)
+      setTimeout(() => {
+          if (urlHelpTriggerRef.current) urlHelpTriggerRef.current.focus()
+      }, 0)
+  }, [])
+  useEffect(() => {
+      if (!showUrlHelp) return
+      const onKey = (e) => {
+          if (e.key === 'Escape') closeUrlHelp()
+      }
+      window.addEventListener('keydown', onKey)
+      const t = setTimeout(() => {
+          if (urlHelpCloseRef.current) urlHelpCloseRef.current.focus()
+      }, 0)
+      return () => {
+          window.removeEventListener('keydown', onKey)
+          clearTimeout(t)
+      }
+  }, [showUrlHelp, closeUrlHelp])
 
   const processText=useCallback(async(text,name,format,pageCount,fileSize,rawText,sparsePages,pdfData)=>{
     let workText=text;
     let originalRaw=rawText||text;
+    const runModels = aiOn ? getModelsForRun(settings) : null
 
     // OCR fallback for image-heavy PDF pages
     if(aiOn&&format==="PDF"&&sparsePages&&sparsePages.length>0){
@@ -1641,7 +3452,13 @@ function UploadScreen({onAnalyze,settings}){
       setAiStatus(`OCR対象: ${sparsePages.length}/${pageCount||"?"}ページ (テキスト未検出)`);
       await new Promise(r=>setTimeout(r,300));
       try{
-        const ocrResults=await ocrSparsePages(pdfData,sparsePages,settings?.apiKey,settings?.model,(msg)=>setAiStatus(msg));
+        const ocrResults = await ocrSparsePages(
+            pdfData,
+            sparsePages,
+            settings?.apiKey,
+            runModels?.formatModel || settings?.model,
+            (msg) => setAiStatus(msg),
+        )
         const ocrCount=Object.keys(ocrResults).length;
         if(ocrCount>0){
           originalRaw=workText;
@@ -1661,7 +3478,13 @@ function UploadScreen({onAnalyze,settings}){
       setStage(3);
       setAiStatus("AIテキスト再構成中...");
       try{
-        const cleaned=await aiCleanupText(workText,settings?.apiKey,settings?.model,(msg)=>setAiStatus(msg));
+        const cleaned = await aiCleanupText(
+            workText,
+            settings?.apiKey,
+            runModels?.formatModel || settings?.model,
+            (msg) => setAiStatus(msg),
+            runModels?.formatFallbackModel,
+        )
         // Validate: AI result must retain substantial content
         const origNonEmpty=workText.split("\n").filter(l=>l.trim().length>0).length;
         const cleanNonEmpty=cleaned?cleaned.split("\n").filter(l=>l.trim().length>0).length:0;
@@ -1684,16 +3507,35 @@ function UploadScreen({onAnalyze,settings}){
     let allDets=dets;
     if(aiOn){
       setStage(6);
-      setAiStatus("AI PII検出中...");
-      try{
-        const aiDets=await detectWithAI(workText,settings?.apiKey,settings?.model);
-        if(aiDets.length>0){
-          allDets=mergeDetections(dets,aiDets);
-          setAiStatus(`AI: ${aiDets.length}件追加検出`);
-        }else{
-          setAiStatus("AI: 追加検出なし");
-        }
-      }catch(e){setAiStatus("AI検出スキップ");}
+      setAiStatus(
+          `AI PII検出中... (${runModels?.detectModel || settings?.model})`,
+      )
+      try {
+          const aiRes = await detectWithAI(
+              workText,
+              settings?.apiKey,
+              runModels?.detectModel || settings?.model,
+              runModels?.detectFallbackModel,
+              (msg) => setAiStatus(msg),
+          )
+          const aiDets = aiRes?.detections || []
+          if (aiDets.length > 0) {
+              allDets = mergeDetections(dets, aiDets)
+              setAiStatus(
+                  `AI: ${aiDets.length}件追加検出${aiRes?.fallbackUsed ? `（再試行:${aiRes.usedModel}）` : ''}`,
+              )
+          } else if (aiRes?.error) {
+              setAiStatus(
+                  `AI検出スキップ（${aiRes.usedModel || runModels.detectModel}）`,
+              )
+          } else {
+              setAiStatus(
+                  `AI: 追加検出なし${aiRes?.fallbackUsed ? `（再試行:${aiRes.usedModel}）` : ''}`,
+              )
+          }
+      } catch (e) {
+          setAiStatus('AI検出スキップ')
+      }
     }
 
     const wm=allDets.map(d=>({...d,enabled:mask[d.category]!==false}));
@@ -1737,153 +3579,1489 @@ function UploadScreen({onAnalyze,settings}){
   },[pasteValue,processText]);
   const toggleCat=cat=>setMask(p=>({...p,[cat]:!p[cat]}));
 
-  if(loading)return (<div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"calc(100vh - 56px)",padding:40,animation:"fadeUp .4s"}}><div style={{maxWidth:480,width:"100%",textAlign:"center"}}><div style={{width:56,height:56,borderRadius:28,border:`3px solid ${T.border}`,borderTopColor:T.accent,animation:"spin .8s linear infinite",margin:"0 auto 24px"}}/><h2 style={{fontSize:18,fontWeight:700,color:T.text,marginBottom:6}}>{fileName}</h2><p style={{fontSize:13,color:T.text2,marginBottom:20}}>解析中...</p>{aiStatus&&<div style={{padding:"10px 16px",borderRadius:10,background:T.accentDim,marginBottom:20,fontSize:12,color:T.accent,fontWeight:500,fontFamily:T.mono,lineHeight:1.6,minHeight:36,display:"flex",alignItems:"center",justifyContent:"center"}}>{aiStatus}</div>}<div style={{textAlign:"left",padding:"0 20px"}}>{STAGES.filter(s=>s!=="--").map((s,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 0",fontSize:13,color:i<stage?T.green:i===stage?T.accent:T.text3}}><div style={{width:20,height:20,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,background:i<stage?T.greenDim:i===stage?T.accentDim:"transparent",border:`1.5px solid ${i<stage?T.green:i===stage?T.accent:T.text3}`}}>{i<stage?"\u2713":i===stage?"\u2022":"\u25CB"}</div><span style={{fontWeight:i===stage?600:400}}>{s}</span></div>))}</div></div></div>);
-
-  return (<div style={{minHeight:"calc(100vh - 56px)",padding:"32px 40px",animation:"fadeUp .5s ease"}}>
-    <div style={{textAlign:"center",marginBottom:28,maxWidth:900,margin:"0 auto 28px"}}><h1 style={{fontSize:28,fontWeight:700,color:T.text,lineHeight:1.35}}>職務経歴書の<span style={{color:T.accent}}>個人情報を自動マスキング</span></h1><p style={{fontSize:13,color:T.text2,marginTop:8,lineHeight:1.7}}>日本人名辞書 + 正規表現 + AI検出 + AIテキスト再構成で高精度</p></div>
-    <div className="rp-upload-main" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,maxWidth:1200,margin:"0 auto",alignItems:"start"}}>
-    <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"18px 20px"}}>
-      <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:14}}>マスキング設定 <span style={{fontSize:11,fontWeight:400,color:T.text3}}>-- アップロード前に対象を選択</span></div>
-      <div style={{display:"flex",gap:8,marginBottom:16}}>{MASK_PRESETS.map((p,i)=>(<button key={p.id} onClick={()=>setMask({...p.mask})} style={{flex:1,padding:"10px 12px",borderRadius:10,border:`1.5px solid ${activePreset===i?T.accent:T.border}`,background:activePreset===i?T.accentDim:"transparent",cursor:"pointer",textAlign:"left",transition:"all .15s"}}><div style={{fontSize:13,fontWeight:600,color:activePreset===i?T.accent:T.text,marginBottom:2,display:"flex",alignItems:"center",gap:6}}><span style={{display:"inline-block",width:8,height:8,borderRadius:4,background:lc[p.level]}}/>{p.label}</div><div style={{fontSize:10,color:T.text3}}>{p.desc}</div></button>))}</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 16px"}}>{Object.entries(CATEGORIES).filter(([k])=>k!=="photo").map(([key,meta])=>(<div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderRadius:8,background:mask[key]?`${meta.color}08`:"transparent",border:`1px solid ${mask[key]?`${meta.color}20`:"transparent"}`,transition:"all .2s"}}><span style={{fontSize:12,fontWeight:500,color:mask[key]?T.text:T.text3}}>{meta.label}</span><Toggle checked={mask[key]} onChange={()=>toggleCat(key)} size="sm"/></div>))}</div>
-      {/* Advanced options */}
-      <div style={{marginTop:12,padding:"10px 12px",borderRadius:10,background:T.bg,border:`1px solid ${T.border}`}}>
-        <div style={{fontSize:11,fontWeight:600,color:T.text2,marginBottom:8}}>詳細オプション</div>
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div><div style={{fontSize:12,fontWeight:500,color:mask.address?T.text:T.text3}}>都道府県を残す</div><div style={{fontSize:9,color:T.text3}}>住所マスク時に在住エリアだけ公開</div></div>
-            <Toggle checked={mask.keepPrefecture} onChange={()=>setMask(p=>({...p,keepPrefecture:!p.keepPrefecture}))} size="sm" disabled={!mask.address}/>
-          </div>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-            <div><div style={{fontSize:12,fontWeight:500,color:mask.name?T.text:T.text3}}>氏名イニシャル化</div><div style={{fontSize:9,color:T.text3}}>田中太郎 → T.T.（フリガナから変換）</div></div>
-            <Toggle checked={mask.nameInitial} onChange={()=>setMask(p=>({...p,nameInitial:!p.nameInitial}))} size="sm" disabled={!mask.name}/>
-          </div>
-        </div>
-      </div>
-      <div style={{marginTop:10,display:"flex",gap:6,flexWrap:"wrap"}}>{Object.entries(mask).filter(([,v])=>v).map(([k])=>{const m=CATEGORIES[k];return m?<Badge key={k} color={m.color} bg={m.bg}>{m.label}</Badge>:null;})}{mask.keepPrefecture&&mask.address&&<Badge color={CATEGORIES.address.color} bg={CATEGORIES.address.bg}>都道府県残す</Badge>}{mask.nameInitial&&mask.name&&<Badge color={CATEGORIES.name.color} bg={CATEGORIES.name.bg}>イニシャル化</Badge>}</div>
-    </div>
-    {/* Right Column: Input + Samples */}
-    <div style={{display:"flex",flexDirection:"column",gap:20}}>
-    <div>
-      <div className="rp-input-tabs" style={{display:"flex",gap:0,marginBottom:0,borderRadius:"12px 12px 0 0",overflow:"hidden",border:`1px solid ${T.border}`,borderBottom:"none"}}>
-        {[{id:"file",icon:"\u{1F4C1}",label:"ファイル"},{id:"url",icon:"\u{1F310}",label:"URLスクレイピング"},{id:"paste",icon:"\u{1F4CB}",label:"テキスト/HTML貼付"}].map(tab=>(
-          <button key={tab.id} onClick={()=>setInputMode(tab.id)} style={{flex:1,padding:"12px 8px",border:"none",background:inputMode===tab.id?T.surface:T.bg2,cursor:"pointer",fontSize:12,fontWeight:inputMode===tab.id?700:500,color:inputMode===tab.id?T.accent:T.text3,borderBottom:inputMode===tab.id?`2px solid ${T.accent}`:`2px solid transparent`,transition:"all .15s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{tab.icon} {tab.label}</button>
-        ))}
-      </div>
-      <div style={{border:`1px solid ${T.border}`,borderTop:"none",borderRadius:"0 0 12px 12px",background:T.bg2,overflow:"hidden"}}>
-        {inputMode==="file"&&(
-          <div onClick={()=>inputRef.current?.click()} onDragOver={e=>{e.preventDefault();setDragOver(true)}} onDragLeave={()=>setDragOver(false)} onDrop={e=>{e.preventDefault();setDragOver(false);handleFile(e.dataTransfer?.files?.[0])}} style={{padding:"44px 32px",display:"flex",flexDirection:"column",alignItems:"center",gap:14,cursor:"pointer",transition:"all .25s",background:dragOver?T.accentDim:T.bg2}}>
-            <input ref={inputRef} type="file" accept=".pdf,.docx,.doc,.xlsx,.xls,.ods,.csv,.txt,.tsv,.md,.markdown,.html,.htm,.rtf,.json,.odt" onChange={e=>handleFile(e.target.files?.[0])} style={{display:"none"}}/>
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <div style={{textAlign:"center"}}><p style={{fontSize:15,fontWeight:600,color:T.text}}>ファイルをドラッグ＆ドロップ</p><p style={{fontSize:12,color:T.text3,marginTop:4}}>PDF / Word / Excel / ODS / CSV / Markdown / HTML / RTF / JSON / ODT / TXT</p></div>
-          </div>
-        )}
-        {inputMode==="url"&&(
-          <div style={{padding:"24px 24px 28px"}}>
-            <div style={{fontSize:13,fontWeight:600,color:T.text,marginBottom:4}}>URLからスクレイピング</div>
-            <p style={{fontSize:11,color:T.text3,marginBottom:14,lineHeight:1.6}}>Webページの職務経歴書・ポートフォリオをそのまま取得してマスキングします</p>
-            <div style={{display:"flex",gap:8,marginBottom:12}}>
-              <input value={urlValue} onChange={e=>setUrlValue(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&urlValue.trim())handleURL();}} placeholder="https://example.com/resume" style={{flex:1,padding:"10px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontFamily:T.mono,outline:"none"}}/>
-              <button onClick={handleURL} disabled={!urlValue.trim()||urlFetching} style={{padding:"10px 20px",borderRadius:10,border:"none",background:urlValue.trim()?T.accent:T.border,color:urlValue.trim()?"#fff":T.text3,fontSize:13,fontWeight:600,cursor:urlValue.trim()?"pointer":"default",opacity:urlFetching?0.6:1,transition:"all .15s",whiteSpace:"nowrap"}}>{urlFetching?"取得中...":"取得＆解析"}</button>
-            </div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-              {[
-                {label:"Wantedly",url:"wantedly.com/id/",color:"#21BDDB"},
-                {label:"LinkedIn",url:"linkedin.com/in/",color:"#0A66C2"},
-                {label:"LAPRAS",url:"lapras.com/public/",color:"#2E7D32"},
-                {label:"GitHub",url:"github.com/",color:"#8B5CF6"},
-                {label:"Qiita",url:"qiita.com/",color:"#55C500"},
-                {label:"Zenn",url:"zenn.dev/",color:"#3EA8FF"},
-              ].map(s=>(
-                <button key={s.label} onClick={()=>{setUrlValue("https://"+s.url);}} style={{padding:"4px 10px",borderRadius:16,border:`1px solid ${s.color}30`,background:`${s.color}10`,color:s.color,fontSize:10,fontWeight:600,cursor:"pointer",transition:"all .15s"}}>{s.label}</button>
-              ))}
-            </div>
-            <div style={{marginTop:14,padding:"10px 14px",borderRadius:8,background:T.surfaceAlt,fontSize:11,color:T.text3,lineHeight:1.6}}>
-              {settings?.proxyUrl?
-                <><span style={{fontWeight:600,color:T.green}}>✓</span> 自前プロキシ設定済。URL取得は安定して動作します。</>:
-                <><span style={{fontWeight:600,color:T.amber}}>⚠</span> 無料CORSプロキシ使用中（取得失敗の可能性あり）。設定 → プロキシURLで安定化できます。<br/>
-                <span style={{fontWeight:600,color:T.text2}}>Tip:</span> 取得失敗時は「テキスト/HTML貼付」タブへ。Ctrl+U→ソースコピーで確実に取り込めます。</>
-              }
-            </div>
-            <div style={{marginTop:8,padding:"8px 14px",borderRadius:8,background:`${T.red}08`,border:`1px solid ${T.red}15`,fontSize:10,color:T.text3,lineHeight:1.6}}>
-              <span style={{fontWeight:600,color:T.red}}>非対応:</span> Canva / Figma / Notion / Google Docs はSPAのため取得不可。<span style={{color:T.text2}}>PDF保存 →「ファイル」タブからアップロードしてください。</span>
-            </div>
-          </div>
-        )}
-        {inputMode==="paste"&&(
-          <div style={{padding:"24px 24px 28px"}}>
-            <div style={{fontSize:13,fontWeight:600,color:T.text,marginBottom:4}}>テキストまたはHTMLソースを貼付</div>
-            <p style={{fontSize:11,color:T.text3,marginBottom:14,lineHeight:1.6}}>職務経歴書のテキストをコピー＆ペースト、またはHTMLソースを貼り付けてください</p>
-            <textarea value={pasteValue} onChange={e=>setPasteValue(e.target.value)} placeholder={"ここにテキストまたはHTMLを貼り付け...\n\n例:\n・職務経歴書のテキスト全文\n・Ctrl+U でコピーしたHTMLソース\n・Wantedlyプロフィールのコピー"} style={{width:"100%",minHeight:160,padding:"12px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontFamily:T.mono,lineHeight:1.7,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10}}>
-              <div style={{fontSize:11,color:T.text3}}>
-                {pasteValue.trim()?(<>{/<[a-z][\s\S]*>/i.test(pasteValue)?<span style={{color:T.cyan}}>HTML検出</span>:<span style={{color:T.green}}>テキスト</span>} / {(new Blob([pasteValue]).size/1024).toFixed(1)} KB</>):"入力待ち..."}
+  if (loading)
+      return (
+          <div
+              style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: 'calc(100vh - 56px)',
+                  padding: 40,
+                  animation: 'fadeUp .4s',
+              }}
+          >
+              <div
+                  style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}
+              >
+                  <div
+                      style={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 28,
+                          border: `3px solid ${T.border}`,
+                          borderTopColor: T.accent,
+                          animation: 'spin .8s linear infinite',
+                          margin: '0 auto 24px',
+                      }}
+                  />
+                  <h2
+                      style={{
+                          fontSize: 18,
+                          fontWeight: 700,
+                          color: T.text,
+                          marginBottom: 6,
+                      }}
+                  >
+                      {fileName}
+                  </h2>
+                  <p style={{ fontSize: 13, color: T.text2, marginBottom: 20 }}>
+                      解析中...
+                  </p>
+                  {aiStatus && (
+                      <div
+                          style={{
+                              padding: '10px 16px',
+                              borderRadius: 10,
+                              background: T.accentDim,
+                              marginBottom: 20,
+                              fontSize: 12,
+                              color: T.accent,
+                              fontWeight: 500,
+                              fontFamily: T.mono,
+                              lineHeight: 1.6,
+                              minHeight: 36,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                          }}
+                      >
+                          {aiStatus}
+                      </div>
+                  )}
+                  <div style={{ textAlign: 'left', padding: '0 20px' }}>
+                      {STAGES.filter((s) => s !== '--').map((s, i) => (
+                          <div
+                              key={i}
+                              style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 10,
+                                  padding: '7px 0',
+                                  fontSize: 13,
+                                  color:
+                                      i < stage
+                                          ? T.green
+                                          : i === stage
+                                            ? T.accent
+                                            : T.text3,
+                              }}
+                          >
+                              <div
+                                  style={{
+                                      width: 20,
+                                      height: 20,
+                                      borderRadius: 10,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: 12,
+                                      fontWeight: 700,
+                                      background:
+                                          i < stage
+                                              ? T.greenDim
+                                              : i === stage
+                                                ? T.accentDim
+                                                : 'transparent',
+                                      border: `1.5px solid ${i < stage ? T.green : i === stage ? T.accent : T.text3}`,
+                                  }}
+                              >
+                                  {i < stage
+                                      ? '\u2713'
+                                      : i === stage
+                                        ? '\u2022'
+                                        : '\u25CB'}
+                              </div>
+                              <span
+                                  style={{
+                                      fontWeight: i === stage ? 600 : 400,
+                                  }}
+                              >
+                                  {s}
+                              </span>
+                          </div>
+                      ))}
+                  </div>
               </div>
-              <button onClick={handlePaste} disabled={!pasteValue.trim()} style={{padding:"10px 24px",borderRadius:10,border:"none",background:pasteValue.trim()?T.accent:T.border,color:pasteValue.trim()?"#fff":T.text3,fontSize:13,fontWeight:600,cursor:pasteValue.trim()?"pointer":"default",transition:"all .15s"}}>解析開始</button>
-            </div>
           </div>
-        )}
+      )
+
+  return (
+      <div
+          style={{
+              minHeight: 'calc(100vh - 56px)',
+              padding: '32px 40px',
+              animation: 'fadeUp .5s ease',
+          }}
+      >
+          <div
+              style={{
+                  textAlign: 'center',
+                  marginBottom: 28,
+                  maxWidth: 900,
+                  margin: '0 auto 28px',
+              }}
+          >
+              <h1
+                  style={{
+                      fontSize: 28,
+                      fontWeight: 700,
+                      color: T.text,
+                      lineHeight: 1.35,
+                  }}
+              >
+                  職務経歴書の
+                  <span style={{ color: T.accent }}>
+                      個人情報を自動マスキング
+                  </span>
+              </h1>
+              <p
+                  style={{
+                      fontSize: 13,
+                      color: T.text2,
+                      marginTop: 8,
+                      lineHeight: 1.7,
+                  }}
+              >
+                  日本人名辞書 + 正規表現 + AI検出 + AIテキスト再構成で高精度
+              </p>
+          </div>
+          <div
+              className='rp-upload-main'
+              style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 24,
+                  maxWidth: 1200,
+                  margin: '0 auto',
+                  alignItems: 'start',
+              }}
+          >
+              <div
+                  style={{
+                      background: T.surface,
+                      border: `1px solid ${T.border}`,
+                      borderRadius: 14,
+                      padding: '18px 20px',
+                  }}
+              >
+                  <div
+                      style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: T.text,
+                          marginBottom: 14,
+                      }}
+                  >
+                      マスキング設定{' '}
+                      <span
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 400,
+                              color: T.text3,
+                          }}
+                      >
+                          -- アップロード前に対象を選択
+                      </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                      {MASK_PRESETS.map((p, i) => (
+                          <button
+                              key={p.id}
+                              onClick={() => setMask({ ...p.mask })}
+                              style={{
+                                  flex: 1,
+                                  padding: '10px 12px',
+                                  borderRadius: 10,
+                                  border: `1.5px solid ${activePreset === i ? T.accent : T.border}`,
+                                  background:
+                                      activePreset === i
+                                          ? T.accentDim
+                                          : 'transparent',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  transition: 'all .15s',
+                              }}
+                          >
+                              <div
+                                  style={{
+                                      fontSize: 13,
+                                      fontWeight: 600,
+                                      color:
+                                          activePreset === i
+                                              ? T.accent
+                                              : T.text,
+                                      marginBottom: 2,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 6,
+                                  }}
+                              >
+                                  <span
+                                      style={{
+                                          display: 'inline-block',
+                                          width: 8,
+                                          height: 8,
+                                          borderRadius: 4,
+                                          background: lc[p.level],
+                                      }}
+                                  />
+                                  {p.label}
+                              </div>
+                              <div style={{ fontSize: 12, color: T.text3 }}>
+                                  {p.desc}
+                              </div>
+                          </button>
+                      ))}
+                  </div>
+                  <div
+                      style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '6px 16px',
+                      }}
+                  >
+                      {Object.entries(CATEGORIES)
+                          .filter(([k]) => k !== 'photo')
+                          .map(([key, meta]) => (
+                              <div
+                                  key={key}
+                                  style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      padding: '8px 12px',
+                                      borderRadius: 8,
+                                      background: mask[key]
+                                          ? `${meta.color}08`
+                                          : 'transparent',
+                                      border: `1px solid ${mask[key] ? `${meta.color}20` : 'transparent'}`,
+                                      transition: 'all .2s',
+                                  }}
+                              >
+                                  <span
+                                      style={{
+                                          fontSize: 12,
+                                          fontWeight: 500,
+                                          color: mask[key] ? T.text : T.text3,
+                                      }}
+                                  >
+                                      {meta.label}
+                                  </span>
+                                  <Toggle
+                                      checked={mask[key]}
+                                      onChange={() => toggleCat(key)}
+                                      size='sm'
+                                  />
+                              </div>
+                          ))}
+                  </div>
+                  {/* Advanced options */}
+                  <div
+                      style={{
+                          marginTop: 12,
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          background: T.bg,
+                          border: `1px solid ${T.border}`,
+                      }}
+                  >
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 8,
+                          }}
+                      >
+                          詳細オプション
+                      </div>
+                      <div
+                          style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 8,
+                          }}
+                      >
+                          <div
+                              style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                              }}
+                          >
+                              <div>
+                                  <div
+                                      style={{
+                                          fontSize: 12,
+                                          fontWeight: 500,
+                                          color: mask.address
+                                              ? T.text
+                                              : T.text3,
+                                      }}
+                                  >
+                                      都道府県を残す
+                                  </div>
+                                  <div style={{ fontSize: 12, color: T.text3 }}>
+                                      住所マスク時に在住エリアだけ公開
+                                  </div>
+                              </div>
+                              <Toggle
+                                  checked={mask.keepPrefecture}
+                                  onChange={() =>
+                                      setMask((p) => ({
+                                          ...p,
+                                          keepPrefecture: !p.keepPrefecture,
+                                      }))
+                                  }
+                                  size='sm'
+                                  disabled={!mask.address}
+                              />
+                          </div>
+                          <div
+                              style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                              }}
+                          >
+                              <div>
+                                  <div
+                                      style={{
+                                          fontSize: 12,
+                                          fontWeight: 500,
+                                          color: mask.name ? T.text : T.text3,
+                                      }}
+                                  >
+                                      氏名イニシャル化
+                                  </div>
+                                  <div style={{ fontSize: 12, color: T.text3 }}>
+                                      田中太郎 → T.T.（フリガナから変換）
+                                  </div>
+                              </div>
+                              <Toggle
+                                  checked={mask.nameInitial}
+                                  onChange={() =>
+                                      setMask((p) => ({
+                                          ...p,
+                                          nameInitial: !p.nameInitial,
+                                      }))
+                                  }
+                                  size='sm'
+                                  disabled={!mask.name}
+                              />
+                          </div>
+                      </div>
+                  </div>
+                  <div
+                      style={{
+                          marginTop: 10,
+                          display: 'flex',
+                          gap: 6,
+                          flexWrap: 'wrap',
+                      }}
+                  >
+                      {Object.entries(mask)
+                          .filter(([, v]) => v)
+                          .map(([k]) => {
+                              const m = CATEGORIES[k]
+                              return m ? (
+                                  <Badge key={k} color={m.color} bg={m.bg}>
+                                      {m.label}
+                                  </Badge>
+                              ) : null
+                          })}
+                      {mask.keepPrefecture && mask.address && (
+                          <Badge
+                              color={CATEGORIES.address.color}
+                              bg={CATEGORIES.address.bg}
+                          >
+                              都道府県残す
+                          </Badge>
+                      )}
+                      {mask.nameInitial && mask.name && (
+                          <Badge
+                              color={CATEGORIES.name.color}
+                              bg={CATEGORIES.name.bg}
+                          >
+                              イニシャル化
+                          </Badge>
+                      )}
+                  </div>
+              </div>
+              {/* Right Column: Input + Samples */}
+              <div
+                  style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+              >
+                  <div>
+                      <div
+                          className='rp-input-tabs'
+                          style={{
+                              display: 'flex',
+                              gap: 0,
+                              marginBottom: 0,
+                              borderRadius: '12px 12px 0 0',
+                              overflow: 'hidden',
+                              border: `1px solid ${T.border}`,
+                              borderBottom: 'none',
+                          }}
+                      >
+                          {[
+                              {
+                                  id: 'file',
+                                  icon: '\u{1F4C1}',
+                                  label: 'ファイル',
+                              },
+                              {
+                                  id: 'url',
+                                  icon: '\u{1F310}',
+                                  label: 'URLスクレイピング',
+                              },
+                              {
+                                  id: 'paste',
+                                  icon: '\u{1F4CB}',
+                                  label: 'テキスト/HTML貼付',
+                              },
+                          ].map((tab) => (
+                              <button
+                                  key={tab.id}
+                                  onClick={() => setInputMode(tab.id)}
+                                  style={{
+                                      flex: 1,
+                                      padding: '12px 8px',
+                                      border: 'none',
+                                      background:
+                                          inputMode === tab.id
+                                              ? T.surface
+                                              : T.bg2,
+                                      cursor: 'pointer',
+                                      fontSize: 12,
+                                      fontWeight:
+                                          inputMode === tab.id ? 700 : 500,
+                                      color:
+                                          inputMode === tab.id
+                                              ? T.accent
+                                              : T.text3,
+                                      borderBottom:
+                                          inputMode === tab.id
+                                              ? `2px solid ${T.accent}`
+                                              : `2px solid transparent`,
+                                      transition: 'all .15s',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      gap: 6,
+                                  }}
+                              >
+                                  {tab.icon} {tab.label}
+                              </button>
+                          ))}
+                      </div>
+                      <div
+                          style={{
+                              border: `1px solid ${T.border}`,
+                              borderTop: 'none',
+                              borderRadius: '0 0 12px 12px',
+                              background: T.bg2,
+                              overflow: 'hidden',
+                          }}
+                      >
+                          {inputMode === 'file' && (
+                              <div
+                                  onClick={() => inputRef.current?.click()}
+                                  onDragOver={(e) => {
+                                      e.preventDefault()
+                                      setDragOver(true)
+                                  }}
+                                  onDragLeave={() => setDragOver(false)}
+                                  onDrop={(e) => {
+                                      e.preventDefault()
+                                      setDragOver(false)
+                                      handleFile(e.dataTransfer?.files?.[0])
+                                  }}
+                                  style={{
+                                      padding: '44px 32px',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: 'center',
+                                      gap: 14,
+                                      cursor: 'pointer',
+                                      transition: 'all .25s',
+                                      background: dragOver
+                                          ? T.accentDim
+                                          : T.bg2,
+                                  }}
+                              >
+                                  <input
+                                      ref={inputRef}
+                                      type='file'
+                                      accept='.pdf,.docx,.doc,.xlsx,.xls,.ods,.csv,.txt,.tsv,.md,.markdown,.html,.htm,.rtf,.json,.odt'
+                                      onChange={(e) =>
+                                          handleFile(e.target.files?.[0])
+                                      }
+                                      style={{ display: 'none' }}
+                                  />
+                                  <svg
+                                      width='40'
+                                      height='40'
+                                      viewBox='0 0 24 24'
+                                      fill='none'
+                                      stroke={T.accent}
+                                      strokeWidth='2'
+                                      strokeLinecap='round'
+                                      strokeLinejoin='round'
+                                  >
+                                      <path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4' />
+                                      <polyline points='17 8 12 3 7 8' />
+                                      <line x1='12' y1='3' x2='12' y2='15' />
+                                  </svg>
+                                  <div style={{ textAlign: 'center' }}>
+                                      <p
+                                          style={{
+                                              fontSize: 15,
+                                              fontWeight: 600,
+                                              color: T.text,
+                                          }}
+                                      >
+                                          ファイルをドラッグ＆ドロップ
+                                      </p>
+                                      <p
+                                          style={{
+                                              fontSize: 12,
+                                              color: T.text3,
+                                              marginTop: 4,
+                                          }}
+                                      >
+                                          PDF / Word / Excel / ODS / CSV /
+                                          Markdown / HTML / RTF / JSON / ODT /
+                                          TXT
+                                      </p>
+                                  </div>
+                              </div>
+                          )}
+                          {inputMode === 'url' && (
+                              <div style={{ padding: '24px 24px 28px' }}>
+                                  <div
+                                      style={{
+                                          fontSize: 13,
+                                          fontWeight: 600,
+                                          color: T.text,
+                                          marginBottom: 4,
+                                      }}
+                                  >
+                                      URLからスクレイピング
+                                  </div>
+                                  <p
+                                      style={{
+                                          fontSize: 12,
+                                          color: T.text3,
+                                          marginBottom: 10,
+                                          lineHeight: 1.6,
+                                      }}
+                                  >
+                                      Webページの職務経歴書・ポートフォリオをそのまま取得してマスキングします
+                                  </p>
+                                  <div
+                                      style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 8,
+                                          marginBottom: 12,
+                                      }}
+                                  >
+                                      <button
+                                          ref={urlHelpTriggerRef}
+                                          onClick={() => setShowUrlHelp(true)}
+                                          aria-haspopup='dialog'
+                                          aria-expanded={showUrlHelp}
+                                          title='URL取得の注意とヒントを表示'
+                                          style={{
+                                              display: 'inline-flex',
+                                              alignItems: 'center',
+                                              gap: 6,
+                                              padding: '6px 10px',
+                                              borderRadius: 8,
+                                              border: `1px solid ${T.border}`,
+                                              background: T.surface,
+                                              color: T.text2,
+                                              fontSize: 12,
+                                              fontWeight: 600,
+                                              cursor: 'pointer',
+                                              transition: 'all .15s',
+                                          }}
+                                      >
+                                          <svg
+                                              width='14'
+                                              height='14'
+                                              viewBox='0 0 24 24'
+                                              fill='none'
+                                              stroke={T.text2}
+                                              strokeWidth='2'
+                                              strokeLinecap='round'
+                                              strokeLinejoin='round'
+                                              aria-hidden='true'
+                                          >
+                                              <circle cx='12' cy='12' r='10' />
+                                              <line
+                                                  x1='12'
+                                                  y1='10'
+                                                  x2='12'
+                                                  y2='16'
+                                              />
+                                              <line
+                                                  x1='12'
+                                                  y1='7'
+                                                  x2='12.01'
+                                                  y2='7'
+                                              />
+                                          </svg>
+                                          補足ガイド
+                                      </button>
+                                  </div>
+                                  <div
+                                      style={{
+                                          display: 'flex',
+                                          gap: 8,
+                                          marginBottom: 12,
+                                      }}
+                                  >
+                                      <input
+                                          value={urlValue}
+                                          onChange={(e) =>
+                                              setUrlValue(e.target.value)
+                                          }
+                                          onKeyDown={(e) => {
+                                              if (
+                                                  e.key === 'Enter' &&
+                                                  urlValue.trim()
+                                              )
+                                                  handleURL()
+                                          }}
+                                          placeholder='https://example.com/resume'
+                                          style={{
+                                              flex: 1,
+                                              padding: '10px 14px',
+                                              borderRadius: 10,
+                                              border: `1px solid ${T.border}`,
+                                              background: T.surface,
+                                              color: T.text,
+                                              fontSize: 13,
+                                              fontFamily: T.mono,
+                                              outline: 'none',
+                                          }}
+                                      />
+                                      <button
+                                          onClick={handleURL}
+                                          disabled={
+                                              !urlValue.trim() || urlFetching
+                                          }
+                                          style={{
+                                              padding: '10px 20px',
+                                              borderRadius: 10,
+                                              border: 'none',
+                                              background: urlValue.trim()
+                                                  ? T.accent
+                                                  : T.border,
+                                              color: urlValue.trim()
+                                                  ? '#fff'
+                                                  : T.text3,
+                                              fontSize: 13,
+                                              fontWeight: 600,
+                                              cursor: urlValue.trim()
+                                                  ? 'pointer'
+                                                  : 'default',
+                                              opacity: urlFetching ? 0.6 : 1,
+                                              transition: 'all .15s',
+                                              whiteSpace: 'nowrap',
+                                          }}
+                                      >
+                                          {urlFetching
+                                              ? '取得中...'
+                                              : '取得＆解析'}
+                                      </button>
+                                  </div>
+                                  {showUrlHelp && (
+                                      <div
+                                          style={{
+                                              position: 'fixed',
+                                              inset: 0,
+                                              background: 'rgba(0,0,0,.55)',
+                                              backdropFilter: 'blur(4px)',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              justifyContent: 'center',
+                                              zIndex: 120,
+                                              padding: 16,
+                                              animation: 'fadeIn .2s',
+                                          }}
+                                          onClick={(e) => {
+                                              if (e.target === e.currentTarget)
+                                                  closeUrlHelp()
+                                          }}
+                                      >
+                                          <div
+                                              role='dialog'
+                                              aria-modal='true'
+                                              aria-label='URLスクレイピングのガイド'
+                                              style={{
+                                                  width: '100%',
+                                                  maxWidth: 520,
+                                                  maxHeight: '90vh',
+                                                  overflow: 'auto',
+                                                  background: T.bg2,
+                                                  borderRadius: 14,
+                                                  border: `1px solid ${T.border}`,
+                                                  animation: 'fadeUp .25s ease',
+                                              }}
+                                          >
+                                              <div
+                                                  style={{
+                                                      padding: '12px 16px',
+                                                      borderBottom: `1px solid ${T.border}`,
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      justifyContent:
+                                                          'space-between',
+                                                      position: 'sticky',
+                                                      top: 0,
+                                                      background: T.bg2,
+                                                  }}
+                                              >
+                                                  <div
+                                                      style={{
+                                                          fontSize: 14,
+                                                          fontWeight: 700,
+                                                          color: T.text,
+                                                      }}
+                                                  >
+                                                      URLスクレイピング ガイド
+                                                  </div>
+                                                  <button
+                                                      ref={urlHelpCloseRef}
+                                                      onClick={closeUrlHelp}
+                                                      aria-label='閉じる'
+                                                      style={{
+                                                          width: 28,
+                                                          height: 28,
+                                                          borderRadius: 7,
+                                                          border: `1px solid ${T.border}`,
+                                                          background:
+                                                              'transparent',
+                                                          color: T.text2,
+                                                          cursor: 'pointer',
+                                                          fontSize: 13,
+                                                          display: 'flex',
+                                                          alignItems: 'center',
+                                                          justifyContent:
+                                                              'center',
+                                                      }}
+                                                  >
+                                                      ×
+                                                  </button>
+                                              </div>
+                                              <div
+                                                  style={{
+                                                      padding: '16px 18px',
+                                                      display: 'flex',
+                                                      flexDirection: 'column',
+                                                      gap: 14,
+                                                  }}
+                                              >
+                                                  <div>
+                                                      <div
+                                                          style={{
+                                                              fontSize: 12,
+                                                              fontWeight: 700,
+                                                              color: T.text,
+                                                              marginBottom: 6,
+                                                          }}
+                                                      >
+                                                          対象外/非推奨
+                                                      </div>
+                                                      <div
+                                                          style={{
+                                                              fontSize: 12,
+                                                              color: T.text2,
+                                                              lineHeight: 1.7,
+                                                          }}
+                                                      >
+                                                          SNS/テックブログ系のURLは情報が断片的で、マスク後に内容がほぼ残らないためURLスクレイピングは非推奨です。必要に応じて「テキスト/HTML貼付」やPDFでの取り込みをご利用ください。
+                                                      </div>
+                                                  </div>
+                                                  <div>
+                                                      <div
+                                                          style={{
+                                                              fontSize: 12,
+                                                              fontWeight: 700,
+                                                              color: T.text,
+                                                              marginBottom: 6,
+                                                          }}
+                                                      >
+                                                          取得の安定化
+                                                      </div>
+                                                      <div
+                                                          style={{
+                                                              fontSize: 12,
+                                                              color: T.text2,
+                                                              lineHeight: 1.7,
+                                                          }}
+                                                      >
+                                                          {settings?.proxyUrl ? (
+                                                              <>
+                                                                  自前プロキシ設定済。URL取得は安定して動作します。
+                                                              </>
+                                                          ) : (
+                                                              <>
+                                                                  無料CORSプロキシ使用中（取得失敗の可能性あり）。設定
+                                                                  →
+                                                                  プロキシURLで安定化できます。
+                                                              </>
+                                                          )}
+                                                      </div>
+                                                      <div
+                                                          style={{
+                                                              fontSize: 12,
+                                                              color: T.text3,
+                                                              marginTop: 6,
+                                                          }}
+                                                      >
+                                                          Tip:
+                                                          取得失敗時は「テキスト/HTML貼付」タブへ。Ctrl+U→ソースコピーで確実に取り込めます。
+                                                      </div>
+                                                  </div>
+                                                  <div>
+                                                      <div
+                                                          style={{
+                                                              fontSize: 12,
+                                                              fontWeight: 700,
+                                                              color: T.text,
+                                                              marginBottom: 6,
+                                                          }}
+                                                      >
+                                                          非対応サイト
+                                                      </div>
+                                                      <div
+                                                          style={{
+                                                              fontSize: 12,
+                                                              color: T.text2,
+                                                              lineHeight: 1.7,
+                                                          }}
+                                                      >
+                                                          Canva / Figma / Notion
+                                                          / Google Docs
+                                                          はSPAのため取得不可。PDF保存
+                                                          →「ファイル」タブからアップロードしてください。
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  )}
+                              </div>
+                          )}
+                          {inputMode === 'paste' && (
+                              <div style={{ padding: '24px 24px 28px' }}>
+                                  <div
+                                      style={{
+                                          fontSize: 13,
+                                          fontWeight: 600,
+                                          color: T.text,
+                                          marginBottom: 4,
+                                      }}
+                                  >
+                                      テキストまたはHTMLソースを貼付
+                                  </div>
+                                  <p
+                                      style={{
+                                          fontSize: 12,
+                                          color: T.text3,
+                                          marginBottom: 14,
+                                          lineHeight: 1.6,
+                                      }}
+                                  >
+                                      職務経歴書のテキストをコピー＆ペースト、またはHTMLソースを貼り付けてください
+                                  </p>
+                                  <textarea
+                                      value={pasteValue}
+                                      onChange={(e) =>
+                                          setPasteValue(e.target.value)
+                                      }
+                                      placeholder={
+                                          'ここにテキストまたはHTMLを貼り付け...\n\n例:\n・職務経歴書のテキスト全文\n・Ctrl+U でコピーしたHTMLソース\n・Wantedlyプロフィールのコピー'
+                                      }
+                                      style={{
+                                          width: '100%',
+                                          minHeight: 160,
+                                          padding: '12px 14px',
+                                          borderRadius: 10,
+                                          border: `1px solid ${T.border}`,
+                                          background: T.surface,
+                                          color: T.text,
+                                          fontSize: 12,
+                                          fontFamily: T.mono,
+                                          lineHeight: 1.7,
+                                          resize: 'vertical',
+                                          outline: 'none',
+                                          boxSizing: 'border-box',
+                                      }}
+                                  />
+                                  <div
+                                      style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          marginTop: 10,
+                                      }}
+                                  >
+                                      <div
+                                          style={{
+                                              fontSize: 12,
+                                              color: T.text3,
+                                          }}
+                                      >
+                                          {pasteValue.trim() ? (
+                                              <>
+                                                  {/<[a-z][\s\S]*>/i.test(
+                                                      pasteValue,
+                                                  ) ? (
+                                                      <span
+                                                          style={{
+                                                              color: T.cyan,
+                                                          }}
+                                                      >
+                                                          HTML検出
+                                                      </span>
+                                                  ) : (
+                                                      <span
+                                                          style={{
+                                                              color: T.green,
+                                                          }}
+                                                      >
+                                                          テキスト
+                                                      </span>
+                                                  )}{' '}
+                                                  /{' '}
+                                                  {(
+                                                      new Blob([pasteValue])
+                                                          .size / 1024
+                                                  ).toFixed(1)}{' '}
+                                                  KB
+                                              </>
+                                          ) : (
+                                              '入力待ち...'
+                                          )}
+                                      </div>
+                                      <button
+                                          onClick={handlePaste}
+                                          disabled={!pasteValue.trim()}
+                                          style={{
+                                              padding: '10px 24px',
+                                              borderRadius: 10,
+                                              border: 'none',
+                                              background: pasteValue.trim()
+                                                  ? T.accent
+                                                  : T.border,
+                                              color: pasteValue.trim()
+                                                  ? '#fff'
+                                                  : T.text3,
+                                              fontSize: 13,
+                                              fontWeight: 600,
+                                              cursor: pasteValue.trim()
+                                                  ? 'pointer'
+                                                  : 'default',
+                                              transition: 'all .15s',
+                                          }}
+                                      >
+                                          解析開始
+                                      </button>
+                                  </div>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+                  {error && (
+                      <div
+                          style={{
+                              padding: '10px 16px',
+                              borderRadius: 10,
+                              background: T.redDim,
+                              color: T.red,
+                              fontSize: 13,
+                          }}
+                      >
+                          ! {error}
+                      </div>
+                  )}
+                  <div
+                      style={{
+                          background: T.surface,
+                          border: `1px solid ${T.border}`,
+                          borderRadius: 14,
+                          padding: '16px 20px',
+                      }}
+                  >
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 12,
+                          }}
+                      >
+                          テストサンプルで動作確認
+                      </div>
+                      <div
+                          className='rp-upload-grid'
+                          style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr',
+                              gap: 8,
+                          }}
+                      >
+                          {[
+                              {
+                                  type: 'pdf',
+                                  label: 'PDF',
+                                  desc: '経歴書 2ページ',
+                                  color: C.red,
+                              },
+                              {
+                                  type: 'xlsx',
+                                  label: 'Excel',
+                                  desc: '社員一覧 5名分',
+                                  color: C.green,
+                              },
+                              {
+                                  type: 'csv',
+                                  label: 'CSV',
+                                  desc: '応募者リスト',
+                                  color: C.amber,
+                              },
+                              {
+                                  type: 'text',
+                                  label: 'Text',
+                                  desc: '詳細経歴書 3社分',
+                                  color: C.purple,
+                              },
+                          ].map((s) => (
+                              <button
+                                  key={s.type}
+                                  onClick={() => handleDemo(s.type)}
+                                  style={{
+                                      padding: '12px 14px',
+                                      borderRadius: 10,
+                                      border: `1px solid ${T.border}`,
+                                      background: T.bg2,
+                                      cursor: 'pointer',
+                                      textAlign: 'left',
+                                      transition: 'all .15s',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 10,
+                                  }}
+                              >
+                                  <span
+                                      style={{
+                                          width: 8,
+                                          height: 8,
+                                          borderRadius: 4,
+                                          background: s.color,
+                                          flexShrink: 0,
+                                      }}
+                                  />
+                                  <div>
+                                      <div
+                                          style={{
+                                              fontSize: 12,
+                                              fontWeight: 600,
+                                              color: T.text,
+                                          }}
+                                      >
+                                          {s.label}{' '}
+                                          <span
+                                              style={{
+                                                  fontSize: 12,
+                                                  color: T.text3,
+                                                  fontWeight: 400,
+                                              }}
+                                          >
+                                              DEMO
+                                          </span>
+                                      </div>
+                                      <div
+                                          style={{
+                                              fontSize: 12,
+                                              color: T.text3,
+                                          }}
+                                      >
+                                          {s.desc}
+                                      </div>
+                                  </div>
+                              </button>
+                          ))}
+                      </div>
+                  </div>
+              </div>
+              {/* end right column */}
+          </div>
+          {/* end grid */}
       </div>
-    </div>
-    {error&&<div style={{padding:"10px 16px",borderRadius:10,background:T.redDim,color:T.red,fontSize:13}}>! {error}</div>}
-    <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:14,padding:"16px 20px"}}>
-      <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:12}}>テストサンプルで動作確認</div>
-      <div className="rp-upload-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-        {[{type:"pdf",label:"PDF",desc:"経歴書 2ページ",color:C.red},{type:"xlsx",label:"Excel",desc:"社員一覧 5名分",color:C.green},{type:"csv",label:"CSV",desc:"応募者リスト",color:C.amber},{type:"text",label:"Text",desc:"詳細経歴書 3社分",color:C.purple}].map(s=>(
-          <button key={s.type} onClick={()=>handleDemo(s.type)} style={{padding:"12px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.bg2,cursor:"pointer",textAlign:"left",transition:"all .15s",display:"flex",alignItems:"center",gap:10}}>
-            <span style={{width:8,height:8,borderRadius:4,background:s.color,flexShrink:0}}/><div><div style={{fontSize:12,fontWeight:600,color:T.text}}>{s.label} <span style={{fontSize:10,color:T.text3,fontWeight:400}}>DEMO</span></div><div style={{fontSize:10,color:T.text3}}>{s.desc}</div></div>
-          </button>
-        ))}
-      </div>
-    </div>
-    </div>{/* end right column */}
-    </div>{/* end grid */}
-  </div>);
+  )
 }
 
 // ═══ AI Panel ═══
 function AIPanel({redactedText,apiKey,model,onApply,onClose}){
   const[instruction,setInstruction]=useState("");const[result,setResult]=useState("");const[loading,setLoading]=useState(false);const[error,setError]=useState(null);const[showPreview,setShowPreview]=useState(false);
   const PRESETS=[{label:"推薦書フォーマット",prompt:"人材紹介会社が企業に提出する推薦書フォーマットに変換。(1)職務要約（3行）(2)スキルセット (3)職務経歴（直近3社）(4)強み・適性"},{label:"スキルシート",prompt:"IT業界のスキルシート形式に変換。(1)基本情報 (2)技術スキル（言語/FW/DB/OS）(3)プロジェクト経歴（期間・規模・役割・環境・工程）"},{label:"英語翻訳",prompt:"英語に翻訳。マスキング部分は[Name Redacted]等に変換。欧米式レジュメ形式で。"},{label:"300字要約",prompt:"300字以内で要約。経験年数、主要スキル、直近の実績を簡潔に。"}];
-  const gen=async(p)=>{const q=p||instruction;if(!q.trim())return;setLoading(true);setError(null);setResult("");try{setResult(await aiReformat(redactedText,q,apiKey,model));}catch(e){setError(e.message);}finally{setLoading(false);}};
+  const gen = async (p) => {
+      const q = p || instruction
+      if (!q.trim()) return
+      setLoading(true)
+      setError(null)
+      setResult('')
+
+      const providerId = getProviderForModel(model)
+      const tier = getModelTier(providerId, model) || 1
+      const maxTier = getProviderMaxTier(providerId)
+      const fallbackModel =
+          tier <= 1
+              ? getPreferredTierModel(providerId, Math.min(2, maxTier))
+              : null
+
+      try {
+          const out = await aiReformat(redactedText, q, apiKey, model)
+          const trimmed = (out || '').trim()
+          if (trimmed) {
+              setResult(trimmed)
+              return
+          }
+
+          if (fallbackModel && fallbackModel !== model) {
+              const fbOut = await aiReformat(
+                  redactedText,
+                  q,
+                  apiKey,
+                  fallbackModel,
+              )
+              const fbTrim = (fbOut || '').trim()
+              if (fbTrim) {
+                  setResult(fbTrim)
+                  return
+              }
+          }
+          setError(
+              'AIの応答が空でした。モデルを変更するか、指示を短くして再実行してください。',
+          )
+      } catch (e) {
+          if (fallbackModel && fallbackModel !== model) {
+              try {
+                  const fbOut = await aiReformat(
+                      redactedText,
+                      q,
+                      apiKey,
+                      fallbackModel,
+                  )
+                  const fbTrim = (fbOut || '').trim()
+                  if (fbTrim) {
+                      setResult(fbTrim)
+                      return
+                  }
+              } catch {}
+          }
+          setError(e.message)
+      } finally {
+          setLoading(false)
+      }
+  }
   const curModel=AI_MODELS.find(m=>m.id===model)||AI_MODELS[1];
-  return (<>
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,padding:20,animation:"fadeIn .2s"}}>
-      <div style={{width:"100%",maxWidth:720,maxHeight:"90vh",background:T.bg2,borderRadius:16,border:`1px solid ${T.border}`,display:"flex",flexDirection:"column",overflow:"hidden",animation:"fadeUp .3s ease"}}>
-        <div style={{padding:"14px 22px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div><div style={{fontSize:15,fontWeight:700,color:T.text}}>AI 再フォーマット</div><div style={{fontSize:11,color:T.text3}}>Model: {curModel.label} -- マスキング維持のまま形式変換</div></div>
-          <button onClick={onClose} style={{width:28,height:28,borderRadius:7,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center"}}>x</button>
-        </div>
-        <div style={{flex:1,overflow:"auto",padding:22}}>
-          <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:8}}>プリセット</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:18}}>{PRESETS.map((p,i)=><button key={i} onClick={()=>{setInstruction(p.prompt);gen(p.prompt);}} style={{padding:"8px 14px",borderRadius:9,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontWeight:500,cursor:"pointer",fontFamily:T.font}}>{p.label}</button>)}</div>
-          <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:8}}>カスタム指示</div>
-          <div style={{display:"flex",gap:8,marginBottom:18}}>
-            <textarea value={instruction} onChange={e=>setInstruction(e.target.value)} placeholder="例: 箇条書きで技術スキルを整理し..." style={{flex:1,padding:"10px 14px",borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontFamily:T.font,resize:"vertical",minHeight:54,outline:"none"}}/>
-            <Btn onClick={()=>gen()} disabled={loading||!instruction.trim()} style={{alignSelf:"flex-end",borderRadius:10}}>生成</Btn>
-          </div>
-          {error&&<div style={{padding:"10px 14px",borderRadius:10,background:T.redDim,color:T.red,fontSize:12,marginBottom:14}}>! {error}</div>}
-          {loading&&<div style={{textAlign:"center",padding:"32px 20px"}}><div style={{width:36,height:36,borderRadius:18,border:`3px solid ${T.border}`,borderTopColor:T.accent,animation:"spin .8s linear infinite",margin:"0 auto 14px"}}/><p style={{fontSize:13,color:T.text2}}>AIが再フォーマット中... ({curModel.label})</p></div>}
-          {result&&!loading&&<div>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-              <span style={{fontSize:13,fontWeight:600,color:T.text}}>生成結果</span>
-              <div style={{display:"flex",gap:6}}>
-                <Btn variant="ghost" onClick={()=>setShowPreview(true)} style={{padding:"5px 12px",fontSize:11,borderRadius:7}}>プレビュー / 保存</Btn>
-                <Btn variant="success" onClick={()=>onApply(result)} style={{padding:"5px 12px",fontSize:11,borderRadius:7}}>適用して閉じる</Btn>
+  return (
+      <>
+          <div
+              style={{
+                  position: 'fixed',
+                  inset: 0,
+                  background: 'rgba(0,0,0,.7)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 100,
+                  padding: 20,
+                  animation: 'fadeIn .2s',
+              }}
+          >
+              <div
+                  style={{
+                      width: '100%',
+                      maxWidth: 720,
+                      maxHeight: '90vh',
+                      background: T.bg2,
+                      borderRadius: 16,
+                      border: `1px solid ${T.border}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      overflow: 'hidden',
+                      animation: 'fadeUp .3s ease',
+                  }}
+              >
+                  <div
+                      style={{
+                          padding: '14px 22px',
+                          borderBottom: `1px solid ${T.border}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                      }}
+                  >
+                      <div>
+                          <div
+                              style={{
+                                  fontSize: 15,
+                                  fontWeight: 700,
+                                  color: T.text,
+                              }}
+                          >
+                              AI 再フォーマット
+                          </div>
+                          <div style={{ fontSize: 12, color: T.text3 }}>
+                              Model: {curModel.label} --
+                              マスキング維持のまま形式変換
+                          </div>
+                      </div>
+                      <button
+                          onClick={onClose}
+                          style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 7,
+                              border: `1px solid ${T.border}`,
+                              background: 'transparent',
+                              color: T.text2,
+                              cursor: 'pointer',
+                              fontSize: 13,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                          }}
+                      >
+                          x
+                      </button>
+                  </div>
+                  <div style={{ flex: 1, overflow: 'auto', padding: 22 }}>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 8,
+                          }}
+                      >
+                          プリセット
+                      </div>
+                      <div
+                          style={{
+                              display: 'flex',
+                              gap: 8,
+                              flexWrap: 'wrap',
+                              marginBottom: 18,
+                          }}
+                      >
+                          {PRESETS.map((p, i) => (
+                              <button
+                                  key={i}
+                                  onClick={() => {
+                                      setInstruction(p.prompt)
+                                      gen(p.prompt)
+                                  }}
+                                  style={{
+                                      padding: '8px 14px',
+                                      borderRadius: 9,
+                                      border: `1px solid ${T.border}`,
+                                      background: T.surface,
+                                      color: T.text,
+                                      fontSize: 12,
+                                      fontWeight: 500,
+                                      cursor: 'pointer',
+                                      fontFamily: T.font,
+                                  }}
+                              >
+                                  {p.label}
+                              </button>
+                          ))}
+                      </div>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text2,
+                              marginBottom: 8,
+                          }}
+                      >
+                          カスタム指示
+                      </div>
+                      <div
+                          style={{ display: 'flex', gap: 8, marginBottom: 18 }}
+                      >
+                          <textarea
+                              value={instruction}
+                              onChange={(e) => setInstruction(e.target.value)}
+                              placeholder='例: 箇条書きで技術スキルを整理し...'
+                              style={{
+                                  flex: 1,
+                                  padding: '10px 14px',
+                                  borderRadius: 10,
+                                  border: `1px solid ${T.border}`,
+                                  background: T.surface,
+                                  color: T.text,
+                                  fontSize: 13,
+                                  fontFamily: T.font,
+                                  resize: 'vertical',
+                                  minHeight: 54,
+                                  outline: 'none',
+                              }}
+                          />
+                          <Btn
+                              onClick={() => gen()}
+                              disabled={loading || !instruction.trim()}
+                              style={{
+                                  alignSelf: 'flex-end',
+                                  borderRadius: 10,
+                              }}
+                          >
+                              生成
+                          </Btn>
+                      </div>
+                      {error && (
+                          <div
+                              style={{
+                                  padding: '10px 14px',
+                                  borderRadius: 10,
+                                  background: T.redDim,
+                                  color: T.red,
+                                  fontSize: 12,
+                                  marginBottom: 14,
+                              }}
+                          >
+                              ! {error}
+                          </div>
+                      )}
+                      {loading && (
+                          <div
+                              style={{
+                                  textAlign: 'center',
+                                  padding: '32px 20px',
+                              }}
+                          >
+                              <div
+                                  style={{
+                                      width: 36,
+                                      height: 36,
+                                      borderRadius: 18,
+                                      border: `3px solid ${T.border}`,
+                                      borderTopColor: T.accent,
+                                      animation: 'spin .8s linear infinite',
+                                      margin: '0 auto 14px',
+                                  }}
+                              />
+                              <p style={{ fontSize: 13, color: T.text2 }}>
+                                  AIが再フォーマット中... ({curModel.label})
+                              </p>
+                          </div>
+                      )}
+                      {result && !loading && (
+                          <div>
+                              <div
+                                  style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      marginBottom: 8,
+                                  }}
+                              >
+                                  <span
+                                      style={{
+                                          fontSize: 13,
+                                          fontWeight: 600,
+                                          color: T.text,
+                                      }}
+                                  >
+                                      生成結果
+                                  </span>
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                      <Btn
+                                          variant='ghost'
+                                          onClick={() => setShowPreview(true)}
+                                          style={{
+                                              padding: '5px 12px',
+                                              fontSize: 12,
+                                              borderRadius: 7,
+                                          }}
+                                      >
+                                          プレビュー / 保存
+                                      </Btn>
+                                      <Btn
+                                          variant='success'
+                                          onClick={() => onApply(result)}
+                                          style={{
+                                              padding: '5px 12px',
+                                              fontSize: 12,
+                                              borderRadius: 7,
+                                          }}
+                                      >
+                                          適用して閉じる
+                                      </Btn>
+                                  </div>
+                              </div>
+                              <pre
+                                  style={{
+                                      padding: 18,
+                                      borderRadius: 12,
+                                      background: T.surface,
+                                      border: `1px solid ${T.border}`,
+                                      fontFamily: T.mono,
+                                      fontSize: 12,
+                                      lineHeight: 1.8,
+                                      color: T.text,
+                                      whiteSpace: 'pre-wrap',
+                                      wordBreak: 'break-word',
+                                      maxHeight: 300,
+                                      overflow: 'auto',
+                                  }}
+                              >
+                                  {result}
+                              </pre>
+                          </div>
+                      )}
+                  </div>
               </div>
-            </div>
-            <pre style={{padding:18,borderRadius:12,background:T.surface,border:`1px solid ${T.border}`,fontFamily:T.mono,fontSize:12,lineHeight:1.8,color:T.text,whiteSpace:"pre-wrap",wordBreak:"break-word",maxHeight:300,overflow:"auto"}}>{result}</pre>
-          </div>}
-        </div>
-      </div>
-    </div>
-    {showPreview&&<PreviewModal title="AI 整形結果" content={result} baseName="ai_formatted" onClose={()=>setShowPreview(false)}/>}
-  </>);
+          </div>
+          {showPreview && (
+              <PreviewModal
+                  title='AI 整形結果'
+                  content={result}
+                  baseName='ai_formatted'
+                  onClose={() => setShowPreview(false)}
+              />
+          )}
+      </>
+  )
 }
 
 // ═══ Editor Screen ═══
 function EditorScreen({data,onReset,apiKey,model}){
-  const[detections,setDetections]=useState(data.detections.map((d,i)=>({...d,id:d.id||`d_${i}`})));
+  const [detections, setDetections] = useState(
+      ensureUniqueDetectionIds(data.detections),
+  )
   const[showRedacted,setShowRedacted]=useState(true);const[copied,setCopied]=useState(false);
   const[filterCat,setFilterCat]=useState("all");const[filterSrc,setFilterSrc]=useState("all");
   const[showAI,setShowAI]=useState(false);const[aiResult,setAiResult]=useState(null);
@@ -1914,105 +5092,825 @@ function EditorScreen({data,onReset,apiKey,model}){
   const showDiff=viewMode==="diff";
   const showAiDiff=viewMode==="ai-diff";
 
-  return (<div className="rp-editor-wrap" style={{display:"flex",height:"calc(100vh - 52px)",fontFamily:T.font}}>
-    <div className="rp-editor-left" style={{flex:"1 1 56%",display:"flex",flexDirection:"column",borderRight:`1px solid ${T.border}`,minWidth:0}}>
-      <div style={{padding:"8px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${T.border}`,background:T.bg2,flexWrap:"wrap",gap:6}}>
-        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-          <span style={{fontSize:12,fontWeight:600,color:T.text}}>{data.file_name}</span>
-          <Badge color={T.text3} bg={T.surfaceAlt}>{data.file_format}</Badge>
-          {data.page_count&&<Badge color={T.text3} bg={T.surfaceAlt}>{data.page_count}p</Badge>}
-          {data.isDemo&&<Badge color={C.amber} bg={C.amberDim}>DEMO</Badge>}
-          {data.stats?.ai>0&&<Badge color={C.purple} bg={C.purpleDim}>AI +{data.stats.ai}</Badge>}
-          {hasRawText&&<Badge color={C.cyan} bg={C.cyanDim}>AI再構成済</Badge>}
-          {data.sparsePageCount>0&&<Badge color={C.amber} bg={C.amberDim}>OCR {data.sparsePageCount}p</Badge>}
-        </div>
-        <div style={{display:"flex",gap:4}}>
-          <div className="rp-view-tabs" style={{display:"flex",borderRadius:8,overflow:"hidden",border:`1px solid ${T.border}`}}>
-            <button onClick={()=>setViewMode("original")} style={{padding:"5px 10px",border:"none",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:viewMode==="original"?T.accentDim:"transparent",color:viewMode==="original"?T.accent:T.text3}}>マスク</button>
-            <button onClick={()=>setViewMode("diff")} style={{padding:"5px 10px",border:"none",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:viewMode==="diff"?T.amberDim:"transparent",color:viewMode==="diff"?T.amber:T.text3}}>Diff</button>
-            {hasRawText&&<>
-              <button onClick={()=>setViewMode("raw")} style={{padding:"5px 10px",border:"none",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:viewMode==="raw"?T.redDim:"transparent",color:viewMode==="raw"?T.red:T.text3}}>Raw</button>
-              <button onClick={()=>setViewMode("raw-diff")} style={{padding:"5px 10px",border:"none",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:viewMode==="raw-diff"?"rgba(240,86,86,0.15)":"transparent",color:viewMode==="raw-diff"?T.red:T.text3}}>Raw Diff</button>
-            </>}
-            {aiResult&&<>
-              <button onClick={()=>setViewMode("ai")} style={{padding:"5px 10px",border:"none",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:viewMode==="ai"?T.purpleDim:"transparent",color:viewMode==="ai"?T.purple:T.text3}}>AI整形</button>
-              <button onClick={()=>setViewMode("ai-diff")} style={{padding:"5px 10px",border:"none",fontSize:10,fontWeight:600,cursor:"pointer",fontFamily:T.font,background:viewMode==="ai-diff"?T.cyanDim:"transparent",color:viewMode==="ai-diff"?T.cyan:T.text3}}>AI Diff</button>
-            </>}
-          </div>
-          {!showDiff&&!showAiDiff&&viewMode!=="raw-diff"&&<Btn variant={showRedacted?"danger":"ghost"} onClick={()=>setShowRedacted(!showRedacted)} style={{padding:"6px 12px",fontSize:11,borderRadius:8}}>{showRedacted?"マスク":"元文"}</Btn>}
-        </div>
-      </div>
-      {showDiff?(
-        <DiffView original={data.text_preview} modified={applyRedaction(data.text_preview,detections,data.maskOpts)} label="マスキング変更"/>
-      ):viewMode==="raw-diff"&&hasRawText?(
-        <DiffView original={data.rawText.slice(0,8000)} modified={data.text_preview} label="AI テキスト再構成 (Raw → Clean)"/>
-      ):showAiDiff&&aiResult?(
-        <DiffView original={applyRedaction(data.text_preview,detections,data.maskOpts)} modified={aiResult} label="AI整形変更"/>
-      ):(
-        <div style={{flex:1,overflow:"auto",padding:24,background:T.bg}}><pre style={{fontFamily:T.mono,fontSize:13,lineHeight:1.9,color:T.text,whiteSpace:"pre-wrap",wordBreak:"break-word",margin:0,maxWidth:740}}>{renderText(displayText)}</pre></div>
-      )}
-    </div>
-    <div className="rp-editor-right" style={{flex:"1 1 44%",display:"flex",flexDirection:"column",minWidth:280,maxWidth:480,background:T.bg2}}>
-      <div style={{padding:"14px 18px",borderBottom:`1px solid ${T.border}`}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-          <div><span style={{fontSize:16,fontWeight:700,color:T.text}}>検出結果</span><span style={{fontSize:13,color:T.text2,marginLeft:10}}>{enabledCount}/{detections.length}</span></div>
-          <Badge color={enabledCount>0?T.green:T.amber} bg={enabledCount>0?T.greenDim:T.amberDim}>{enabledCount>0?"保護中":"未保護"}</Badge>
-        </div>
-        <div style={{marginBottom:12}}>
-          <div style={{fontSize:11,fontWeight:600,color:T.text3,marginBottom:8,letterSpacing:.3}}>カテゴリ別マスキング</div>
-          <div className="rp-cat-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 12px"}}>
-            {allCats.map(cat=>{const meta=CATEGORIES[cat]||{label:cat,color:T.text2};const cc=catCounts[cat]||{total:0,enabled:0};const allOn=cc.enabled===cc.total;
-              return (<div key={cat} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 10px",borderRadius:8,background:allOn?`${meta.color}0A`:"transparent",border:`1px solid ${allOn?`${meta.color}18`:"transparent"}`,transition:"all .2s"}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:6,height:6,borderRadius:3,background:meta.color,display:"inline-block"}}/><span style={{fontSize:11,fontWeight:500,color:allOn?T.text:T.text3}}>{meta.label}</span><span style={{fontSize:10,color:T.text3}}>({cc.enabled}/{cc.total})</span></div>
-                <Toggle checked={allOn} onChange={()=>setCatEnabled(cat,!allOn)} size="sm"/>
-              </div>);})}
-          </div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}>
-          <Pill active={filterCat==="all"} onClick={()=>setFilterCat("all")}>全て</Pill>
-          {allCats.map(c=>{const m=CATEGORIES[c];return m?<Pill key={c} active={filterCat===c} onClick={()=>setFilterCat(c)} color={m.color}>{m.label}</Pill>:null;})}
-        </div>
-        {allSrcs.length>1&&<div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:6}}><Pill active={filterSrc==="all"} onClick={()=>setFilterSrc("all")}>全ソース</Pill>{allSrcs.map(s=><Pill key={s} active={filterSrc===s} onClick={()=>setFilterSrc(s)}>{s==="regex"?"正規表現":s==="dict"?"辞書":s==="ai"?"AI":s==="heuristic"?"推定":"NER"}</Pill>)}</div>}
-        <div style={{display:"flex",gap:6}}><Btn variant="ghost" onClick={enableAll} style={{padding:"3px 10px",fontSize:10,borderRadius:7}}>全ON</Btn><Btn variant="ghost" onClick={disableAll} style={{padding:"3px 10px",fontSize:10,borderRadius:7}}>全OFF</Btn></div>
-      </div>
-      <div style={{flex:1,overflow:"auto",padding:"6px 12px"}}>
-        {filtered.length===0?<div style={{textAlign:"center",padding:"36px 20px",color:T.text3}}><p style={{fontSize:12}}>該当する検出結果がありません</p></div>:(
-          Object.entries(grouped).map(([cat,items],gi)=>{const meta=CATEGORIES[cat]||{label:cat,color:T.text2};
-            return (<div key={cat} style={{marginBottom:4,animation:`slideIn .25s ease ${gi*.03}s both`}}>
-              <div style={{fontSize:10,fontWeight:700,color:meta.color,padding:"8px 8px 3px",letterSpacing:.5,textTransform:"uppercase",display:"flex",alignItems:"center",gap:6}}><span style={{width:6,height:6,borderRadius:3,background:meta.color,display:"inline-block"}}/>{meta.label} ({items.length})</div>
-              {items.map(item=>(<div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"7px 10px",marginBottom:1,borderRadius:9,background:item.enabled?`${meta.color}0D`:"transparent",border:`1px solid ${item.enabled?`${meta.color}1A`:"transparent"}`,transition:"all .2s"}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:1}}>
-                    {item.source==="dict"&&<Badge color={T.red} bg={T.redDim} style={{fontSize:8,padding:"0px 5px"}}>辞書</Badge>}
-                    {item.source==="ai"&&<Badge color={T.purple} bg={T.purpleDim} style={{fontSize:8,padding:"0px 5px"}}>AI</Badge>}
-                    {item.source==="heuristic"&&<Badge color={T.amber} bg={T.amberDim} style={{fontSize:8,padding:"0px 5px"}}>推定</Badge>}
-                    {item.confidence>=.9&&<span style={{fontSize:8,color:T.green}}>[高]</span>}
-                    {item.confidence&&item.confidence<.9&&item.confidence>=.75&&<span style={{fontSize:8,color:T.amber}}>[中]</span>}
+  return (
+      <div
+          className='rp-editor-wrap'
+          style={{
+              display: 'flex',
+              height: 'calc(100vh - 52px)',
+              fontFamily: T.font,
+          }}
+      >
+          <div
+              className='rp-editor-left'
+              style={{
+                  flex: '1 1 56%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRight: `1px solid ${T.border}`,
+                  minWidth: 0,
+              }}
+          >
+              <div
+                  style={{
+                      padding: '8px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderBottom: `1px solid ${T.border}`,
+                      background: T.bg2,
+                      flexWrap: 'wrap',
+                      gap: 6,
+                  }}
+              >
+                  <div
+                      style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          flexWrap: 'wrap',
+                      }}
+                  >
+                      <span
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text,
+                          }}
+                      >
+                          {data.file_name}
+                      </span>
+                      <Badge color={T.text3} bg={T.surfaceAlt}>
+                          {data.file_format}
+                      </Badge>
+                      {data.page_count && (
+                          <Badge color={T.text3} bg={T.surfaceAlt}>
+                              {data.page_count}p
+                          </Badge>
+                      )}
+                      {data.isDemo && (
+                          <Badge color={C.amber} bg={C.amberDim}>
+                              DEMO
+                          </Badge>
+                      )}
+                      {data.stats?.ai > 0 && (
+                          <Badge color={C.purple} bg={C.purpleDim}>
+                              AI +{data.stats.ai}
+                          </Badge>
+                      )}
+                      {hasRawText && (
+                          <Badge color={C.cyan} bg={C.cyanDim}>
+                              AI再構成済
+                          </Badge>
+                      )}
+                      {data.sparsePageCount > 0 && (
+                          <Badge color={C.amber} bg={C.amberDim}>
+                              OCR {data.sparsePageCount}p
+                          </Badge>
+                      )}
                   </div>
-                  <div style={{fontSize:12,fontWeight:500,color:item.enabled?T.text:T.text3,fontFamily:T.mono,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textDecoration:item.enabled?"none":"line-through",opacity:item.enabled?1:.5}}>{item.value}</div>
-                </div>
-                <Toggle checked={item.enabled} onChange={()=>toggle(item.id)} size="sm"/>
-              </div>))}
-            </div>);})
-        )}
+                  <div style={{ display: 'flex', gap: 4 }}>
+                      <div
+                          className='rp-view-tabs'
+                          style={{
+                              display: 'flex',
+                              borderRadius: 8,
+                              overflow: 'hidden',
+                              border: `1px solid ${T.border}`,
+                          }}
+                      >
+                          <button
+                              onClick={() => setViewMode('original')}
+                              style={{
+                                  padding: '5px 10px',
+                                  border: 'none',
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  fontFamily: T.font,
+                                  background:
+                                      viewMode === 'original'
+                                          ? T.accentDim
+                                          : 'transparent',
+                                  color:
+                                      viewMode === 'original'
+                                          ? T.accent
+                                          : T.text3,
+                              }}
+                          >
+                              マスク
+                          </button>
+                          <button
+                              onClick={() => setViewMode('diff')}
+                              style={{
+                                  padding: '5px 10px',
+                                  border: 'none',
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  fontFamily: T.font,
+                                  background:
+                                      viewMode === 'diff'
+                                          ? T.amberDim
+                                          : 'transparent',
+                                  color:
+                                      viewMode === 'diff' ? T.amber : T.text3,
+                              }}
+                          >
+                              Diff
+                          </button>
+                          {hasRawText && (
+                              <>
+                                  <button
+                                      onClick={() => setViewMode('raw')}
+                                      style={{
+                                          padding: '5px 10px',
+                                          border: 'none',
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          cursor: 'pointer',
+                                          fontFamily: T.font,
+                                          background:
+                                              viewMode === 'raw'
+                                                  ? T.redDim
+                                                  : 'transparent',
+                                          color:
+                                              viewMode === 'raw'
+                                                  ? T.red
+                                                  : T.text3,
+                                      }}
+                                  >
+                                      Raw
+                                  </button>
+                                  <button
+                                      onClick={() => setViewMode('raw-diff')}
+                                      style={{
+                                          padding: '5px 10px',
+                                          border: 'none',
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          cursor: 'pointer',
+                                          fontFamily: T.font,
+                                          background:
+                                              viewMode === 'raw-diff'
+                                                  ? 'rgba(240,86,86,0.15)'
+                                                  : 'transparent',
+                                          color:
+                                              viewMode === 'raw-diff'
+                                                  ? T.red
+                                                  : T.text3,
+                                      }}
+                                  >
+                                      Raw Diff
+                                  </button>
+                              </>
+                          )}
+                          {aiResult && (
+                              <>
+                                  <button
+                                      onClick={() => setViewMode('ai')}
+                                      style={{
+                                          padding: '5px 10px',
+                                          border: 'none',
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          cursor: 'pointer',
+                                          fontFamily: T.font,
+                                          background:
+                                              viewMode === 'ai'
+                                                  ? T.purpleDim
+                                                  : 'transparent',
+                                          color:
+                                              viewMode === 'ai'
+                                                  ? T.purple
+                                                  : T.text3,
+                                      }}
+                                  >
+                                      AI整形
+                                  </button>
+                                  <button
+                                      onClick={() => setViewMode('ai-diff')}
+                                      style={{
+                                          padding: '5px 10px',
+                                          border: 'none',
+                                          fontSize: 12,
+                                          fontWeight: 600,
+                                          cursor: 'pointer',
+                                          fontFamily: T.font,
+                                          background:
+                                              viewMode === 'ai-diff'
+                                                  ? T.cyanDim
+                                                  : 'transparent',
+                                          color:
+                                              viewMode === 'ai-diff'
+                                                  ? T.cyan
+                                                  : T.text3,
+                                      }}
+                                  >
+                                      AI Diff
+                                  </button>
+                              </>
+                          )}
+                      </div>
+                      {!showDiff && !showAiDiff && viewMode !== 'raw-diff' && (
+                          <Btn
+                              variant={showRedacted ? 'danger' : 'ghost'}
+                              onClick={() => setShowRedacted(!showRedacted)}
+                              style={{
+                                  padding: '6px 12px',
+                                  fontSize: 12,
+                                  borderRadius: 8,
+                              }}
+                          >
+                              {showRedacted ? 'マスク' : '元文'}
+                          </Btn>
+                      )}
+                  </div>
+              </div>
+              {showDiff ? (
+                  <DiffView
+                      original={data.text_preview}
+                      modified={applyRedaction(
+                          data.text_preview,
+                          detections,
+                          data.maskOpts,
+                      )}
+                      label='マスキング変更'
+                  />
+              ) : viewMode === 'raw-diff' && hasRawText ? (
+                  <DiffView
+                      original={data.rawText.slice(0, 8000)}
+                      modified={data.text_preview}
+                      label='AI テキスト再構成 (Raw → Clean)'
+                  />
+              ) : showAiDiff && aiResult ? (
+                  <DiffView
+                      original={applyRedaction(
+                          data.text_preview,
+                          detections,
+                          data.maskOpts,
+                      )}
+                      modified={aiResult}
+                      label='AI整形変更'
+                  />
+              ) : (
+                  <div
+                      style={{
+                          flex: 1,
+                          overflow: 'auto',
+                          padding: 24,
+                          background: T.bg,
+                      }}
+                  >
+                      <pre
+                          style={{
+                              fontFamily: T.mono,
+                              fontSize: 13,
+                              lineHeight: 1.9,
+                              color: T.text,
+                              whiteSpace: 'pre-wrap',
+                              wordBreak: 'break-word',
+                              margin: 0,
+                              maxWidth: 740,
+                          }}
+                      >
+                          {renderText(displayText)}
+                      </pre>
+                  </div>
+              )}
+          </div>
+          <div
+              className='rp-editor-right'
+              style={{
+                  flex: '1 1 44%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minWidth: 280,
+                  maxWidth: 480,
+                  background: T.bg2,
+              }}
+          >
+              <div
+                  style={{
+                      padding: '14px 18px',
+                      borderBottom: `1px solid ${T.border}`,
+                  }}
+              >
+                  <div
+                      style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: 12,
+                      }}
+                  >
+                      <div>
+                          <span
+                              style={{
+                                  fontSize: 16,
+                                  fontWeight: 700,
+                                  color: T.text,
+                              }}
+                          >
+                              検出結果
+                          </span>
+                          <span
+                              style={{
+                                  fontSize: 13,
+                                  color: T.text2,
+                                  marginLeft: 10,
+                              }}
+                          >
+                              {enabledCount}/{detections.length}
+                          </span>
+                      </div>
+                      <Badge
+                          color={enabledCount > 0 ? T.green : T.amber}
+                          bg={enabledCount > 0 ? T.greenDim : T.amberDim}
+                      >
+                          {enabledCount > 0 ? '保護中' : '未保護'}
+                      </Badge>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                      <div
+                          style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: T.text3,
+                              marginBottom: 8,
+                              letterSpacing: 0.3,
+                          }}
+                      >
+                          カテゴリ別マスキング
+                      </div>
+                      <div
+                          className='rp-cat-grid'
+                          style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr 1fr',
+                              gap: '4px 12px',
+                          }}
+                      >
+                          {allCats.map((cat) => {
+                              const meta = CATEGORIES[cat] || {
+                                  label: cat,
+                                  color: T.text2,
+                              }
+                              const cc = catCounts[cat] || {
+                                  total: 0,
+                                  enabled: 0,
+                              }
+                              const allOn = cc.enabled === cc.total
+                              return (
+                                  <div
+                                      key={cat}
+                                      style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                          padding: '6px 10px',
+                                          borderRadius: 8,
+                                          background: allOn
+                                              ? `${meta.color}0A`
+                                              : 'transparent',
+                                          border: `1px solid ${allOn ? `${meta.color}18` : 'transparent'}`,
+                                          transition: 'all .2s',
+                                      }}
+                                  >
+                                      <div
+                                          style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 6,
+                                          }}
+                                      >
+                                          <span
+                                              style={{
+                                                  width: 6,
+                                                  height: 6,
+                                                  borderRadius: 3,
+                                                  background: meta.color,
+                                                  display: 'inline-block',
+                                              }}
+                                          />
+                                          <span
+                                              style={{
+                                                  fontSize: 12,
+                                                  fontWeight: 500,
+                                                  color: allOn
+                                                      ? T.text
+                                                      : T.text3,
+                                              }}
+                                          >
+                                              {meta.label}
+                                          </span>
+                                          <span
+                                              style={{
+                                                  fontSize: 12,
+                                                  color: T.text3,
+                                              }}
+                                          >
+                                              ({cc.enabled}/{cc.total})
+                                          </span>
+                                      </div>
+                                      <Toggle
+                                          checked={allOn}
+                                          onChange={() =>
+                                              setCatEnabled(cat, !allOn)
+                                          }
+                                          size='sm'
+                                      />
+                                  </div>
+                              )
+                          })}
+                      </div>
+                  </div>
+                  <div
+                      style={{
+                          display: 'flex',
+                          gap: 4,
+                          flexWrap: 'wrap',
+                          marginBottom: 6,
+                      }}
+                  >
+                      <Pill
+                          active={filterCat === 'all'}
+                          onClick={() => setFilterCat('all')}
+                      >
+                          全て
+                      </Pill>
+                      {allCats.map((c) => {
+                          const m = CATEGORIES[c]
+                          return m ? (
+                              <Pill
+                                  key={c}
+                                  active={filterCat === c}
+                                  onClick={() => setFilterCat(c)}
+                                  color={m.color}
+                              >
+                                  {m.label}
+                              </Pill>
+                          ) : null
+                      })}
+                  </div>
+                  {allSrcs.length > 1 && (
+                      <div
+                          style={{
+                              display: 'flex',
+                              gap: 4,
+                              flexWrap: 'wrap',
+                              marginBottom: 6,
+                          }}
+                      >
+                          <Pill
+                              active={filterSrc === 'all'}
+                              onClick={() => setFilterSrc('all')}
+                          >
+                              全ソース
+                          </Pill>
+                          {allSrcs.map((s) => (
+                              <Pill
+                                  key={s}
+                                  active={filterSrc === s}
+                                  onClick={() => setFilterSrc(s)}
+                              >
+                                  {s === 'regex'
+                                      ? '正規表現'
+                                      : s === 'dict'
+                                        ? '辞書'
+                                        : s === 'ai'
+                                          ? 'AI'
+                                          : s === 'heuristic'
+                                            ? '推定'
+                                            : 'NER'}
+                              </Pill>
+                          ))}
+                      </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 6 }}>
+                      <Btn
+                          variant='ghost'
+                          onClick={enableAll}
+                          style={{
+                              padding: '3px 10px',
+                              fontSize: 12,
+                              borderRadius: 7,
+                          }}
+                      >
+                          全ON
+                      </Btn>
+                      <Btn
+                          variant='ghost'
+                          onClick={disableAll}
+                          style={{
+                              padding: '3px 10px',
+                              fontSize: 12,
+                              borderRadius: 7,
+                          }}
+                      >
+                          全OFF
+                      </Btn>
+                  </div>
+              </div>
+              <div style={{ flex: 1, overflow: 'auto', padding: '6px 12px' }}>
+                  {filtered.length === 0 ? (
+                      <div
+                          style={{
+                              textAlign: 'center',
+                              padding: '36px 20px',
+                              color: T.text3,
+                          }}
+                      >
+                          <p style={{ fontSize: 12 }}>
+                              該当する検出結果がありません
+                          </p>
+                      </div>
+                  ) : (
+                      Object.entries(grouped).map(([cat, items], gi) => {
+                          const meta = CATEGORIES[cat] || {
+                              label: cat,
+                              color: T.text2,
+                          }
+                          return (
+                              <div
+                                  key={cat}
+                                  style={{
+                                      marginBottom: 4,
+                                      animation: `slideIn .25s ease ${gi * 0.03}s both`,
+                                  }}
+                              >
+                                  <div
+                                      style={{
+                                          fontSize: 12,
+                                          fontWeight: 700,
+                                          color: meta.color,
+                                          padding: '8px 8px 3px',
+                                          letterSpacing: 0.5,
+                                          textTransform: 'uppercase',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 6,
+                                      }}
+                                  >
+                                      <span
+                                          style={{
+                                              width: 6,
+                                              height: 6,
+                                              borderRadius: 3,
+                                              background: meta.color,
+                                              display: 'inline-block',
+                                          }}
+                                      />
+                                      {meta.label} ({items.length})
+                                  </div>
+                                  {items.map((item) => (
+                                      <div
+                                          key={item.id}
+                                          style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 10,
+                                              padding: '7px 10px',
+                                              marginBottom: 1,
+                                              borderRadius: 9,
+                                              background: item.enabled
+                                                  ? `${meta.color}0D`
+                                                  : 'transparent',
+                                              border: `1px solid ${item.enabled ? `${meta.color}1A` : 'transparent'}`,
+                                              transition: 'all .2s',
+                                          }}
+                                      >
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                              <div
+                                                  style={{
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      gap: 5,
+                                                      marginBottom: 1,
+                                                  }}
+                                              >
+                                                  {item.source === 'dict' && (
+                                                      <Badge
+                                                          color={T.red}
+                                                          bg={T.redDim}
+                                                          style={{
+                                                              fontSize: 12,
+                                                              padding:
+                                                                  '0px 5px',
+                                                          }}
+                                                      >
+                                                          辞書
+                                                      </Badge>
+                                                  )}
+                                                  {item.source === 'ai' && (
+                                                      <Badge
+                                                          color={T.purple}
+                                                          bg={T.purpleDim}
+                                                          style={{
+                                                              fontSize: 12,
+                                                              padding:
+                                                                  '0px 5px',
+                                                          }}
+                                                      >
+                                                          AI
+                                                      </Badge>
+                                                  )}
+                                                  {item.source ===
+                                                      'heuristic' && (
+                                                      <Badge
+                                                          color={T.amber}
+                                                          bg={T.amberDim}
+                                                          style={{
+                                                              fontSize: 12,
+                                                              padding:
+                                                                  '0px 5px',
+                                                          }}
+                                                      >
+                                                          推定
+                                                      </Badge>
+                                                  )}
+                                                  {item.confidence >= 0.9 && (
+                                                      <span
+                                                          style={{
+                                                              fontSize: 12,
+                                                              color: T.green,
+                                                          }}
+                                                      >
+                                                          [高]
+                                                      </span>
+                                                  )}
+                                                  {item.confidence &&
+                                                      item.confidence < 0.9 &&
+                                                      item.confidence >=
+                                                          0.75 && (
+                                                          <span
+                                                              style={{
+                                                                  fontSize: 12,
+                                                                  color: T.amber,
+                                                              }}
+                                                          >
+                                                              [中]
+                                                          </span>
+                                                      )}
+                                              </div>
+                                              <div
+                                                  style={{
+                                                      fontSize: 12,
+                                                      fontWeight: 500,
+                                                      color: item.enabled
+                                                          ? T.text
+                                                          : T.text3,
+                                                      fontFamily: T.mono,
+                                                      overflow: 'hidden',
+                                                      textOverflow: 'ellipsis',
+                                                      whiteSpace: 'nowrap',
+                                                      textDecoration:
+                                                          item.enabled
+                                                              ? 'none'
+                                                              : 'line-through',
+                                                      opacity: item.enabled
+                                                          ? 1
+                                                          : 0.5,
+                                                  }}
+                                              >
+                                                  {item.value}
+                                              </div>
+                                          </div>
+                                          <Toggle
+                                              checked={item.enabled}
+                                              onChange={() => toggle(item.id)}
+                                              size='sm'
+                                          />
+                                      </div>
+                                  ))}
+                              </div>
+                          )
+                      })
+                  )}
+              </div>
+              <div
+                  style={{
+                      padding: '10px 16px',
+                      borderTop: `1px solid ${T.border}`,
+                      background: T.bg2,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 7,
+                  }}
+              >
+                  <Btn
+                      onClick={() => setShowAI(true)}
+                      style={{
+                          width: '100%',
+                          borderRadius: 10,
+                          background: `linear-gradient(135deg,${T.accent},${T.purple})`,
+                          fontSize: 13,
+                      }}
+                  >
+                      AI で再フォーマット
+                  </Btn>
+                  <Btn
+                      onClick={() => setShowDesign(true)}
+                      style={{
+                          width: '100%',
+                          borderRadius: 10,
+                          background: '#222',
+                          fontSize: 13,
+                          color: '#fff',
+                      }}
+                  >
+                      📄 PDF プレビュー・編集
+                  </Btn>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                      <Btn
+                          variant='ghost'
+                          onClick={() =>
+                              setPreview({
+                                  title: 'マスキング済みテキスト',
+                                  content: buildTxt(),
+                                  baseName,
+                              })
+                          }
+                          style={{ flex: 1, borderRadius: 10, fontSize: 12 }}
+                      >
+                          プレビュー / 保存
+                      </Btn>
+                      <Btn
+                          variant='ghost'
+                          onClick={handleCopy}
+                          style={{
+                              borderRadius: 10,
+                              padding: '11px 16px',
+                              fontSize: 12,
+                          }}
+                      >
+                          {copied ? '\u2713' : 'Copy'}
+                      </Btn>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                      <Btn
+                          variant='ghost'
+                          onClick={() =>
+                              setPreview({
+                                  title: '検出レポート',
+                                  content: buildCsv(),
+                                  baseName: 'pii_report',
+                              })
+                          }
+                          style={{
+                              flex: 1,
+                              fontSize: 12,
+                              padding: '7px 12px',
+                              borderRadius: 8,
+                          }}
+                      >
+                          検出レポート
+                      </Btn>
+                      <Btn
+                          variant='ghost'
+                          onClick={onReset}
+                          style={{
+                              fontSize: 12,
+                              padding: '7px 12px',
+                              borderRadius: 8,
+                          }}
+                      >
+                          ホームへ戻る
+                      </Btn>
+                  </div>
+              </div>
+          </div>
+          {showAI && (
+              <AIPanel
+                  redactedText={redacted}
+                  apiKey={apiKey}
+                  model={model}
+                  onApply={(t) => {
+                      setAiResult(t)
+                      setViewMode('ai')
+                      setShowAI(false)
+                  }}
+                  onClose={() => setShowAI(false)}
+              />
+          )}
+          {showDesign && (
+              <DesignExportModal
+                  text={viewMode === 'ai' && aiResult ? aiResult : redacted}
+                  apiKey={apiKey}
+                  model={model}
+                  onClose={() => setShowDesign(false)}
+              />
+          )}
+          {preview && (
+              <PreviewModal
+                  title={preview.title}
+                  content={preview.content}
+                  baseName={preview.baseName}
+                  onClose={() => setPreview(null)}
+              />
+          )}
       </div>
-      <div style={{padding:"10px 16px",borderTop:`1px solid ${T.border}`,background:T.bg2,display:"flex",flexDirection:"column",gap:7}}>
-        <Btn onClick={()=>setShowAI(true)} style={{width:"100%",borderRadius:10,background:`linear-gradient(135deg,${T.accent},${T.purple})`,fontSize:13}}>AI で再フォーマット</Btn>
-        <Btn onClick={()=>setShowDesign(true)} style={{width:"100%",borderRadius:10,background:"#222",fontSize:13,color:"#fff"}}>📄 PDF プレビュー・編集</Btn>
-        <div style={{display:"flex",gap:8}}>
-          <Btn variant="ghost" onClick={()=>setPreview({title:"マスキング済みテキスト",content:buildTxt(),baseName})} style={{flex:1,borderRadius:10,fontSize:12}}>プレビュー / 保存</Btn>
-          <Btn variant="ghost" onClick={handleCopy} style={{borderRadius:10,padding:"11px 16px",fontSize:12}}>{copied?"\u2713":"Copy"}</Btn>
-        </div>
-        <div style={{display:"flex",gap:8}}>
-          <Btn variant="ghost" onClick={()=>setPreview({title:"検出レポート",content:buildCsv(),baseName:"pii_report"})} style={{flex:1,fontSize:11,padding:"7px 12px",borderRadius:8}}>検出レポート</Btn>
-          <Btn variant="ghost" onClick={onReset} style={{fontSize:11,padding:"7px 12px",borderRadius:8}}>ホームへ戻る</Btn>
-        </div>
-      </div>
-    </div>
-    {showAI&&<AIPanel redactedText={redacted} apiKey={apiKey} model={model} onApply={t=>{setAiResult(t);setViewMode("ai");setShowAI(false);}} onClose={()=>setShowAI(false)}/>}
-    {showDesign&&<DesignExportModal text={viewMode==="ai"&&aiResult?aiResult:redacted} apiKey={apiKey} model={model} onClose={()=>setShowDesign(false)}/>}
-    {preview&&<PreviewModal title={preview.title} content={preview.content} baseName={preview.baseName} onClose={()=>setPreview(null)}/>}
-  </div>);
+  )
 }
 
 // ═══ App ═══
@@ -2020,12 +5918,21 @@ export default function App(){
   const[data,setData]=useState(null);
   const[showSettings,setShowSettings]=useState(false);
   const[isDark,setIsDark]=useState(true);
-  const[settings,setSettings]=useState({apiKey:"",model:"gpt-5-nano",aiDetect:true,provider:"openai",proxyUrl:""});
+  const [settings, setSettings] = useState({
+      apiKey: '',
+      model: pickFormatModelForProfile('openai', 'balanced') || 'gpt-5-nano',
+      aiDetect: true,
+      aiProfile: 'balanced',
+      provider: 'openai',
+      proxyUrl: '',
+  })
   useEffect(()=>{(async()=>{
     const safeGet=async(key)=>storage.get(key);
     const k=await safeGet("rp_api_key");if(k)setSettings(p=>({...p,apiKey:k}));
     const m=await safeGet("rp_model");if(m)setSettings(p=>({...p,model:m}));
     const ad=await safeGet("rp_ai_detect");if(ad)setSettings(p=>({...p,aiDetect:ad!=="false"}));
+    const ap = await safeGet('rp_ai_profile')
+    if (ap) setSettings((p) => ({ ...p, aiProfile: ap }))
     const prov=await safeGet("rp_provider");if(prov)setSettings(p=>({...p,provider:prov}));
     const px=await safeGet("rp_proxy_url");if(px)setSettings(p=>({...p,proxyUrl:px}));
     const th=await safeGet("rp_theme");if(th)setIsDark(th!=="light");
@@ -2040,30 +5947,169 @@ export default function App(){
     setData(null);
   },[]);
 
-  return (<div data-theme={isDark?"dark":"light"} style={{fontFamily:T.font,background:T.bg,color:T.text,minHeight:"100vh"}}>
-    <style>{CSS}</style>
-    <header className="rp-header" style={{height:52,padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${T.border}`,background:T.bg2}}>
-      <nav aria-label="グローバルナビゲーション" style={{display:"flex",alignItems:"center",gap:8}}>
-        <a href="./" aria-label="トップページへ戻る" style={{display:"inline-flex",alignItems:"center",gap:8,textDecoration:"none",color:"inherit"}}>
-          <div style={{width:28,height:28,borderRadius:7,background:`linear-gradient(135deg,${C.accent},#7C5CFF)`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:"#fff"}}>R</div>
-          <span style={{fontSize:15,fontWeight:700,letterSpacing:-.5}}>Redact<span style={{color:C.accent}}>Pro</span></span>
-        </a>
-        <Badge color={T.text3} bg={T.surfaceAlt}>v0.9</Badge>
-      </nav>
-      <div style={{display:"flex",alignItems:"center",gap:6}}>
-        <div className="rp-header-badges" style={{display:"flex",gap:6,alignItems:"center"}}>
-          {data&&<Badge color={C.accent} bg={C.accentDim}>{data.detections.filter(d=>d.enabled).length} 件</Badge>}
-          {settings.aiDetect&&<Badge color={C.purple} bg={C.purpleDim}>AI</Badge>}
-        </div>
-        <button onClick={()=>setIsDark(!isDark)} style={{width:32,height:32,borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",color:T.text2,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>{isDark?"☀️":"🌙"}</button>
-        <button onClick={()=>setShowSettings(true)} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:8,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",color:T.text2,fontSize:11,fontFamily:T.font,fontWeight:500}}>
-          <span style={{width:6,height:6,borderRadius:3,background:curProv.color,flexShrink:0}}/>
-          <span>{curModel?.label||"設定"}</span>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+  return (
+      <div
+          data-theme={isDark ? 'dark' : 'light'}
+          style={{
+              fontFamily: T.font,
+              background: T.bg,
+              color: T.text,
+              minHeight: '100vh',
+          }}
+      >
+          <style>{CSS}</style>
+          <header
+              className='rp-header'
+              style={{
+                  height: 52,
+                  padding: '0 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottom: `1px solid ${T.border}`,
+                  background: T.bg2,
+              }}
+          >
+              <nav
+                  aria-label='グローバルナビゲーション'
+                  style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+              >
+                  <a
+                      href='./'
+                      aria-label='トップページへ戻る'
+                      style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          textDecoration: 'none',
+                          color: 'inherit',
+                      }}
+                  >
+                      <div
+                          style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 7,
+                              background: `linear-gradient(135deg,${C.accent},#7C5CFF)`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 14,
+                              fontWeight: 800,
+                              color: '#fff',
+                          }}
+                      >
+                          R
+                      </div>
+                      <span
+                          style={{
+                              fontSize: 15,
+                              fontWeight: 700,
+                              letterSpacing: -0.5,
+                          }}
+                      >
+                          Redact<span style={{ color: C.accent }}>Pro</span>
+                      </span>
+                  </a>
+                  <Badge color={T.text3} bg={T.surfaceAlt}>
+                      v0.9
+                  </Badge>
+              </nav>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div
+                      className='rp-header-badges'
+                      style={{ display: 'flex', gap: 6, alignItems: 'center' }}
+                  >
+                      {data && (
+                          <Badge color={C.accent} bg={C.accentDim}>
+                              {data.detections.filter((d) => d.enabled).length}{' '}
+                              件
+                          </Badge>
+                      )}
+                      {settings.aiDetect && (
+                          <Badge color={C.purple} bg={C.purpleDim}>
+                              AI
+                          </Badge>
+                      )}
+                  </div>
+                  <button
+                      onClick={() => setIsDark(!isDark)}
+                      style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          border: `1px solid ${T.border}`,
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          color: T.text2,
+                          fontSize: 14,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                      }}
+                  >
+                      {isDark ? '☀️' : '🌙'}
+                  </button>
+                  <button
+                      onClick={() => setShowSettings(true)}
+                      style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          padding: '5px 10px',
+                          borderRadius: 8,
+                          border: `1px solid ${T.border}`,
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          color: T.text2,
+                          fontSize: 12,
+                          fontFamily: T.font,
+                          fontWeight: 500,
+                      }}
+                  >
+                      <span
+                          style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: 3,
+                              background: curProv.color,
+                              flexShrink: 0,
+                          }}
+                      />
+                      <span>{curModel?.label || '設定'}</span>
+                      <svg
+                          width='13'
+                          height='13'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                      >
+                          <path d='M12.22 2h-.44a2 2 0 00-2 2v.18a2 2 0 01-1 1.73l-.43.25a2 2 0 01-2 0l-.15-.08a2 2 0 00-2.73.73l-.22.38a2 2 0 00.73 2.73l.15.1a2 2 0 011 1.72v.51a2 2 0 01-1 1.74l-.15.09a2 2 0 00-.73 2.73l.22.38a2 2 0 002.73.73l.15-.08a2 2 0 012 0l.43.25a2 2 0 011 1.73V20a2 2 0 002 2h.44a2 2 0 002-2v-.18a2 2 0 011-1.73l.43-.25a2 2 0 012 0l.15.08a2 2 0 002.73-.73l.22-.39a2 2 0 00-.73-2.73l-.15-.08a2 2 0 01-1-1.74v-.5a2 2 0 011-1.74l.15-.09a2 2 0 00.73-2.73l-.22-.38a2 2 0 00-2.73-.73l-.15.08a2 2 0 01-2 0l-.43-.25a2 2 0 01-1-1.73V4a2 2 0 00-2-2z' />
+                          <circle cx='12' cy='12' r='3' />
+                      </svg>
+                  </button>
+              </div>
+          </header>
+          {data ? (
+              <EditorScreen
+                  data={data}
+                  onReset={goHome}
+                  apiKey={settings.apiKey}
+                  model={settings.model}
+              />
+          ) : (
+              <UploadScreen onAnalyze={setData} settings={settings} />
+          )}
+          {showSettings && (
+              <SettingsModal
+                  settings={settings}
+                  onSave={(s) => setSettings(s)}
+                  onClose={() => setShowSettings(false)}
+                  isDark={isDark}
+                  setIsDark={setIsDark}
+              />
+          )}
       </div>
-    </header>
-    {data?<EditorScreen data={data} onReset={goHome} apiKey={settings.apiKey} model={settings.model}/>:<UploadScreen onAnalyze={setData} settings={settings}/>}
-    {showSettings&&<SettingsModal settings={settings} onSave={s=>setSettings(s)} onClose={()=>setShowSettings(false)} isDark={isDark} setIsDark={setIsDark}/>}
-  </div>);
+  )
 }
