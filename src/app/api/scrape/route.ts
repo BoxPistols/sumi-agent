@@ -119,7 +119,8 @@ function getCorsHeaders(request: NextRequest): Record<string, string> {
   let isLocalhost = false
   try {
     const url = new URL(origin)
-    isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1'
+    isLocalhost =
+      url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '::1'
   } catch {
     isLocalhost = false
   }
@@ -128,7 +129,7 @@ function getCorsHeaders(request: NextRequest): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': allowedOrigin || 'null',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Vary': 'Origin',
+    Vary: 'Origin',
   }
 }
 
@@ -143,17 +144,14 @@ export async function GET(request: NextRequest) {
   if (!url) {
     return NextResponse.json(
       { error: 'Missing ?url= parameter' },
-      { status: 400, headers: corsHeaders }
+      { status: 400, headers: corsHeaders },
     )
   }
 
   // SSRF validation
   const validation = validateTargetURL(url)
   if (!validation.valid) {
-    return NextResponse.json(
-      { error: validation.error },
-      { status: 400, headers: corsHeaders }
-    )
+    return NextResponse.json({ error: validation.error }, { status: 400, headers: corsHeaders })
   }
 
   // Rate limit
@@ -164,7 +162,7 @@ export async function GET(request: NextRequest) {
   if (!checkRateLimit(ip)) {
     return NextResponse.json(
       { error: 'Rate limit exceeded' },
-      { status: 429, headers: corsHeaders }
+      { status: 429, headers: corsHeaders },
     )
   }
 
@@ -191,7 +189,7 @@ export async function GET(request: NextRequest) {
       if (!redirectValidation.valid) {
         return NextResponse.json(
           { error: `Redirect blocked: ${redirectValidation.error}` },
-          { status: 403, headers: corsHeaders }
+          { status: 403, headers: corsHeaders },
         )
       }
     }
@@ -199,7 +197,7 @@ export async function GET(request: NextRequest) {
     if (!res.ok) {
       return NextResponse.json(
         { error: `Upstream returned ${res.status}` },
-        { status: 502, headers: corsHeaders }
+        { status: 502, headers: corsHeaders },
       )
     }
 
@@ -208,7 +206,7 @@ export async function GET(request: NextRequest) {
     if (!contentType.includes('text/') && !contentType.includes('application/xhtml')) {
       return NextResponse.json(
         { error: 'Response is not HTML/text content' },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: corsHeaders },
       )
     }
 
@@ -218,7 +216,7 @@ export async function GET(request: NextRequest) {
     if (html.length > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: 'Response too large (>5MB)' },
-        { status: 413, headers: corsHeaders }
+        { status: 413, headers: corsHeaders },
       )
     }
 
@@ -233,7 +231,7 @@ export async function GET(request: NextRequest) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     return NextResponse.json(
       { error: msg.includes('abort') ? 'Timeout (15s)' : msg },
-      { status: msg.includes('abort') ? 504 : 500, headers: corsHeaders }
+      { status: msg.includes('abort') ? 504 : 500, headers: corsHeaders },
     )
   }
 }

@@ -27,19 +27,25 @@ RedactProでは、PDFエクスポートに「ブラウザの印刷機能（Print
 ## 3. 実装のポイント
 
 ### 3.1 印刷専用CSS
+
 `@media print` を活用し、背景の非表示、余白の最適化（`@page { margin: 15mm }`）、フォントサイズの調整を行っています。
 
 ### 3.2 ライフサイクル管理
+
 `generateExport` 関数で生成されたHTMLには以下のスクリプトが含まれています：
+
 ```javascript
-window.onload = function() {
-  window.print();
+window.onload = function () {
+  window.print()
   // 印刷ダイアログを閉じた後にタブを自動的に閉じる（UX向上）
-  setTimeout(() => { window.close() }, 1000);
+  setTimeout(() => {
+    window.close()
+  }, 1000)
 }
 ```
 
 ### 3.3 セキュリティとクリーンアップ
+
 `triggerDownload` 関数内で `URL.createObjectURL` を使用し、ダウンロードではなくブラウザ内表示に切り替えることで、不要なHTMLファイルがユーザーのローカルディスクに蓄積されるのを防いでいます。
 
 ## 4. このスキームのメリット
@@ -50,4 +56,5 @@ window.onload = function() {
 - **オフライン動作**: 外部サーバーへの通信が一切発生しない。
 
 ---
+
 最終更新: 2026年2月14日

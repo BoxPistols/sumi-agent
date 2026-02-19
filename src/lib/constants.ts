@@ -88,7 +88,7 @@ export const AI_PROVIDERS: AIProvider[] = [
 ]
 
 export const AI_MODELS = AI_PROVIDERS.flatMap((p) =>
-  p.models.map((m) => ({ ...m, provider: p.id }))
+  p.models.map((m) => ({ ...m, provider: p.id })),
 )
 
 export function getProviderForModel(modelId: string): string {
@@ -190,7 +190,7 @@ export const EXPORT_FORMATS = [
   { id: 'csv', label: 'CSV', ext: '.csv', icon: 'C' },
   { id: 'xlsx', label: 'Excel', ext: '.xlsx', icon: 'X' },
   { id: 'pdf', label: 'PDF', ext: '.pdf', icon: 'P' },
-  { id: 'docx', label: 'Word', ext: '.doc', icon: 'W' },
+  { id: 'docx', label: 'Word', ext: '.docx', icon: 'W' },
 ] as const
 
 // SPA sites that can't be scraped

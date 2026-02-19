@@ -62,6 +62,87 @@ interface AIRequestBody {
   apiKey?: string
 }
 
+const AI_REQUEST_TIMEOUT_MS = 90_000
+
+interface OpenAIOutputPart {
+  type?: string
+  text?: string
+  refusal?: string
+}
+
+interface OpenAIMessage {
+  content?: string | OpenAIOutputPart[] | null
+  refusal?: string | null
+}
+
+interface OpenAIChoice {
+  message?: OpenAIMessage
+}
+
+interface OpenAIResponseBody {
+  choices?: OpenAIChoice[]
+}
+
+function extractOpenAIText(body: OpenAIResponseBody): string {
+  const msg = body.choices?.[0]?.message
+  if (!msg) return ''
+
+  if (typeof msg.content === 'string') return msg.content
+
+  if (Array.isArray(msg.content)) {
+    // Check for refusal parts in content array
+    for (const part of msg.content) {
+      if (
+        part.type === 'refusal' ||
+        (typeof part.refusal === 'string' && part.refusal.trim())
+      ) {
+        return part.refusal || ''
+      }
+    }
+    // Extract text parts
+    const joined = msg.content
+      .map((part) => (typeof part.text === 'string' ? part.text : ''))
+      .join('')
+      .trim()
+    if (joined) return joined
+  }
+
+  if (typeof msg.refusal === 'string' && msg.refusal.trim()) {
+    return msg.refusal
+  }
+
+  return ''
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number = AI_REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+  const externalSignal = init.signal
+  const onAbort = () => controller.abort()
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      onAbort()
+    } else {
+      externalSignal.addEventListener('abort', onAbort)
+    }
+  }
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timeout)
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', onAbort)
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request)
   if (!checkRateLimit(ip)) {
@@ -80,7 +161,7 @@ export async function POST(request: NextRequest) {
   if (!provider || !model || !messages) {
     return NextResponse.json(
       { error: 'Missing required fields: provider, model, messages' },
-      { status: 400 }
+      { status: 400 },
     )
   }
 
@@ -115,31 +196,35 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30_000)
+      const reqBody: Record<string, unknown> = {
+        model,
+        messages: msgs,
+        max_completion_tokens: maxTokens,
+      }
+      // GPT-5 family can spend the entire budget on hidden reasoning tokens,
+      // yielding empty visible output for small max_completion_tokens.
+      if (model.startsWith('gpt-5')) reqBody.reasoning_effort = 'minimal'
 
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${key}`,
         },
-        body: JSON.stringify({ model, messages: msgs, max_completion_tokens: maxTokens }),
-        signal: controller.signal,
+        body: JSON.stringify(reqBody),
       })
-
-      clearTimeout(timeout)
 
       if (!res.ok) {
         const e = await res.text().catch(() => '')
         return NextResponse.json(
           { error: `OpenAI ${res.status}: ${e.slice(0, 200)}` },
-          { status: 502 }
+          { status: 502 },
         )
       }
 
-      const d = await res.json()
-      return NextResponse.json({ text: d.choices?.[0]?.message?.content || '' })
+      const d = (await res.json()) as OpenAIResponseBody
+      const text = extractOpenAIText(d)
+      return NextResponse.json({ text })
     }
 
     if (provider === 'google') {
@@ -166,10 +251,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30_000)
-
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
         {
           method: 'POST',
@@ -178,25 +260,21 @@ export async function POST(request: NextRequest) {
             contents: [{ parts }],
             generationConfig: { maxOutputTokens: maxTokens },
           }),
-          signal: controller.signal,
-        }
+        },
       )
-
-      clearTimeout(timeout)
 
       if (!res.ok) {
         const e = await res.text().catch(() => '')
         return NextResponse.json(
           { error: `Gemini ${res.status}: ${e.slice(0, 200)}` },
-          { status: 502 }
+          { status: 502 },
         )
       }
 
       const d = await res.json()
       const text =
-        d.candidates?.[0]?.content?.parts
-          ?.map((p: { text?: string }) => p.text || '')
-          .join('') || ''
+        d.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') ||
+        ''
       return NextResponse.json({ text })
     }
 
@@ -218,23 +296,17 @@ export async function POST(request: NextRequest) {
       }
       if (system) reqBody.system = system
 
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30_000)
-
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers,
         body: JSON.stringify(reqBody),
-        signal: controller.signal,
       })
-
-      clearTimeout(timeout)
 
       if (!res.ok) {
         const e = await res.text().catch(() => '')
         return NextResponse.json(
           { error: `Claude ${res.status}: ${e.slice(0, 200)}` },
-          { status: 502 }
+          { status: 502 },
         )
       }
 
@@ -249,7 +321,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Unknown provider: ${provider}` }, { status: 400 })
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
-      return NextResponse.json({ error: 'AI APIリクエストがタイムアウトしました (30s)' }, { status: 504 })
+      return NextResponse.json(
+        {
+          error: `AI APIリクエストがタイムアウトしました (${Math.floor(AI_REQUEST_TIMEOUT_MS / 1000)}s)`,
+        },
+        { status: 504 },
+      )
     }
     const msg = err instanceof Error ? err.message : 'Unknown error'
     return NextResponse.json({ error: msg }, { status: 500 })

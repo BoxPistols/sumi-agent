@@ -7,10 +7,14 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "fix": "pnpm lint:fix && pnpm format:write"
   },
   "dependencies": {
     "mammoth": "^1.8.0",
@@ -28,6 +32,8 @@
     "@vitejs/plugin-react": "^5.1.4",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.2.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   },

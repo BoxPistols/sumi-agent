@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest'
 import { applyRedaction, PLACEHOLDERS, PLACEHOLDER_RE } from '../redaction'
 import type { Detection } from '../detection'
 
-function makeDet(overrides: Partial<Detection> & { value: string; type: string; category: string }): Detection {
+function makeDet(
+  overrides: Partial<Detection> & { value: string; type: string; category: string },
+): Detection {
   return {
     id: 'test_' + Math.random().toString(36).slice(2),
     label: 'test',
@@ -147,9 +149,19 @@ describe('PLACEHOLDER_RE', () => {
 describe('PLACEHOLDERS', () => {
   it('has mappings for all detection types', () => {
     const expectedTypes = [
-      'email', 'url', 'phone', 'postal', 'birthday', 'address',
-      'name_label', 'name_dict', 'name_context', 'name_ai', 'name_kana',
-      'sns_ai', 'mynumber',
+      'email',
+      'url',
+      'phone',
+      'postal',
+      'birthday',
+      'address',
+      'name_label',
+      'name_dict',
+      'name_context',
+      'name_ai',
+      'name_kana',
+      'sns_ai',
+      'mynumber',
     ]
     for (const type of expectedTypes) {
       expect(PLACEHOLDERS[type], `Missing placeholder for type: ${type}`).toBeDefined()

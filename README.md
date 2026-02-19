@@ -102,14 +102,14 @@ RedactPro はこの課題を解決するために、以下の設計思想で構�
 
 ```typescript
 interface Detection {
-  id: string          // 一意識別子
-  type: string        // 検出パターンID (email, phone, name_dict 等)
-  label: string       // 表示用ラベル
-  category: string    // カテゴリ (name, contact, address, personal, web, organization)
-  value: string       // 検出された文字列
-  source: 'regex' | 'dict' | 'ai' | 'heuristic'  // 検出手法
-  confidence: number  // 信頼度 (0-1)
-  enabled: boolean    // ユーザーによるON/OFF
+  id: string // 一意識別子
+  type: string // 検出パターンID (email, phone, name_dict 等)
+  label: string // 表示用ラベル
+  category: string // カテゴリ (name, contact, address, personal, web, organization)
+  value: string // 検出された文字列
+  source: 'regex' | 'dict' | 'ai' | 'heuristic' // 検出手法
+  confidence: number // 信頼度 (0-1)
+  enabled: boolean // ユーザーによるON/OFF
 }
 ```
 
@@ -221,6 +221,7 @@ redact-pro/
 現在 `RedactPro.tsx` にUIとロジックが同居するモノリス構成から、段階的にモジュール分割を進めている。
 
 分割済み:
+
 - `src/lib/constants.ts` -- 定数・設定・型定義
 - `src/lib/detection.ts` -- 検出エンジン（正規表現、辞書、ヒューリスティクス）
 - `src/lib/redaction.ts` -- マスキングエンジン
@@ -266,6 +267,7 @@ pnpm test:watch
 ```
 
 テスト対象:
+
 - テキスト正規化 (`normalizeText`)
 - 都道府県抽出 (`extractPrefecture`)
 - 名前イニシャル変換 (`nameToInitial`, `buildReadingMap`)
@@ -279,15 +281,15 @@ pnpm test:watch
 
 ## コマンド一覧
 
-| コマンド | 説明 |
-|---------|------|
-| `pnpm dev` | 開発サーバー起動（Turbopack） |
-| `pnpm build` | プロダクションビルド |
-| `pnpm start` | プロダクションサーバー起動 |
-| `pnpm test` | テスト実行 |
-| `pnpm test:watch` | テスト（ウォッチモード） |
-| `pnpm lint` | ESLint 実行 |
-| `pnpm type-check` | TypeScript 型チェック |
+| コマンド          | 説明                          |
+| ----------------- | ----------------------------- |
+| `pnpm dev`        | 開発サーバー起動（Turbopack） |
+| `pnpm build`      | プロダクションビルド          |
+| `pnpm start`      | プロダクションサーバー起動    |
+| `pnpm test`       | テスト実行                    |
+| `pnpm test:watch` | テスト（ウォッチモード）      |
+| `pnpm lint`       | ESLint 実行                   |
+| `pnpm type-check` | TypeScript 型チェック         |
 
 ---
 
@@ -323,15 +325,15 @@ CMD ["pnpm", "start"]
 
 ## 技術スタック
 
-| 領域 | 技術 |
-|------|------|
-| フレームワーク | Next.js 15 (App Router) |
-| UI | React 19 |
-| 言語 | TypeScript 5 |
-| テスト | Vitest |
-| パッケージ管理 | pnpm |
-| ファイル解析 | mammoth (docx), xlsx, papaparse (csv) |
-| AI | OpenAI API, Anthropic API, Google Generative AI API |
+| 領域           | 技術                                                |
+| -------------- | --------------------------------------------------- |
+| フレームワーク | Next.js 15 (App Router)                             |
+| UI             | React 19                                            |
+| 言語           | TypeScript 5                                        |
+| テスト         | Vitest                                              |
+| パッケージ管理 | pnpm                                                |
+| ファイル解析   | mammoth (docx), xlsx, papaparse (csv)               |
+| AI             | OpenAI API, Anthropic API, Google Generative AI API |
 
 ---
 

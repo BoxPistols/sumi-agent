@@ -1,0 +1,9 @@
+.next/
+out/
+dist/
+node_modules/
+coverage/
+
+# Monolith: keep as-is for now
+src/app/RedactPro.tsx
+

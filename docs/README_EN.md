@@ -102,14 +102,14 @@ All detection results conform to a unified `Detection` type:
 
 ```typescript
 interface Detection {
-  id: string          // Unique identifier
-  type: string        // Pattern ID (email, phone, name_dict, etc.)
-  label: string       // Display label
-  category: string    // Category (name, contact, address, personal, web, organization)
-  value: string       // Detected string
-  source: 'regex' | 'dict' | 'ai' | 'heuristic'  // Detection method
-  confidence: number  // Confidence score (0-1)
-  enabled: boolean    // User toggle
+  id: string // Unique identifier
+  type: string // Pattern ID (email, phone, name_dict, etc.)
+  label: string // Display label
+  category: string // Category (name, contact, address, personal, web, organization)
+  value: string // Detected string
+  source: 'regex' | 'dict' | 'ai' | 'heuristic' // Detection method
+  confidence: number // Confidence score (0-1)
+  enabled: boolean // User toggle
 }
 ```
 
@@ -254,15 +254,15 @@ pnpm test:watch
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server (Turbopack) |
-| `pnpm build` | Production build |
-| `pnpm start` | Start production server |
-| `pnpm test` | Run tests |
-| `pnpm test:watch` | Tests (watch mode) |
-| `pnpm lint` | Run ESLint |
-| `pnpm type-check` | TypeScript type check |
+| Command           | Description                  |
+| ----------------- | ---------------------------- |
+| `pnpm dev`        | Start dev server (Turbopack) |
+| `pnpm build`      | Production build             |
+| `pnpm start`      | Start production server      |
+| `pnpm test`       | Run tests                    |
+| `pnpm test:watch` | Tests (watch mode)           |
+| `pnpm lint`       | Run ESLint                   |
+| `pnpm type-check` | TypeScript type check        |
 
 ---
 
@@ -298,15 +298,15 @@ CMD ["pnpm", "start"]
 
 ## Tech stack
 
-| Area | Technology |
-|------|-----------|
-| Framework | Next.js 15 (App Router) |
-| UI | React 19 |
-| Language | TypeScript 5 |
-| Testing | Vitest |
-| Package manager | pnpm |
-| File parsing | mammoth (docx), xlsx, papaparse (csv) |
-| AI | OpenAI API, Anthropic API, Google Generative AI API |
+| Area            | Technology                                          |
+| --------------- | --------------------------------------------------- |
+| Framework       | Next.js 15 (App Router)                             |
+| UI              | React 19                                            |
+| Language        | TypeScript 5                                        |
+| Testing         | Vitest                                              |
+| Package manager | pnpm                                                |
+| File parsing    | mammoth (docx), xlsx, papaparse (csv)               |
+| AI              | OpenAI API, Anthropic API, Google Generative AI API |
 
 ---
 

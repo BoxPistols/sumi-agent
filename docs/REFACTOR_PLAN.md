@@ -11,14 +11,14 @@
 
 ### 分割済み
 
-| モジュール | ファイル | 内容 |
-|-----------|---------|------|
-| 定数・設定 | `src/lib/constants.ts` | AIプロバイダ、カテゴリ、マスクプリセット、エクスポート形式 |
-| 検出エンジン | `src/lib/detection.ts` | 正規表現パターン、日本人名辞書、検出関数群 |
-| マスキング | `src/lib/redaction.ts` | プレースホルダー定義、マスキング関数 |
-| AIプロキシ | `src/app/api/ai/route.ts` | サーバーサイドAI中継（OpenAI / Claude / Gemini） |
-| スクレイピング | `src/app/api/scrape/route.ts` | URLフェッチプロキシ（SSRF対策済み） |
-| テスト | `src/lib/__tests__/` | detection.test.ts, redaction.test.ts |
+| モジュール     | ファイル                      | 内容                                                       |
+| -------------- | ----------------------------- | ---------------------------------------------------------- |
+| 定数・設定     | `src/lib/constants.ts`        | AIプロバイダ、カテゴリ、マスクプリセット、エクスポート形式 |
+| 検出エンジン   | `src/lib/detection.ts`        | 正規表現パターン、日本人名辞書、検出関数群                 |
+| マスキング     | `src/lib/redaction.ts`        | プレースホルダー定義、マスキング関数                       |
+| AIプロキシ     | `src/app/api/ai/route.ts`     | サーバーサイドAI中継（OpenAI / Claude / Gemini）           |
+| スクレイピング | `src/app/api/scrape/route.ts` | URLフェッチプロキシ（SSRF対策済み）                        |
+| テスト         | `src/lib/__tests__/`          | detection.test.ts, redaction.test.ts                       |
 
 ---
 

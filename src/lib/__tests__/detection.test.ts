@@ -30,9 +30,7 @@ describe('normalizeText', () => {
   })
 
   it('handles mixed content', () => {
-    expect(normalizeText('電話：０９０−１２３４−５６７８')).toBe(
-      '電話：090−1234−5678'
-    )
+    expect(normalizeText('電話：０９０−１２３４−５６７８')).toBe('電話：090−1234−5678')
   })
 })
 
@@ -87,6 +85,10 @@ describe('nameToInitial', () => {
   it('handles hiragana reading', () => {
     const result = nameToInitial('さくら はな')
     expect(result).toBe('S.H.')
+  })
+
+  it('returns empty string for empty input', () => {
+    expect(nameToInitial('')).toBe('')
   })
 })
 
@@ -232,6 +234,54 @@ describe('detectJapaneseNames', () => {
   })
 })
 
+// ═══ SNS detection ═══
+describe('SNS detection', () => {
+  it('detects Twitter/X accounts', () => {
+    const dets = detectRegex('Twitter: @username123')
+    expect(dets.some((d) => d.type === 'sns_twitter' && d.value === 'username123')).toBe(true)
+  })
+
+  it('detects Twitter/X with Japanese label', () => {
+    const dets = detectRegex('ツイッター：@dev_user')
+    expect(dets.some((d) => d.type === 'sns_twitter' && d.value === 'dev_user')).toBe(true)
+  })
+
+  it('detects GitHub accounts', () => {
+    const dets = detectRegex('GitHub: @octocat')
+    expect(dets.some((d) => d.type === 'sns_github' && d.value === 'octocat')).toBe(true)
+  })
+
+  it('detects GitHub accounts without @', () => {
+    const dets = detectRegex('GitHub: tanaka-taro-dev')
+    expect(dets.some((d) => d.type === 'sns_github' && d.value === 'tanaka-taro-dev')).toBe(true)
+  })
+
+  it('detects LinkedIn accounts', () => {
+    const dets = detectRegex('LinkedIn: /in/taro-tanaka')
+    expect(dets.some((d) => d.type === 'sns_linkedin' && d.value === 'taro-tanaka')).toBe(true)
+  })
+
+  it('detects Instagram accounts', () => {
+    const dets = detectRegex('Instagram: @photo_user')
+    expect(dets.some((d) => d.type === 'sns_instagram' && d.value === 'photo_user')).toBe(true)
+  })
+
+  it('detects Facebook accounts', () => {
+    const dets = detectRegex('Facebook: taro.tanaka')
+    expect(dets.some((d) => d.type === 'sns_facebook' && d.value === 'taro.tanaka')).toBe(true)
+  })
+
+  it('does not detect email addresses as SNS', () => {
+    const dets = detectRegex('連絡先: user@example.com')
+    expect(dets.some((d) => d.type.startsWith('sns_'))).toBe(false)
+  })
+
+  it('does not detect URL path as SNS', () => {
+    const dets = detectRegex('https://github.com/octocat')
+    expect(dets.some((d) => d.type.startsWith('sns_'))).toBe(false)
+  })
+})
+
 // ═══ detectAll ═══
 describe('detectAll', () => {
   it('combines regex and name detection, deduplicating', () => {
@@ -260,11 +310,38 @@ describe('detectAll', () => {
 describe('mergeDetections', () => {
   it('merges without duplicates', () => {
     const base: Detection[] = [
-      { id: '1', type: 'email', label: 'Email', category: 'contact', value: 'a@b.com', source: 'regex', confidence: 0.95, enabled: true },
+      {
+        id: '1',
+        type: 'email',
+        label: 'Email',
+        category: 'contact',
+        value: 'a@b.com',
+        source: 'regex',
+        confidence: 0.95,
+        enabled: true,
+      },
     ]
     const ai: Detection[] = [
-      { id: '2', type: 'email', label: 'Email', category: 'contact', value: 'a@b.com', source: 'ai', confidence: 0.9, enabled: true },
-      { id: '3', type: 'name_ai', label: 'Name', category: 'name', value: '田中太郎', source: 'ai', confidence: 0.95, enabled: true },
+      {
+        id: '2',
+        type: 'email',
+        label: 'Email',
+        category: 'contact',
+        value: 'a@b.com',
+        source: 'ai',
+        confidence: 0.9,
+        enabled: true,
+      },
+      {
+        id: '3',
+        type: 'name_ai',
+        label: 'Name',
+        category: 'name',
+        value: '田中太郎',
+        source: 'ai',
+        confidence: 0.95,
+        enabled: true,
+      },
     ]
     const merged = mergeDetections(base, ai)
     expect(merged).toHaveLength(2) // a@b.com deduped, 田中太郎 added

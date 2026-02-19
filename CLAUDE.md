@@ -12,14 +12,14 @@
 
 ## コマンド
 
-| コマンド | 用途 |
-|---------|------|
-| `pnpm dev` | 開発サーバー（Turbopack） |
-| `pnpm build` | プロダクションビルド |
-| `pnpm test` | Vitest テスト実行 |
-| `pnpm test:watch` | Vitest ウォッチモード |
-| `pnpm lint` | ESLint |
-| `pnpm type-check` | `tsc --noEmit` |
+| コマンド          | 用途                      |
+| ----------------- | ------------------------- |
+| `pnpm dev`        | 開発サーバー（Turbopack） |
+| `pnpm build`      | プロダクションビルド      |
+| `pnpm test`       | Vitest テスト実行         |
+| `pnpm test:watch` | Vitest ウォッチモード     |
+| `pnpm lint`       | ESLint                    |
+| `pnpm type-check` | `tsc --noEmit`            |
 
 ## アーキテクチャ
 
