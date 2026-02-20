@@ -56,7 +56,7 @@ const AI_PROVIDERS=[
     {id:"claude-sonnet-4-20250514",label:"Sonnet 4",desc:"バランス型（推奨）",tier:2},
     {id:"claude-sonnet-4-5-20250929",label:"Sonnet 4.5",desc:"高精度",tier:3},
   ],defaultModel:"claude-sonnet-4-20250514"},
-  {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:true,models:[
+  {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
     {id:"gpt-4.1-nano",label:"GPT-4.1 Nano",desc:"旧世代・超軽量",tier:1},
     {id:"gpt-4.1-mini",label:"GPT-4.1 Mini",desc:"旧世代・低コスト",tier:2},
     {id:"gpt-5-nano",label:"GPT-5 Nano",desc:"最速・最安（推奨）",tier:1},
@@ -2350,7 +2350,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                           <span style={{ fontFamily: T.mono }}>{'{url}'}</span>{' '}
                           は取得対象URLに自動置換）
                           <br />
-                          未設定でも動作しますが、公開CORSプロキシ経由になるため取得失敗が増えることがあります。
+                          通常はサーバー経由で自動取得されるため、設定不要です。独自の中継サーバーがある場合のみ入力してください。
                       </div>
                       <input
                           value={proxyUrl}
@@ -2373,13 +2373,12 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                           <div
                               style={{
                                   fontSize: 12,
-                                  color: T.amber,
+                                  color: T.text3,
                                   marginTop: 6,
                                   lineHeight: 1.5,
                               }}
                           >
-                              ⚠
-                              未設定時は無料CORSプロキシ(allOrigins等)を使用。取得失敗率が高めです。
+                              未設定でOK — サーバー経由で自動取得します。
                           </div>
                       )}
                       {proxyUrl && !proxyUrl.includes('{url}') && (
@@ -2403,6 +2402,24 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                           justifyContent: 'flex-end',
                       }}
                   >
+                      <Btn
+                          variant='ghost'
+                          onClick={() => {
+                              if(!confirm('すべての設定を初期値に戻しますか？'))return;
+                              setProvider('openai');setModel('gpt-5-nano');
+                              setApiKey('');setAiDetect(true);
+                              setAiProfile('balanced');setProxyUrl('');
+                          }}
+                          style={{
+                              padding: '8px 16px',
+                              fontSize: 12,
+                              borderRadius: 8,
+                              marginRight: 'auto',
+                              color: T.red,
+                          }}
+                      >
+                          初期化
+                      </Btn>
                       {apiKey && (
                           <Btn
                               variant='ghost'
@@ -5112,9 +5129,7 @@ function UploadScreen({onAnalyze,settings}){
                                                               </>
                                                           ) : (
                                                               <>
-                                                                  無料CORSプロキシ使用中（取得失敗の可能性あり）。設定
-                                                                  →
-                                                                  プロキシURLで安定化できます。
+                                                                  サーバー経由で自動取得します。取得できない場合はテキスト貼付をお試しください。
                                                               </>
                                                           )}
                                                       </div>
