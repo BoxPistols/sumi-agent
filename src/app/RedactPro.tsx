@@ -56,7 +56,7 @@ const AI_PROVIDERS=[
     {id:"claude-sonnet-4-20250514",label:"Sonnet 4",desc:"バランス型（推奨）",tier:2},
     {id:"claude-sonnet-4-5-20250929",label:"Sonnet 4.5",desc:"高精度",tier:3},
   ],defaultModel:"claude-sonnet-4-20250514"},
-  {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:true,models:[
+  {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
     {id:"gpt-4.1-nano",label:"GPT-4.1 Nano",desc:"旧世代・超軽量",tier:1},
     {id:"gpt-4.1-mini",label:"GPT-4.1 Mini",desc:"旧世代・低コスト",tier:2},
     {id:"gpt-5-nano",label:"GPT-5 Nano",desc:"最速・最安（推奨）",tier:1},
@@ -704,6 +704,82 @@ function buildNonOverlappingMatches(text,dets,occupied){
   }
   matches.sort((a,b)=>a.s-b.s);
   return matches;
+}
+
+/**
+ * buildAnnotations - セグメント分割ロジック
+ * テキストを検出値で分割し、プレーンテキストセグメントと検出セグメントの
+ * 配列を返す。重複排除済み。
+ *
+ * 戻り値: Array<{type:"text",text:string}|{type:"det",text:string,det:object}>
+ */
+function buildAnnotations(text,dets,opts){
+  if(typeof text!=="string"||!text||!dets||dets.length===0){
+    return [{type:"text",text:text||""}];
+  }
+  const showRedacted=opts?.showRedacted||false;
+  const keepPref=opts?.keepPrefecture||false;
+  const nameInit=opts?.nameInitial||false;
+
+  const all=[...dets].filter(d=>d&&typeof d.value==="string"&&d.value.length>=2)
+    .sort((a,b)=>(b.value?.length||0)-(a.value?.length||0));
+  if(all.length===0)return [{type:"text",text}];
+
+  // 全検出値のマッチ位置を一括収集（長い値優先で重複排除）
+  const rawMatches=[];
+  for(const d of all){
+    const v=d.value;
+    let idx=0;
+    while(idx<text.length){
+      const p=text.indexOf(v,idx);
+      if(p===-1)break;
+      rawMatches.push({s:p,e:p+v.length,det:d});
+      idx=p+v.length;
+    }
+  }
+  // 開始位置でソート、同一開始なら長い方を優先
+  rawMatches.sort((a,b)=>a.s-b.s||(b.e-b.s)-(a.e-a.s));
+
+  // 重複排除: 長い値優先のグリーディ選択
+  const selected=[];
+  let lastEnd=0;
+  for(const m of rawMatches){
+    if(m.s>=lastEnd){
+      selected.push(m);
+      lastEnd=m.e;
+    }
+  }
+
+  // セグメント配列に変換
+  const segments=[];
+  let cur=0;
+  for(const m of selected){
+    if(m.s>cur){
+      segments.push({type:"text",text:text.slice(cur,m.s)});
+    }
+    const d=m.det;
+    if(showRedacted&&d.enabled){
+      const isNameType=d.category==="name";
+      const isAddrType=d.type==="address";
+      let masked;
+      if(isNameType&&nameInit){
+        masked=PH[d.type]||"[非公開]";
+      }else if(isAddrType&&keepPref){
+        const pref=extractPrefecture(d.value);
+        masked=pref?(pref+"[住所詳細非公開]"):"[住所非公開]";
+      }else{
+        masked=PH[d.type]||"[非公開]";
+      }
+      segments.push({type:"det",text:masked,original:d.value,det:d,masked:true});
+    }else{
+      segments.push({type:"det",text:text.slice(m.s,m.e),det:d,masked:false});
+    }
+    cur=m.e;
+  }
+  if(cur<text.length){
+    segments.push({type:"text",text:text.slice(cur)});
+  }
+  return segments;
 }
 
 function renderTextWithDetectionAnchors(text,dets,opts,showRedacted,focusId,focusPulse){
@@ -2274,7 +2350,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                           <span style={{ fontFamily: T.mono }}>{'{url}'}</span>{' '}
                           は取得対象URLに自動置換）
                           <br />
-                          未設定でも動作しますが、公開CORSプロキシ経由になるため取得失敗が増えることがあります。
+                          通常はサーバー経由で自動取得されるため、設定不要です。独自の中継サーバーがある場合のみ入力してください。
                       </div>
                       <input
                           value={proxyUrl}
@@ -2297,13 +2373,12 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                           <div
                               style={{
                                   fontSize: 12,
-                                  color: T.amber,
+                                  color: T.text3,
                                   marginTop: 6,
                                   lineHeight: 1.5,
                               }}
                           >
-                              ⚠
-                              未設定時は無料CORSプロキシ(allOrigins等)を使用。取得失敗率が高めです。
+                              未設定でOK — サーバー経由で自動取得します。
                           </div>
                       )}
                       {proxyUrl && !proxyUrl.includes('{url}') && (
@@ -2327,6 +2402,24 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                           justifyContent: 'flex-end',
                       }}
                   >
+                      <Btn
+                          variant='ghost'
+                          onClick={() => {
+                              if(!confirm('すべての設定を初期値に戻しますか？'))return;
+                              setProvider('openai');setModel('gpt-5-nano');
+                              setApiKey('');setAiDetect(true);
+                              setAiProfile('balanced');setProxyUrl('');
+                          }}
+                          style={{
+                              padding: '8px 16px',
+                              fontSize: 12,
+                              borderRadius: 8,
+                              marginRight: 'auto',
+                              color: T.red,
+                          }}
+                      >
+                          初期化
+                      </Btn>
                       {apiKey && (
                           <Btn
                               variant='ghost'
@@ -2609,6 +2702,170 @@ strong{font-weight:700}
 .hr{border:0;border-top:1px solid #e5e7eb;margin:12px 0}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body><div class="page"><div class="body">${body}</div></div></body></html>`;
+}
+
+// ═══ A4 Preview (inline) ═══
+function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusDet}){
+  const segments=useMemo(()=>{
+    return buildAnnotations(text,detections,{
+      showRedacted:true,
+      keepPrefecture:maskOpts?.keepPrefecture||false,
+      nameInitial:maskOpts?.nameInitial||false,
+    });
+  },[text,detections,maskOpts]);
+
+  // A4用のMarkdownパース（セクション分割）
+  const lines=useMemo(()=>{
+    const result=[];
+    // セグメントをテキスト行に再構成
+    let lineBuffer=[];
+    for(const seg of segments){
+      const parts=seg.text.split("\n");
+      for(let i=0;i<parts.length;i++){
+        if(i>0){
+          result.push({line:lineBuffer,raw:lineBuffer.map(s=>s.text||"").join("")});
+          lineBuffer=[];
+        }
+        if(parts[i]||i<parts.length){
+          lineBuffer.push({...seg,text:parts[i]});
+        }
+      }
+    }
+    if(lineBuffer.length>0){
+      result.push({line:lineBuffer,raw:lineBuffer.map(s=>s.text||"").join("")});
+    }
+    return result;
+  },[segments]);
+
+  const animName=focusPulse%2?"detFlashA":"detFlashB";
+
+  function renderSegment(seg,idx){
+    if(seg.type==="text"){
+      return <span key={`t${idx}`}>{seg.text}</span>;
+    }
+    const d=seg.det;
+    const focused=!!(focusDetId&&d?.id===focusDetId);
+    const anim=focused?{animation:`${animName} 1.25s ease-in-out 1`}:{};
+    const meta=CATEGORIES[d?.category]||{color:T.text2};
+    if(seg.masked){
+      return (
+        <span key={`d${idx}`} data-det-id={d?.id}
+          onClick={(e)=>{e.stopPropagation();onFocusDet&&onFocusDet(d?.id);}}
+          style={{
+            background:`${meta.color}18`,color:meta.color,
+            padding:"1px 5px",borderRadius:3,fontWeight:600,
+            fontSize:"0.92em",cursor:"pointer",
+            borderBottom:`2px solid ${meta.color}40`,
+            ...anim,
+          }}>
+          {seg.text}
+        </span>
+      );
+    }
+    return (
+      <span key={`d${idx}`} data-det-id={d?.id}
+        onClick={(e)=>{e.stopPropagation();onFocusDet&&onFocusDet(d?.id);}}
+        style={{
+          background:focused?`${meta.color}16`:"transparent",
+          borderRadius:3,cursor:"pointer",...anim,
+        }}>
+        {seg.text}
+      </span>
+    );
+  }
+
+  function classifyLine(raw){
+    const trimmed=raw.trim();
+    if(!trimmed)return {type:"blank"};
+    if(/^#{1,3}\s+(.+)$/.test(trimmed)){
+      const m=trimmed.match(/^(#{1,3})\s+(.+)$/);
+      return {type:"heading",level:m[1].length,content:m[2]};
+    }
+    if(/^【(.+?)】$/.test(trimmed))return {type:"heading",level:2};
+    if(/^[■●◆◇▶▷☆★]+\s*(.+)$/.test(trimmed))return {type:"heading",level:2};
+    if(/^(?:職務経歴書|履歴書|基本情報|職務要約|職務経歴|学歴|資格|スキル|自己PR|志望動機|プロフィール|連絡先)\s*$/i.test(trimmed))return {type:"heading",level:2};
+    if(/^-{3,}$/.test(trimmed))return {type:"hr"};
+    if(/^[-*]\s+(.+)$/.test(trimmed)||/^・\s*(.+)$/.test(trimmed))return {type:"list"};
+    if(/^(.{1,30}?)[：:]\s*(.+)$/.test(trimmed))return {type:"kv"};
+    return {type:"body"};
+  }
+
+  const pageStyle={
+    maxWidth:595,margin:"0 auto",padding:"26px 30px",
+    fontFamily:"'Noto Sans JP',sans-serif",color:"#111827",
+    fontSize:"10.2pt",lineHeight:1.75,background:"#fff",
+    minHeight:842,
+  };
+  const h2Style={fontSize:"14pt",fontWeight:700,color:"#0f172a",margin:"18px 0 8px",paddingBottom:7,borderBottom:"1.8px solid #0f172a",letterSpacing:0.2};
+  const h3Style={fontSize:"11.5pt",fontWeight:700,color:"#111827",margin:"14px 0 6px"};
+  const kvStyle={display:"grid",gridTemplateColumns:"minmax(110px,160px) 1fr",gap:12,padding:"2.5px 0"};
+  const kvKeyStyle={color:"#475569",fontWeight:700};
+  const kvValStyle={color:"#0f172a"};
+  const liStyle={paddingLeft:"1em",textIndent:"-1em",lineHeight:1.75,margin:"1px 0"};
+  const hrStyle={border:0,borderTop:"1px solid #e5e7eb",margin:"12px 0"};
+
+  return (
+    <div style={{flex:1,overflow:"auto",background:"#e5e7eb",display:"flex",justifyContent:"center",padding:"24px 16px"}}>
+      <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,overflow:"hidden",transformOrigin:"top center"}}>
+        <div style={pageStyle}>
+          {lines.map(({line,raw},li)=>{
+            const cls=classifyLine(raw);
+            const segs=line.map((seg,si)=>renderSegment(seg,`${li}_${si}`));
+
+            if(cls.type==="blank")return <br key={li} style={{display:"block",marginTop:8}}/>;
+            if(cls.type==="hr")return <hr key={li} style={hrStyle}/>;
+            if(cls.type==="heading"){
+              const style=cls.level<=2?h2Style:h3Style;
+              // 見出しマーカーを除去して表示
+              const cleaned=raw.trim().replace(/^#{1,3}\s+/,"").replace(/^[■●◆◇▶▷☆★]+\s*/,"").replace(/^【(.+?)】$/,"$1");
+              // セグメント内の検出値はそのまま表示
+              const hasDetection=line.some(s=>s.type==="det");
+              if(hasDetection){
+                return <div key={li} style={style}>{segs}</div>;
+              }
+              return <div key={li} style={style}>{cleaned}</div>;
+            }
+            if(cls.type==="list"){
+              return <div key={li} style={liStyle}>・{segs}</div>;
+            }
+            if(cls.type==="kv"){
+              const kvMatch=raw.trim().match(/^(.{1,30}?)[：:]\s*(.+)$/);
+              if(kvMatch){
+                // キー部分と値部分を分割してセグメント表示
+                const keyLen=kvMatch[1].length;
+                const sepIdx=raw.indexOf(kvMatch[1])+keyLen;
+                const keySegs=[];
+                const valSegs=[];
+                let charCount=0;
+                for(let si=0;si<line.length;si++){
+                  const seg=line[si];
+                  const segLen=seg.text.length;
+                  if(charCount+segLen<=sepIdx){
+                    keySegs.push(renderSegment(seg,`${li}_k${si}`));
+                  }else if(charCount>=sepIdx){
+                    valSegs.push(renderSegment(seg,`${li}_v${si}`));
+                  }else{
+                    // セグメントがキーと値にまたがる場合 — detection metadataを保持
+                    const splitAt=sepIdx-charCount;
+                    keySegs.push(renderSegment({...seg,text:seg.text.slice(0,splitAt)},`${li}_ks${si}`));
+                    valSegs.push(renderSegment({...seg,text:seg.text.slice(splitAt)},`${li}_vs${si}`));
+                  }
+                  charCount+=segLen;
+                }
+                return (
+                  <div key={li} style={kvStyle}>
+                    <div style={kvKeyStyle}>{keySegs}</div>
+                    <div style={kvValStyle}>{valSegs}</div>
+                  </div>
+                );
+              }
+            }
+            return <div key={li} style={{lineHeight:1.75}}>{segs}</div>;
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ═══ PDF Review / Edit Modal ═══
@@ -4872,9 +5129,7 @@ function UploadScreen({onAnalyze,settings}){
                                                               </>
                                                           ) : (
                                                               <>
-                                                                  無料CORSプロキシ使用中（取得失敗の可能性あり）。設定
-                                                                  →
-                                                                  プロキシURLで安定化できます。
+                                                                  サーバー経由で自動取得します。取得できない場合はテキスト貼付をお試しください。
                                                               </>
                                                           )}
                                                       </div>
@@ -5518,6 +5773,7 @@ function EditorScreen({data,onReset,apiKey,model}){
   const[showDesign,setShowDesign]=useState(false);
   const[focusDetId,setFocusDetId]=useState(null);
   const[focusPulse,setFocusPulse]=useState(0);
+  const[sidebarCollapsed,setSidebarCollapsed]=useState(false);
   const hasRawText=data.rawText&&data.rawText!==data.fullText&&data.rawText!==data.text_preview;
 
   const toggle=id=>setDetections(p=>p.map(d=>d.id===id?{...d,enabled:!d.enabled}:d));
@@ -5536,7 +5792,8 @@ function EditorScreen({data,onReset,apiKey,model}){
   const focusDetection=useCallback((id)=>{
     setFocusDetId(id);
     setFocusPulse(p=>p+1);
-    setViewMode(vm=>vm==="original"?vm:"original");
+    // A4モードでも検出ハイライトが使えるのでそのまま維持
+    setViewMode(vm=>(vm==="original"||vm==="a4")?vm:"original");
   },[]);
 
   useEffect(()=>{
@@ -5690,6 +5947,25 @@ function EditorScreen({data,onReset,apiKey,model}){
                           >
                               Diff
                           </button>
+                          <button
+                              onClick={() => setViewMode('a4')}
+                              style={{
+                                  padding: '5px 10px',
+                                  border: 'none',
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  fontFamily: T.font,
+                                  background:
+                                      viewMode === 'a4'
+                                          ? T.greenDim
+                                          : 'transparent',
+                                  color:
+                                      viewMode === 'a4' ? T.green : T.text3,
+                              }}
+                          >
+                              A4
+                          </button>
                           {hasRawText && (
                               <>
                                   <button
@@ -5783,7 +6059,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                               </>
                           )}
                       </div>
-                      {!showDiff && !showAiDiff && viewMode !== 'raw-diff' && (
+                      {!showDiff && !showAiDiff && viewMode !== 'raw-diff' && viewMode !== 'a4' && (
                           <Btn
                               variant={showRedacted ? 'danger' : 'ghost'}
                               onClick={() => setShowRedacted(!showRedacted)}
@@ -5798,6 +6074,38 @@ function EditorScreen({data,onReset,apiKey,model}){
                       )}
                   </div>
               </div>
+              {/* カテゴリ別クイックトグル */}
+              {(viewMode==='original'||viewMode==='a4')&&allCats.length>0&&(
+              <div style={{
+                  padding:"4px 14px",display:"flex",alignItems:"center",gap:4,
+                  borderBottom:`1px solid ${T.border}`,background:T.bg2,
+                  flexWrap:"wrap",
+              }}>
+                  <span style={{fontSize:11,color:T.text3,fontWeight:600,marginRight:4}}>カテゴリ</span>
+                  {allCats.map(cat=>{
+                      const meta=CATEGORIES[cat]||{label:cat,color:T.text2};
+                      const cc=catCounts[cat]||{total:0,enabled:0};
+                      const allOn=cc.enabled===cc.total;
+                      return (
+                          <button key={cat} onClick={()=>setCatEnabled(cat,!allOn)}
+                              style={{
+                                  padding:"2px 8px",borderRadius:5,border:`1px solid ${allOn?`${meta.color}30`:T.border}`,
+                                  background:allOn?`${meta.color}14`:"transparent",cursor:"pointer",
+                                  fontSize:11,fontWeight:allOn?600:400,fontFamily:T.font,
+                                  color:allOn?meta.color:T.text3,transition:"all .15s",
+                                  display:"flex",alignItems:"center",gap:3,
+                              }}>
+                              <span style={{width:5,height:5,borderRadius:3,background:meta.color,display:"inline-block"}}/>
+                              {meta.label}
+                              <span style={{fontSize:10,opacity:0.7}}>({cc.enabled}/{cc.total})</span>
+                          </button>
+                      );
+                  })}
+                  <span style={{flex:1}}/>
+                  <button onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全ON</button>
+                  <button onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全OFF</button>
+              </div>
+              )}
               {showDiff ? (
                   <DiffView
                       original={data.text_preview}
@@ -5823,6 +6131,15 @@ function EditorScreen({data,onReset,apiKey,model}){
                       )}
                       modified={aiResult}
                       label='AI整形変更'
+                  />
+              ) : viewMode === 'a4' ? (
+                  <A4PreviewPanel
+                      text={aiResult||data.text_preview}
+                      detections={detections}
+                      maskOpts={data.maskOpts}
+                      focusDetId={focusDetId}
+                      focusPulse={focusPulse}
+                      onFocusDet={focusDetection}
                   />
               ) : (
                   <div
@@ -5859,11 +6176,31 @@ function EditorScreen({data,onReset,apiKey,model}){
                   </div>
               )}
           </div>
+          {/* Collapsed sidebar indicator */}
+          {sidebarCollapsed && (
+              <div
+                  onClick={()=>setSidebarCollapsed(false)}
+                  style={{
+                      width:40,display:"flex",flexDirection:"column",
+                      alignItems:"center",justifyContent:"center",gap:8,
+                      background:T.bg2,borderLeft:`1px solid ${T.border}`,
+                      cursor:"pointer",padding:"12px 0",
+                      transition:"background .15s",
+                  }}
+                  title="サイドバーを展開"
+              >
+                  <span style={{writingMode:"vertical-rl",fontSize:12,fontWeight:600,color:T.text2,letterSpacing:1}}>検出結果</span>
+                  <Badge color={enabledCount>0?T.green:T.amber} bg={enabledCount>0?T.greenDim:T.amberDim} style={{writingMode:"horizontal-tb",fontSize:11,padding:"2px 6px"}}>
+                      {enabledCount}/{detections.length}
+                  </Badge>
+                  <span style={{fontSize:16,color:T.text3,marginTop:4}}>&#x276E;</span>
+              </div>
+          )}
           <div
               className='rp-editor-right'
               style={{
                   flex: '1 1 44%',
-                  display: 'flex',
+                  display: sidebarCollapsed?'none':'flex',
                   flexDirection: 'column',
                   minWidth: 280,
                   maxWidth: 480,
@@ -5884,7 +6221,8 @@ function EditorScreen({data,onReset,apiKey,model}){
                           marginBottom: 12,
                       }}
                   >
-                      <div>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                          <div>
                           <span
                               style={{
                                   fontSize: 16,
@@ -5904,12 +6242,24 @@ function EditorScreen({data,onReset,apiKey,model}){
                               {enabledCount}/{detections.length}
                           </span>
                       </div>
+                      </div>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
                       <Badge
                           color={enabledCount > 0 ? T.green : T.amber}
                           bg={enabledCount > 0 ? T.greenDim : T.amberDim}
                       >
                           {enabledCount > 0 ? '保護中' : '未保護'}
                       </Badge>
+                      <button
+                          onClick={()=>setSidebarCollapsed(true)}
+                          title="サイドバーを折りたたむ"
+                          style={{
+                              background:"transparent",border:"none",cursor:"pointer",
+                              color:T.text3,fontSize:16,padding:"2px 4px",
+                              display:"flex",alignItems:"center",
+                          }}
+                      >&#x276F;</button>
+                      </div>
                   </div>
                   <div style={{ marginBottom: 12 }}>
                       <div
@@ -6612,4 +6962,5 @@ export const __test__ = {
   cleanContent,
   mdToHTML,
   generatePDFHTML,
+  buildAnnotations,
 }

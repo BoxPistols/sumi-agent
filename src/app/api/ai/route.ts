@@ -8,10 +8,10 @@ import { NextRequest, NextResponse } from 'next/server'
  * Body: { provider, model, messages, maxTokens?, system? }
  */
 
-// Rate limiter (per-IP, 60 req/min)
+// Rate limiter (per-IP, 30 req/day)
 const rateMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 60
-const RATE_WINDOW = 60_000
+const RATE_LIMIT = 30
+const RATE_WINDOW = 24 * 60 * 60_000 // 24h
 
 // Cleanup stale entries every 5 minutes
 if (typeof globalThis !== 'undefined') {

@@ -63,7 +63,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     label: 'OpenAI',
     icon: 'O',
     color: '#10A37F',
-    needsKey: true,
+    needsKey: false,
     models: [
       { id: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', desc: '旧世代・超軽量', tier: 1 },
       { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', desc: '旧世代・低コスト', tier: 2 },
