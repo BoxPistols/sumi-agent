@@ -1931,6 +1931,172 @@ function useFocusTrap(active=true){
   return ref;
 }
 
+// ═══ Help Modal ═══
+function HelpModal({onClose}){
+  const trapRef=useFocusTrap();
+  useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
+  const sectionStyle={marginBottom:20};
+  const headingStyle={fontSize:14,fontWeight:700,color:T.text,marginBottom:8,display:'flex',alignItems:'center',gap:6};
+  const listStyle={margin:0,paddingLeft:20,fontSize:13,lineHeight:1.8,color:T.text2};
+  const badgeStyle=(color,bg)=>({display:'inline-block',padding:'1px 7px',borderRadius:4,fontSize:11,fontWeight:600,color,background:bg,marginLeft:4});
+  const stepNumStyle={display:'inline-flex',alignItems:'center',justifyContent:'center',width:20,height:20,borderRadius:10,background:C.accent,color:'#fff',fontSize:11,fontWeight:700,flexShrink:0};
+  const stepStyle={display:'flex',gap:8,alignItems:'flex-start',fontSize:13,color:T.text2,lineHeight:1.6};
+  const kbdStyle={display:'inline-block',padding:'1px 6px',borderRadius:4,border:`1px solid ${T.border}`,background:T.surfaceAlt,fontSize:11,fontWeight:600,color:T.text2,fontFamily:'monospace'};
+  return (
+      <div
+          style={{
+              position:'fixed',inset:0,
+              background:'rgba(0,0,0,.55)',
+              backdropFilter:'blur(4px)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              zIndex:100,padding:16,
+              animation:'fadeIn .2s',
+          }}
+          onClick={(e)=>{if(e.target===e.currentTarget)onClose()}}
+      >
+          <div
+              ref={trapRef}
+              className='rp-modal-inner'
+              role="dialog"
+              aria-modal="true"
+              aria-label="ヘルプ"
+              style={{
+                  width:'100%',maxWidth:640,maxHeight:'92vh',overflow:'auto',
+                  background:T.bg2,borderRadius:16,
+                  border:`1px solid ${T.border}`,
+                  animation:'fadeUp .3s ease',
+              }}
+          >
+              <div style={{
+                  padding:'14px 20px',borderBottom:`1px solid ${T.border}`,
+                  display:'flex',alignItems:'center',justifyContent:'space-between',
+                  position:'sticky',top:0,background:T.bg2,zIndex:1,
+              }}>
+                  <span style={{fontSize:15,fontWeight:700,color:T.text}}>ヘルプ</span>
+                  <button
+                      onClick={onClose}
+                      aria-label="閉じる"
+                      style={{
+                          width:28,height:28,borderRadius:7,
+                          border:`1px solid ${T.border}`,background:'transparent',
+                          color:T.text2,cursor:'pointer',fontSize:13,
+                          display:'flex',alignItems:'center',justifyContent:'center',
+                      }}
+                  >✕</button>
+              </div>
+              <div style={{padding:'18px 20px'}}>
+                  {/* クイックスタート */}
+                  <div style={sectionStyle}>
+                      <div style={headingStyle}>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><polygon points='5 3 19 12 5 21 5 3'/></svg>
+                          クイックスタート
+                      </div>
+                      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                          <div style={stepStyle}><span style={stepNumStyle}>1</span><span>ファイルをドラッグ＆ドロップ、またはテキストを貼り付け</span></div>
+                          <div style={stepStyle}><span style={stepNumStyle}>2</span><span>自動で個人情報（PII）を検出・ハイライト表示</span></div>
+                          <div style={stepStyle}><span style={stepNumStyle}>3</span><span>カテゴリ別にマスク設定を調整</span></div>
+                          <div style={stepStyle}><span style={stepNumStyle}>4</span><span>マスク済みテキストをコピー or エクスポート</span></div>
+                      </div>
+                  </div>
+
+                  {/* 対応ファイル形式 */}
+                  <div style={sectionStyle}>
+                      <div style={headingStyle}>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>
+                          対応ファイル形式
+                      </div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                          {['PDF','Word (.docx)','Excel (.xlsx)','CSV','Markdown','HTML','RTF','JSON','ODT','テキスト'].map(f=>(
+                              <span key={f} style={badgeStyle(T.text2,T.surfaceAlt)}>{f}</span>
+                          ))}
+                      </div>
+                      <p style={{fontSize:12,color:T.text3,margin:'8px 0 0'}}>URLからの読み込み（Wantedly, LinkedIn 等）にも対応</p>
+                  </div>
+
+                  {/* 検出カテゴリ */}
+                  <div style={sectionStyle}>
+                      <div style={headingStyle}>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>
+                          検出カテゴリ
+                      </div>
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 16px',fontSize:13,color:T.text2}}>
+                          <div><span style={{color:C.red}}>●</span> 氏名（辞書+AI）</div>
+                          <div><span style={{color:C.blue}}>●</span> 連絡先（メール・電話）</div>
+                          <div><span style={{color:C.orange}}>●</span> 住所・地名</div>
+                          <div><span style={{color:C.purple}}>●</span> 個人情報（生年月日等）</div>
+                          <div><span style={{color:C.cyan}}>●</span> URL</div>
+                          <div><span style={{color:T.text3}}>●</span> 組織名（オプション）</div>
+                      </div>
+                  </div>
+
+                  {/* マスクプリセット */}
+                  <div style={sectionStyle}>
+                      <div style={headingStyle}>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0110 0v4'/></svg>
+                          マスクプリセット
+                      </div>
+                      <div style={{display:'flex',flexDirection:'column',gap:4,fontSize:13,color:T.text2}}>
+                          <div><strong>基本</strong> — 氏名・連絡先のみ</div>
+                          <div><strong>標準</strong> — + 住所・年月日・URL（推奨）</div>
+                          <div><strong>厳格</strong> — 組織名含む全項目</div>
+                      </div>
+                  </div>
+
+                  {/* AI機能 */}
+                  <div style={sectionStyle}>
+                      <div style={headingStyle}>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4z'/><rect x='3' y='8' width='18' height='14' rx='2'/><line x1='12' y1='12' x2='12' y2='16'/></svg>
+                          AI機能
+                      </div>
+                      <ul style={listStyle}>
+                          <li>設定画面でプロバイダ（OpenAI / Claude / Gemini）を選択</li>
+                          <li>APIキーを入力して接続テスト可能</li>
+                          <li>AI検出で正規表現では見つけにくい個人情報も補完</li>
+                          <li>テキスト整形・OCR読み取りにも活用</li>
+                      </ul>
+                  </div>
+
+                  {/* エクスポート */}
+                  <div style={sectionStyle}>
+                      <div style={headingStyle}>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>
+                          エクスポート
+                      </div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                          {['テキスト','Markdown','CSV','Excel','PDF','Word'].map(f=>(
+                              <span key={f} style={badgeStyle(T.text2,T.surfaceAlt)}>{f}</span>
+                          ))}
+                      </div>
+                  </div>
+
+                  {/* キーボードショートカット */}
+                  <div style={sectionStyle}>
+                      <div style={headingStyle}>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><rect x='2' y='4' width='20' height='16' rx='2'/><line x1='6' y1='8' x2='6' y2='8'/><line x1='10' y1='8' x2='10' y2='8'/><line x1='14' y1='8' x2='14' y2='8'/><line x1='18' y1='8' x2='18' y2='8'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
+                          キーボード操作
+                      </div>
+                      <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:'4px 12px',fontSize:13,color:T.text2,alignItems:'center'}}>
+                          <kbd style={kbdStyle}>Esc</kbd><span>ダイアログを閉じる</span>
+                          <kbd style={kbdStyle}>Tab</kbd><span>次の要素にフォーカス移動</span>
+                      </div>
+                  </div>
+
+                  {/* フッター */}
+                  <div style={{paddingTop:12,borderTop:`1px solid ${T.border}`,fontSize:12,color:T.text3,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <span>RedactPro v0.9</span>
+                      <a
+                          href='https://github.com/BoxPistols/redact-pro'
+                          target='_blank'
+                          rel='noopener noreferrer'
+                          style={{color:C.accent,textDecoration:'none',fontSize:12}}
+                      >GitHub</a>
+                  </div>
+              </div>
+          </div>
+      </div>
+  );
+}
+
 // ═══ Settings Modal ═══
 function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
   const trapRef=useFocusTrap();
@@ -7529,6 +7695,7 @@ export default function App(){
   const[activeFileIdx,setActiveFileIdx]=useState(0);
   const batchAddRef=useRef(null);
   const[showSettings,setShowSettings]=useState(false);
+  const[showHelp,setShowHelp]=useState(false);
   const[isDark,setIsDark]=useState(true);
   const [settings, setSettings] = useState({
       apiKey: '',
@@ -7748,6 +7915,27 @@ export default function App(){
                       {isDark ? '☀️' : '🌙'}
                   </button>
                   <button
+                      title='ヘルプ'
+                      aria-label='ヘルプを表示'
+                      onClick={() => setShowHelp(true)}
+                      style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 8,
+                          border: `1px solid ${T.border}`,
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          color: T.text2,
+                          fontSize: 15,
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                      }}
+                  >
+                      ?
+                  </button>
+                  <button
                       title='設定'
                       aria-label='設定'
                       onClick={() => setShowSettings(true)}
@@ -7842,6 +8030,9 @@ export default function App(){
                   isDark={isDark}
                   setIsDark={setIsDark}
               />
+          )}
+          {showHelp && (
+              <HelpModal onClose={() => setShowHelp(false)} />
           )}
       </div>
   )
