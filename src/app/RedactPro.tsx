@@ -2818,7 +2818,7 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
 
   return (
     <div style={{flex:1,overflow:"auto",background:"#e5e7eb",display:"flex",justifyContent:"center",padding:"24px 16px"}}>
-      <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,overflow:"hidden",transform:`scale(${zoom})`,transformOrigin:"top center"}}>
+      <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${zoom})`,transformOrigin:"top center"}}>
         <div style={pageStyle}>
           {lines.map(({line,raw},li)=>{
             const cls=classifyLine(raw);
@@ -6533,7 +6533,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                   {/* Preview content */}
                   {editMode ? (
                       <div style={{flex:1,overflow:"auto",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16}}>
-                          <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,overflow:"hidden",transform:`scale(${previewZoom})`,transformOrigin:"top center"}}>
+                          <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${previewZoom})`,transformOrigin:"top center"}}>
                               <iframe
                                   srcDoc={previewHtml}
                                   style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
