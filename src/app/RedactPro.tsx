@@ -164,8 +164,8 @@ const EXPORT_FORMATS=[
 
 const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-[data-theme="dark"]{--rp-bg:#181A21;--rp-bg2:#1F222B;--rp-surface:#262A36;--rp-surfaceAlt:#2D3240;--rp-border:#3D4258;--rp-text:#D3D6E0;--rp-text2:#9DA1B3;--rp-text3:#6E7388;--rp-diffAdd:#1B3326;--rp-diffDel:#331B1B;--rp-diffAddBorder:#2A5A3A;--rp-diffDelBorder:#5A2A2A;--rp-scrollThumb:#3D4258}
-[data-theme="light"]{--rp-bg:#F5F6FA;--rp-bg2:#FFFFFF;--rp-surface:#FFFFFF;--rp-surfaceAlt:#EDEEF4;--rp-border:#D5D8E0;--rp-text:#1C1E27;--rp-text2:#5C6173;--rp-text3:#838799;--rp-diffAdd:#E8F5E9;--rp-diffDel:#FFEBEE;--rp-diffAddBorder:#A5D6A7;--rp-diffDelBorder:#EF9A9A;--rp-scrollThumb:#C4C7D0}
+[data-theme="dark"]{--rp-bg:#181A21;--rp-bg2:#1F222B;--rp-surface:#262A36;--rp-surfaceAlt:#2D3240;--rp-border:#3D4258;--rp-text:#D3D6E0;--rp-text2:#B0B4C3;--rp-text3:#8E92A4;--rp-diffAdd:#1B3326;--rp-diffDel:#331B1B;--rp-diffAddBorder:#2A5A3A;--rp-diffDelBorder:#5A2A2A;--rp-scrollThumb:#3D4258}
+[data-theme="light"]{--rp-bg:#F5F6FA;--rp-bg2:#FFFFFF;--rp-surface:#FFFFFF;--rp-surfaceAlt:#EDEEF4;--rp-border:#D5D8E0;--rp-text:#1C1E27;--rp-text2:#4A4F63;--rp-text3:#656A7E;--rp-diffAdd:#E8F5E9;--rp-diffDel:#FFEBEE;--rp-diffAddBorder:#A5D6A7;--rp-diffDelBorder:#EF9A9A;--rp-scrollThumb:#C4C7D0}
 body{background:var(--rp-bg);font-size:14px}
 :focus-visible{outline:2px solid #4C85F6!important;outline-offset:2px;border-radius:4px}
 input:focus-visible,textarea:focus-visible{outline:2px solid #4C85F6!important;outline-offset:0}
@@ -1876,12 +1876,12 @@ function FileTabBar({files,activeIdx,onSelect,onRemove,onBatchExport,onAddFiles}
 // ═══ Batch Processing View ═══
 function BatchProcessingView({file}){
   return (
-    <div style={{
+    <div aria-live="polite" aria-label={`${file.fileName}を処理中: ${file.stage||'処理待機中'} ${file.progress||0}%`} style={{
       display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
       height:'calc(100vh - 90px)',gap:16,fontFamily:T.font,
     }}>
       <div style={{width:48,height:48,border:`3px solid ${T.border}`,borderTopColor:T.accent,borderRadius:'50%',
-        animation:'rp-spin 1s linear infinite'}}/>
+        animation:'rp-spin 1s linear infinite'}} role="status" aria-label="処理中"/>
       <div style={{fontSize:16,fontWeight:600,color:T.text}}>{file.fileName}</div>
       <div style={{fontSize:13,color:T.text3}}>{file.stage||'処理待機中...'}</div>
       <div style={{width:240,height:6,borderRadius:3,background:T.surfaceAlt,overflow:'hidden'}}>
@@ -1895,11 +1895,11 @@ function BatchProcessingView({file}){
 
 function BatchErrorView({file,onRetry}){
   return (
-    <div style={{
+    <div role="alert" style={{
       display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
       height:'calc(100vh - 90px)',gap:12,fontFamily:T.font,
     }}>
-      <div style={{width:48,height:48,borderRadius:'50%',background:T.redDim,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,color:T.red}}>!</div>
+      <div style={{width:48,height:48,borderRadius:'50%',background:T.redDim,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,color:T.red}} aria-hidden="true">!</div>
       <div style={{fontSize:16,fontWeight:600,color:T.text}}>{file.fileName}</div>
       <div style={{fontSize:13,color:T.red}}>{file.error||'処理中にエラーが発生しました'}</div>
       {onRetry&&<Btn onClick={onRetry} style={{padding:'6px 16px',fontSize:12,borderRadius:8}}>再試行</Btn>}
@@ -2534,6 +2534,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                           >
                               {testingKey ? '接続テスト中...' : 'API接続テスト'}
                           </Btn>
+                          <span aria-live="polite" aria-atomic="true">
                           {keyTest && (
                               <span
                                   style={{
@@ -2545,6 +2546,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                                   {keyTest.msg}
                               </span>
                           )}
+                          </span>
                       </div>
                   </div>
                   {/* Proxy URL for URL scraping */}
@@ -2673,6 +2675,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                       <Btn
                           variant={saved ? 'success' : 'primary'}
                           onClick={handleSave}
+                          aria-live="polite"
                           style={{
                               padding: '8px 20px',
                               fontSize: 12,
@@ -3337,6 +3340,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                           <div style={{ flex: 1 }} />
                           <button
                               onClick={handleCopyText}
+                              aria-live="polite"
                               style={{
                                   padding: '4px 10px',
                                   borderRadius: 6,
@@ -4147,6 +4151,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           variant='ghost'
                           onClick={handleCopy}
                           title='クリップボードにコピー'
+                          aria-live="polite"
                           style={{
                               padding: '7px 16px',
                               fontSize: 12,
@@ -7434,6 +7439,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           title='クリップボードにコピー'
                           variant='ghost'
                           onClick={handleCopy}
+                          aria-live="polite"
                           style={{
                               borderRadius: 10,
                               padding: '11px 16px',
@@ -7783,6 +7789,7 @@ export default function App(){
                   </button>
               </div>
           </header>
+          <main style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
           {batchMode ? (
               <>
                   <input aria-label="バッチファイル追加" ref={batchAddRef} type="file" multiple
@@ -7824,6 +7831,7 @@ export default function App(){
           ) : (
               <UploadScreen onAnalyze={setData} onSubmitBatch={handleBatchSubmit} settings={settings} />
           )}
+          </main>
           {showSettings && (
               <SettingsModal
                   settings={settings}
