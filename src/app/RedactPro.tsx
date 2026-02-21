@@ -5778,6 +5778,10 @@ function EditorScreen({data,onReset,apiKey,model}){
   const[focusDetId,setFocusDetId]=useState(null);
   const[focusPulse,setFocusPulse]=useState(0);
   const[sidebarCollapsed,setSidebarCollapsed]=useState(false);
+  const[editMode,setEditMode]=useState(false);
+  const[editedText,setEditedText]=useState(null);
+  const[previewVisible,setPreviewVisible]=useState(true);
+  const[previewFontType,setPreviewFontType]=useState("gothic");
   const hasRawText=data.rawText&&data.rawText!==data.fullText&&data.rawText!==data.text_preview;
 
   const toggle=id=>setDetections(p=>p.map(d=>d.id===id?{...d,enabled:!d.enabled}:d));
@@ -5793,11 +5797,46 @@ function EditorScreen({data,onReset,apiKey,model}){
   const buildTxt=()=>`# マスキング済み\n# 元ファイル: ${data.file_name}\n# 日時: ${new Date().toLocaleString("ja-JP")}\n# マスク: ${enabledCount}件\n\n${viewMode==="ai"&&aiResult?aiResult:redacted}`;
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
+  // A4プレビュー用 memoized HTML
+  const previewSrcText=editedText??redacted;
+  const previewHtml=useMemo(()=>editMode?generatePDFHTML(previewSrcText,previewFontType):"",[editMode,previewSrcText,previewFontType]);
+
+  // 共通エクスポートヘルパー
+  const exportPrintPDF=useCallback(()=>{
+    const src=editedText??redacted;
+    const html=generatePDFHTML(src,previewFontType);
+    const printHTML=html.replace("</body>",`<script>window.onload=function(){window.print();setTimeout(()=>{window.close()},1000)}<\/script></body>`);
+    const blob=new Blob([printHTML],{type:"text/html;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const win=window.open(url,"_blank");
+    if(win)win.focus();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  },[editedText,redacted,previewFontType]);
+
+  const exportHTML=useCallback(()=>{
+    const src=editedText??redacted;
+    const html=generatePDFHTML(src,previewFontType);
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+    const a=document.createElement("a");const url=URL.createObjectURL(blob);
+    a.href=url;a.download=baseName+".html";document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },[editedText,redacted,previewFontType,baseName]);
+
+  const exportWord=useCallback(()=>{
+    const src=editedText??redacted;
+    const html=generatePDFHTML(src,previewFontType);
+    const wordHTML=html.replace('<!DOCTYPE html>','').replace('<html lang="ja">','<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" lang="ja">').replace('<head>','<head><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->');
+    const blob=new Blob(["\uFEFF"+wordHTML],{type:"application/msword;charset=utf-8"});
+    const a=document.createElement("a");const url=URL.createObjectURL(blob);
+    a.href=url;a.download=baseName+".docx";document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },[editedText,redacted,previewFontType,baseName]);
+
   const focusDetection=useCallback((id)=>{
     setFocusDetId(id);
     setFocusPulse(p=>p+1);
-    // A4モードでも検出ハイライトが使えるのでそのまま維持
-    setViewMode(vm=>(vm==="original"||vm==="a4")?vm:"original");
+    setViewMode("original");
+    setEditMode(false);
   },[]);
 
   useEffect(()=>{
@@ -5831,11 +5870,12 @@ function EditorScreen({data,onReset,apiKey,model}){
           <div
               className='rp-editor-left'
               style={{
-                  flex: '1 1 56%',
+                  flex: previewVisible ? '1 1 38%' : '1 1 56%',
                   display: 'flex',
                   flexDirection: 'column',
                   borderRight: `1px solid ${T.border}`,
                   minWidth: 0,
+                  transition: 'flex .2s',
               }}
           >
               <div
@@ -5951,25 +5991,6 @@ function EditorScreen({data,onReset,apiKey,model}){
                           >
                               Diff
                           </button>
-                          <button
-                              onClick={() => setViewMode('a4')}
-                              style={{
-                                  padding: '5px 10px',
-                                  border: 'none',
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  fontFamily: T.font,
-                                  background:
-                                      viewMode === 'a4'
-                                          ? T.greenDim
-                                          : 'transparent',
-                                  color:
-                                      viewMode === 'a4' ? T.green : T.text3,
-                              }}
-                          >
-                              A4
-                          </button>
                           {hasRawText && (
                               <>
                                   <button
@@ -6063,7 +6084,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                               </>
                           )}
                       </div>
-                      {!showDiff && !showAiDiff && viewMode !== 'raw-diff' && viewMode !== 'a4' && (
+                      {!showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
                           <Btn
                               variant={showRedacted ? 'danger' : 'ghost'}
                               onClick={() => setShowRedacted(!showRedacted)}
@@ -6076,10 +6097,30 @@ function EditorScreen({data,onReset,apiKey,model}){
                               {showRedacted ? 'マスク' : '元文'}
                           </Btn>
                       )}
+                      <Btn
+                          variant={editMode ? 'primary' : 'ghost'}
+                          onClick={() => {
+                              if(!editMode){
+                                  setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
+                                  setEditMode(true);
+                                  setPreviewVisible(true);
+                              }else{
+                                  setEditMode(false);
+                                  setEditedText(null);
+                              }
+                          }}
+                          style={{
+                              padding: '6px 12px',
+                              fontSize: 12,
+                              borderRadius: 8,
+                          }}
+                      >
+                          {editMode ? '編集中' : '編集'}
+                      </Btn>
                   </div>
               </div>
               {/* カテゴリ別クイックトグル */}
-              {(viewMode==='original'||viewMode==='a4')&&allCats.length>0&&(
+              {(viewMode==='original')&&!editMode&&allCats.length>0&&(
               <div style={{
                   padding:"4px 14px",display:"flex",alignItems:"center",gap:4,
                   borderBottom:`1px solid ${T.border}`,background:T.bg2,
@@ -6136,15 +6177,26 @@ function EditorScreen({data,onReset,apiKey,model}){
                       modified={aiResult}
                       label='AI整形変更'
                   />
-              ) : viewMode === 'a4' ? (
-                  <A4PreviewPanel
-                      text={aiResult||data.text_preview}
-                      detections={detections}
-                      maskOpts={data.maskOpts}
-                      focusDetId={focusDetId}
-                      focusPulse={focusPulse}
-                      onFocusDet={focusDetection}
-                  />
+              ) : editMode ? (
+                  <div style={{flex:1,overflow:"auto",padding:0,background:T.bg,display:"flex",flexDirection:"column"}}>
+                      <div style={{padding:"6px 14px",borderBottom:`1px solid ${T.border}`,fontSize:12,color:T.text3,lineHeight:1.6,flexShrink:0,background:T.bg2}}>
+                          <span style={{fontWeight:600,color:T.text2}}>記法: </span>
+                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono}}>**太字**</code>
+                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono,marginLeft:6}}># 見出し</code>
+                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono,marginLeft:6}}>## 小見出し</code>
+                          <span style={{opacity:0.6,marginLeft:8}}>Markdown記法でA4プレビューに反映</span>
+                      </div>
+                      <textarea
+                          value={editedText??""}
+                          onChange={(e)=>setEditedText(e.target.value)}
+                          spellCheck={false}
+                          style={{
+                              flex:1,padding:"14px 16px",border:"none",outline:"none",resize:"none",
+                              fontFamily:T.mono,fontSize:12,lineHeight:1.8,color:T.text,
+                              background:T.bg,whiteSpace:"pre-wrap",wordBreak:"break-word",
+                          }}
+                      />
+                  </div>
               ) : (
                   <div
                       style={{
@@ -6180,6 +6232,96 @@ function EditorScreen({data,onReset,apiKey,model}){
                   </div>
               )}
           </div>
+          {/* Center: A4 Preview Panel (always visible) */}
+          {previewVisible ? (
+              <div className="rp-editor-center" style={{
+                  flex:"1 1 32%",minWidth:320,maxWidth:480,display:"flex",flexDirection:"column",
+                  borderRight:`1px solid ${T.border}`,background:"#e5e7eb",
+                  transition:"flex .2s",overflow:"hidden",
+              }}>
+                  {/* Preview toolbar */}
+                  <div style={{
+                      padding:"6px 12px",display:"flex",alignItems:"center",gap:6,
+                      borderBottom:`1px solid ${T.border}`,background:T.bg2,flexShrink:0,flexWrap:"wrap",
+                  }}>
+                      <span style={{fontSize:12,fontWeight:700,color:T.text}}>A4</span>
+                      {editMode && (
+                          <>
+                              <button onClick={()=>setPreviewFontType("gothic")} style={{
+                                  padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
+                                  border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
+                                  background:previewFontType==="gothic"?T.accentDim:"transparent",
+                                  color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
+                              }}>ゴシック</button>
+                              <button onClick={()=>setPreviewFontType("mincho")} style={{
+                                  padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
+                                  border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
+                                  background:previewFontType==="mincho"?T.accentDim:"transparent",
+                                  color:previewFontType==="mincho"?T.accent:T.text3,fontWeight:previewFontType==="mincho"?600:400,
+                              }}>明朝</button>
+                          </>
+                      )}
+                      <span style={{flex:1}}/>
+                      {editMode && (
+                          <div style={{display:"flex",gap:4}}>
+                              <button onClick={exportPrintPDF} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                                  PDF印刷
+                              </button>
+                              <button onClick={exportHTML} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                                  HTML
+                              </button>
+                              <button onClick={exportWord} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                                  Word
+                              </button>
+                          </div>
+                      )}
+                      <button onClick={()=>setShowDesign(true)} title="全画面編集" style={{
+                          padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
+                          border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
+                      }}>&#x2197;</button>
+                      <button onClick={()=>setPreviewVisible(false)} title="プレビューを閉じる" style={{
+                          padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
+                          border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
+                      }}>&#x276F;</button>
+                  </div>
+                  {/* Preview content */}
+                  {editMode ? (
+                      <div style={{flex:1,overflow:"auto",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16}}>
+                          <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,overflow:"hidden",transform:"scale(0.62)",transformOrigin:"top center"}}>
+                              <iframe
+                                  srcDoc={previewHtml}
+                                  style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
+                                  title="A4 Preview"
+                                  onLoad={(e)=>{try{const h=e.target.contentDocument?.documentElement?.scrollHeight;if(h&&h>842)e.target.style.height=h+"px";}catch(ex){}}}
+                              />
+                          </div>
+                      </div>
+                  ) : (
+                      <A4PreviewPanel
+                          text={aiResult||data.text_preview}
+                          detections={detections}
+                          maskOpts={data.maskOpts}
+                          focusDetId={focusDetId}
+                          focusPulse={focusPulse}
+                          onFocusDet={focusDetection}
+                      />
+                  )}
+              </div>
+          ) : (
+              <div
+                  onClick={()=>setPreviewVisible(true)}
+                  style={{
+                      width:36,display:"flex",flexDirection:"column",
+                      alignItems:"center",justifyContent:"center",gap:8,
+                      background:T.bg2,borderRight:`1px solid ${T.border}`,
+                      cursor:"pointer",padding:"12px 0",transition:"background .15s",
+                  }}
+                  title="A4プレビューを表示"
+              >
+                  <span style={{writingMode:"vertical-rl",fontSize:12,fontWeight:600,color:T.text2,letterSpacing:1}}>A4</span>
+                  <span style={{fontSize:14,color:T.text3,marginTop:4}}>&#x276E;</span>
+              </div>
+          )}
           {/* Collapsed sidebar indicator */}
           {sidebarCollapsed && (
               <div
@@ -6203,12 +6345,13 @@ function EditorScreen({data,onReset,apiKey,model}){
           <div
               className='rp-editor-right'
               style={{
-                  flex: '1 1 44%',
+                  flex: previewVisible ? '0 0 260px' : '1 1 44%',
                   display: sidebarCollapsed?'none':'flex',
                   flexDirection: 'column',
-                  minWidth: 280,
-                  maxWidth: 480,
+                  minWidth: 240,
+                  maxWidth: previewVisible ? 320 : 480,
                   background: T.bg2,
+                  transition: 'flex .2s, max-width .2s',
               }}
           >
               <div
@@ -6651,16 +6794,22 @@ function EditorScreen({data,onReset,apiKey,model}){
                       AI で再フォーマット
                   </Btn>
                   <Btn
-                      onClick={() => setShowDesign(true)}
+                      onClick={() => {
+                          if(!editMode){
+                              setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
+                              setEditMode(true);
+                          }
+                          setPreviewVisible(true);
+                      }}
                       style={{
                           width: '100%',
                           borderRadius: 10,
-                          background: '#222',
+                          background: editMode ? T.accent : '#222',
                           fontSize: 13,
                           color: '#fff',
                       }}
                   >
-                      📄 PDF プレビュー・編集
+                      {editMode ? '編集中 / A4プレビュー' : 'PDF プレビュー・編集'}
                   </Btn>
                   <div style={{ display: 'flex', gap: 8 }}>
                       <Btn
@@ -6740,7 +6889,7 @@ function EditorScreen({data,onReset,apiKey,model}){
           )}
           {showDesign && (
               <DesignExportModal
-                  text={viewMode === 'ai' && aiResult ? aiResult : redacted}
+                  text={editMode ? (editedText??redacted) : viewMode === 'ai' && aiResult ? aiResult : redacted}
                   apiKey={apiKey}
                   model={model}
                   baseName={baseName}
