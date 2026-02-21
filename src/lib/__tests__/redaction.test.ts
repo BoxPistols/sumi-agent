@@ -118,6 +118,49 @@ describe('applyRedaction with nameInitial', () => {
   })
 })
 
+describe('applyRedaction with custom keywords', () => {
+  it('replaces custom keyword with placeholder', () => {
+    const text = '所属：株式会社テスト商事 開発部'
+    const dets = [makeDet({ type: 'custom_keyword', category: 'custom', value: '株式会社テスト商事' })]
+    const result = applyRedaction(text, dets)
+    expect(result).toBe('所属：[指定語非公開] 開発部')
+  })
+
+  it('replaces multiple custom keywords', () => {
+    const text = 'プロジェクトAとプロジェクトBに参加'
+    const dets = [
+      makeDet({ type: 'custom_keyword', category: 'custom', value: 'プロジェクトA' }),
+      makeDet({ type: 'custom_keyword', category: 'custom', value: 'プロジェクトB' }),
+    ]
+    const result = applyRedaction(text, dets)
+    expect(result).toBe('[指定語非公開]と[指定語非公開]に参加')
+  })
+
+  it('replaces all occurrences of custom keyword', () => {
+    const text = 'ABC社との契約。ABC社へ報告。'
+    const dets = [makeDet({ type: 'custom_keyword', category: 'custom', value: 'ABC社' })]
+    const result = applyRedaction(text, dets)
+    expect(result).toBe('[指定語非公開]との契約。[指定語非公開]へ報告。')
+  })
+
+  it('works alongside other detection types', () => {
+    const text = '田中太郎はABC社に所属'
+    const dets = [
+      makeDet({ type: 'name_dict', category: 'name', value: '田中太郎' }),
+      makeDet({ type: 'custom_keyword', category: 'custom', value: 'ABC社' }),
+    ]
+    const result = applyRedaction(text, dets)
+    expect(result).toBe('[氏名非公開]は[指定語非公開]に所属')
+  })
+
+  it('skips disabled custom keyword', () => {
+    const text = '秘密のキーワード'
+    const dets = [makeDet({ type: 'custom_keyword', category: 'custom', value: '秘密のキーワード', enabled: false })]
+    const result = applyRedaction(text, dets)
+    expect(result).toBe('秘密のキーワード')
+  })
+})
+
 describe('PLACEHOLDER_RE', () => {
   it('matches all standard placeholders', () => {
     const placeholders = [
@@ -131,6 +174,7 @@ describe('PLACEHOLDER_RE', () => {
       '[番号非公開]',
       '[SNS非公開]',
       '[組織名非公開]',
+      '[指定語非公開]',
       '[顔写真削除]',
       '[非公開]',
     ]
@@ -162,6 +206,7 @@ describe('PLACEHOLDERS', () => {
       'name_kana',
       'sns_ai',
       'mynumber',
+      'custom_keyword',
     ]
     for (const type of expectedTypes) {
       expect(PLACEHOLDERS[type], `Missing placeholder for type: ${type}`).toBeDefined()
