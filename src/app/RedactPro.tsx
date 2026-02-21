@@ -5797,11 +5797,46 @@ function EditorScreen({data,onReset,apiKey,model}){
   const buildTxt=()=>`# マスキング済み\n# 元ファイル: ${data.file_name}\n# 日時: ${new Date().toLocaleString("ja-JP")}\n# マスク: ${enabledCount}件\n\n${viewMode==="ai"&&aiResult?aiResult:redacted}`;
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
+  // A4プレビュー用 memoized HTML
+  const previewSrcText=editedText||redacted;
+  const previewHtml=useMemo(()=>editMode?generatePDFHTML(previewSrcText,previewFontType):"",[editMode,previewSrcText,previewFontType]);
+
+  // 共通エクスポートヘルパー
+  const exportPrintPDF=useCallback(()=>{
+    const src=editedText||redacted;
+    const html=generatePDFHTML(src,previewFontType);
+    const printHTML=html.replace("</body>",`<script>window.onload=function(){window.print();setTimeout(()=>{window.close()},1000)}<\/script></body>`);
+    const blob=new Blob([printHTML],{type:"text/html;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const win=window.open(url,"_blank");
+    if(win)win.focus();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  },[editedText,redacted,previewFontType]);
+
+  const exportHTML=useCallback(()=>{
+    const src=editedText||redacted;
+    const html=generatePDFHTML(src,previewFontType);
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+    const a=document.createElement("a");const url=URL.createObjectURL(blob);
+    a.href=url;a.download=baseName+".html";document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },[editedText,redacted,previewFontType,baseName]);
+
+  const exportWord=useCallback(()=>{
+    const src=editedText||redacted;
+    const html=generatePDFHTML(src,previewFontType);
+    const wordHTML=html.replace('<!DOCTYPE html>','').replace('<html lang="ja">','<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" lang="ja">').replace('<head>','<head><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->');
+    const blob=new Blob(["\uFEFF"+wordHTML],{type:"application/msword;charset=utf-8"});
+    const a=document.createElement("a");const url=URL.createObjectURL(blob);
+    a.href=url;a.download=baseName+".docx";document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },[editedText,redacted,previewFontType,baseName]);
+
   const focusDetection=useCallback((id)=>{
     setFocusDetId(id);
     setFocusPulse(p=>p+1);
-    // A4モードでも検出ハイライトが使えるのでそのまま維持
-    setViewMode(vm=>vm==="original"?vm:"original");
+    setViewMode("original");
+    setEditMode(false);
   },[]);
 
   useEffect(()=>{
@@ -6071,6 +6106,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                                   setPreviewVisible(true);
                               }else{
                                   setEditMode(false);
+                                  setEditedText(null);
                               }
                           }}
                           style={{
@@ -6084,7 +6120,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                   </div>
               </div>
               {/* カテゴリ別クイックトグル */}
-              {(viewMode==='original')&&allCats.length>0&&(
+              {(viewMode==='original')&&!editMode&&allCats.length>0&&(
               <div style={{
                   padding:"4px 14px",display:"flex",alignItems:"center",gap:4,
                   borderBottom:`1px solid ${T.border}`,background:T.bg2,
@@ -6199,9 +6235,9 @@ function EditorScreen({data,onReset,apiKey,model}){
           {/* Center: A4 Preview Panel (always visible) */}
           {previewVisible ? (
               <div className="rp-editor-center" style={{
-                  flex:"0 0 auto",width:420,display:"flex",flexDirection:"column",
+                  flex:"1 1 32%",minWidth:320,maxWidth:480,display:"flex",flexDirection:"column",
                   borderRight:`1px solid ${T.border}`,background:"#e5e7eb",
-                  transition:"width .2s",overflow:"hidden",
+                  transition:"flex .2s",overflow:"hidden",
               }}>
                   {/* Preview toolbar */}
                   <div style={{
@@ -6228,33 +6264,13 @@ function EditorScreen({data,onReset,apiKey,model}){
                       <span style={{flex:1}}/>
                       {editMode && (
                           <div style={{display:"flex",gap:4}}>
-                              <button onClick={()=>{
-                                  const src=editedText||redacted;
-                                  const printHTML=generatePDFHTML(src,previewFontType).replace("</body>",`<script>window.onload=function(){window.print();setTimeout(()=>{window.close()},1000)}<\/script></body>`);
-                                  const blob=new Blob([printHTML],{type:"text/html;charset=utf-8"});
-                                  const url=URL.createObjectURL(blob);
-                                  const win=window.open(url,"_blank");
-                                  if(win)win.focus();
-                              }} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportPrintPDF} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   PDF印刷
                               </button>
-                              <button onClick={()=>{
-                                  const src=editedText||redacted;
-                                  const html=generatePDFHTML(src,previewFontType);
-                                  const blob=new Blob([html],{type:"text/html;charset=utf-8"});
-                                  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
-                                  a.download=baseName+".html";document.body.appendChild(a);a.click();document.body.removeChild(a);
-                              }} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportHTML} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   HTML
                               </button>
-                              <button onClick={()=>{
-                                  const src=editedText||redacted;
-                                  const html=generatePDFHTML(src,previewFontType);
-                                  const wordHTML=html.replace('<!DOCTYPE html>','').replace('<html lang="ja">','<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" lang="ja">').replace('<head>','<head><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->');
-                                  const blob=new Blob(["\uFEFF"+wordHTML],{type:"application/msword;charset=utf-8"});
-                                  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
-                                  a.download=baseName+".docx";document.body.appendChild(a);a.click();document.body.removeChild(a);
-                              }} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportWord} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   Word
                               </button>
                           </div>
@@ -6273,7 +6289,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                       <div style={{flex:1,overflow:"auto",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16}}>
                           <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,overflow:"hidden",transform:"scale(0.62)",transformOrigin:"top center"}}>
                               <iframe
-                                  srcDoc={generatePDFHTML(editedText||redacted,previewFontType)}
+                                  srcDoc={previewHtml}
                                   style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
                                   title="A4 Preview"
                                   onLoad={(e)=>{try{const h=e.target.contentDocument?.documentElement?.scrollHeight;if(h&&h>842)e.target.style.height=h+"px";}catch(ex){}}}
