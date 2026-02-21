@@ -1631,6 +1631,9 @@ async function aiReformat(redactedText,instruction,apiKey,model){
   })
 }
 
+// ═══ Export helpers ═══
+function fileTimestamp(){const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;}
+
 // ═══ Export generators ═══
 function generateExport(rawContent,format,baseName){
   const bom="\uFEFF",ts=new Date().toLocaleString("ja-JP");
@@ -2869,7 +2872,8 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
 }
 
 // ═══ PDF Review / Edit Modal ═══
-function DesignExportModal({text,apiKey,model,onClose}){
+function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
+  const exportBase=baseNameProp||"redacted_"+fileTimestamp();
   const[editText,setEditText]=useState(text);
   const[fontType,setFontType]=useState("gothic");
   const[saved,setSaved]=useState(false);
@@ -2897,7 +2901,7 @@ function DesignExportModal({text,apiKey,model,onClose}){
     const blob=new Blob([htmlContent],{type:"text/html;charset=utf-8"});
     const a=document.createElement("a");
     a.href=URL.createObjectURL(blob);
-    a.download="resume.html";
+    a.download=exportBase+".html";
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
   };
@@ -2911,7 +2915,7 @@ function DesignExportModal({text,apiKey,model,onClose}){
     const blob=new Blob([bom+wordHTML],{type:"application/msword;charset=utf-8"});
     const a=document.createElement("a");
     a.href=URL.createObjectURL(blob);
-    a.download="resume.docx";
+    a.download=exportBase+".docx";
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
   };
@@ -5753,7 +5757,7 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
               <PreviewModal
                   title='AI 整形結果'
                   content={result}
-                  baseName='ai_formatted'
+                  baseName={`ai_formatted_${fileTimestamp()}`}
                   onClose={() => setShowPreview(false)}
               />
           )}
@@ -5785,7 +5789,7 @@ function EditorScreen({data,onReset,apiKey,model}){
   const redacted=useMemo(()=>applyRedaction(data.fullText||data.text_preview,detections,data.maskOpts),[data,detections]);
   const displayText=viewMode==="ai"&&aiResult?aiResult:viewMode==="raw"&&hasRawText?data.rawText:showRedacted?applyRedaction(data.text_preview,detections,data.maskOpts):data.text_preview;
   const handleCopy=()=>{navigator.clipboard.writeText(viewMode==="ai"&&aiResult?aiResult:redacted);setCopied(true);setTimeout(()=>setCopied(false),2000);};
-  const baseName=data.file_name.replace(/\.[^.]+$/,"")+"_redacted";
+  const baseName=data.file_name.replace(/\.[^.]+$/,"")+"_redacted_"+fileTimestamp();
   const buildTxt=()=>`# マスキング済み\n# 元ファイル: ${data.file_name}\n# 日時: ${new Date().toLocaleString("ja-JP")}\n# マスク: ${enabledCount}件\n\n${viewMode==="ai"&&aiResult?aiResult:redacted}`;
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
@@ -6695,7 +6699,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                               setPreview({
                                   title: '検出レポート',
                                   content: buildCsv(),
-                                  baseName: 'pii_report',
+                                  baseName: `pii_report_${fileTimestamp()}`,
                               })
                           }
                           style={{
@@ -6739,6 +6743,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                   text={viewMode === 'ai' && aiResult ? aiResult : redacted}
                   apiKey={apiKey}
                   model={model}
+                  baseName={baseName}
                   onClose={() => setShowDesign(false)}
               />
           )}
