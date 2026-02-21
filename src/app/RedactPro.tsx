@@ -7236,9 +7236,9 @@ function EditorScreen({data,onReset,apiKey,model}){
                       >&#x276F;</button>
                       </div>
                   </div>
-                  <div role="button" tabIndex={0} onClick={()=>setSideSettingsOpen(p=>!p)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSideSettingsOpen(p=>!p);}}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 0',cursor:'pointer',userSelect:'none'}}>
-                      <span style={{fontSize:12,fontWeight:600,color:T.text2}}>マスキング設定</span>
-                      <span style={{fontSize:9,color:T.text3,transition:'transform .2s',transform:sideSettingsOpen?'rotate(90deg)':'rotate(0deg)',display:'inline-block'}}>▶</span>
+                  <div role="button" tabIndex={0} onClick={()=>setSideSettingsOpen(p=>!p)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSideSettingsOpen(p=>!p);}}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',margin:'8px -18px 8px',cursor:'pointer',userSelect:'none',background:sideSettingsOpen?T.surface:'transparent',borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,transition:'background .15s'}}>
+                      <span style={{fontSize:12,fontWeight:700,color:T.text,letterSpacing:0.3}}>{sideSettingsOpen?'▾':'▸'} マスキング設定</span>
+                      <span style={{fontSize:10,color:T.text3,padding:'2px 8px',borderRadius:4,background:sideSettingsOpen?'transparent':T.accentDim,border:sideSettingsOpen?'none':`1px solid ${T.accent}40`,color:sideSettingsOpen?T.text3:T.accent,fontWeight:500}}>{sideSettingsOpen?'閉じる':'開く'}</span>
                   </div>
                   {sideSettingsOpen && (<>
                   <div style={{ marginBottom: 12 }}>
@@ -7669,7 +7669,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           color: '#fff',
                       }}
                   >
-                      {editMode ? '編集中 / A4プレビュー' : 'PDF プレビュー・編集'}
+                      {editMode ? '編集完了 / プレビューを閉じる' : 'PDF プレビュー・編集'}
                   </Btn>
                   <div style={{ display: 'flex', gap: 8 }}>
                       <Btn
