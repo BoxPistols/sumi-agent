@@ -6473,6 +6473,8 @@ function EditorScreen({data,onReset,apiKey,model}){
     try{const raw=localStorage.getItem("rp_custom_keywords");const arr=raw?JSON.parse(raw):[];if(!arr.includes(kw)){arr.push(kw);localStorage.setItem("rp_custom_keywords",JSON.stringify(arr));}}catch(e){}
   };
   const[sideSettingsOpen,setSideSettingsOpen]=useState(true);
+  const[closedCats,setClosedCats]=useState(new Set());
+  const toggleCatAccordion=(cat)=>setClosedCats(prev=>{const next=new Set(prev);if(next.has(cat))next.delete(cat);else next.add(cat);return next;});
   // アップロード画面のカスタムキーワードを引き継ぐ
   useEffect(()=>{try{const raw=localStorage.getItem("rp_custom_keywords");if(!raw)return;const keywords=JSON.parse(raw);if(!Array.isArray(keywords)||!keywords.length)return;const text=data.fullText||data.text_preview;setDetections(prev=>{const add=[];for(const kw of keywords){if(!kw||!text.includes(kw))continue;if(prev.some(d=>d.type==="custom_keyword"&&d.value===kw))continue;add.push({id:`ck_load_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,type:"custom_keyword",label:"カスタム指定",category:"custom",value:kw,source:"regex",confidence:1.0,enabled:true});}return add.length?[...prev,...add]:prev;});}catch(e){}},[]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -7237,8 +7239,8 @@ function EditorScreen({data,onReset,apiKey,model}){
                       </div>
                   </div>
                   <div role="button" tabIndex={0} onClick={()=>setSideSettingsOpen(p=>!p)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSideSettingsOpen(p=>!p);}}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',margin:'8px -18px 8px',cursor:'pointer',userSelect:'none',background:sideSettingsOpen?T.surface:'transparent',borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,transition:'background .15s'}}>
-                      <span style={{fontSize:12,fontWeight:700,color:T.text,letterSpacing:0.3}}>{sideSettingsOpen?'▾':'▸'} マスキング設定</span>
-                      <span style={{fontSize:10,color:T.text3,padding:'2px 8px',borderRadius:4,background:sideSettingsOpen?'transparent':T.accentDim,border:sideSettingsOpen?'none':`1px solid ${T.accent}40`,color:sideSettingsOpen?T.text3:T.accent,fontWeight:500}}>{sideSettingsOpen?'閉じる':'開く'}</span>
+                      <span style={{fontSize:13,fontWeight:700,color:T.text,display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:16,lineHeight:1,transition:'transform .2s',transform:sideSettingsOpen?'rotate(90deg)':'rotate(0deg)',display:'inline-block'}}>&#9654;</span>マスキング設定</span>
+                      <span style={{fontSize:10,padding:'2px 8px',borderRadius:4,background:sideSettingsOpen?'transparent':T.accentDim,border:sideSettingsOpen?'none':`1px solid ${T.accent}40`,color:sideSettingsOpen?T.text3:T.accent,fontWeight:500}}>{sideSettingsOpen?'閉じる':'開く'}</span>
                   </div>
                   {sideSettingsOpen && (<>
                   <div style={{ marginBottom: 12 }}>
@@ -7462,6 +7464,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                               label: cat,
                               color: T.text2,
                           }
+                          const catOpen = !closedCats.has(cat);
                           return (
                               <div
                                   key={cat}
@@ -7471,6 +7474,9 @@ function EditorScreen({data,onReset,apiKey,model}){
                                   }}
                               >
                                   <div
+                                      role="button" tabIndex={0}
+                                      onClick={()=>toggleCatAccordion(cat)}
+                                      onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleCatAccordion(cat);}}}
                                       style={{
                                           fontSize: 12,
                                           fontWeight: 700,
@@ -7481,8 +7487,11 @@ function EditorScreen({data,onReset,apiKey,model}){
                                           display: 'flex',
                                           alignItems: 'center',
                                           gap: 6,
+                                          cursor: 'pointer',
+                                          userSelect: 'none',
                                       }}
                                   >
+                                      <span style={{fontSize:14,transition:'transform .15s',transform:catOpen?'rotate(90deg)':'rotate(0deg)',display:'inline-block',lineHeight:1}}>&#9654;</span>
                                       <span
                                           style={{
                                               width: 6,
@@ -7494,7 +7503,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                                       />
                                       {meta.label} ({items.length})
                                   </div>
-                                  {items.map((item) => (
+                                  {catOpen && items.map((item) => (
                                       <div
                                           key={item.id}
                                           role="button" tabIndex={0}
@@ -7658,8 +7667,11 @@ function EditorScreen({data,onReset,apiKey,model}){
                           if(!editMode){
                               setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
                               setEditMode(true);
+                              setPreviewVisible(true);
+                          }else{
+                              setEditMode(false);
+                              setEditedText(null);
                           }
-                          setPreviewVisible(true);
                       }}
                       style={{
                           width: '100%',
