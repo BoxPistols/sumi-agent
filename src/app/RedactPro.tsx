@@ -4638,7 +4638,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings}){
   },[loading]);
 
   useEffect(()=>{(async()=>{try{const v=await safeGet("rp_custom_keywords");if(v){const parsed=JSON.parse(v);if(Array.isArray(parsed))setCustomKeywords(parsed);}}catch(e){}})();},[]);
-  useEffect(()=>{if(customKeywords.length>0)storage.set("rp_custom_keywords",JSON.stringify(customKeywords));else storage.set("rp_custom_keywords","");},[customKeywords]);
+  useEffect(()=>{storage.set("rp_custom_keywords",JSON.stringify(customKeywords));},[customKeywords]);
 
   const processText=useCallback(async(text,name,format,pageCount,fileSize,rawText,sparsePages,pdfData)=>{
     let workText=text;
@@ -8037,8 +8037,7 @@ export default function App(){
                     style={{display:'none'}}
                     onChange={(e)=>{
                       const fl=e.target.files;if(!fl||fl.length===0)return;
-                      const ckStr=typeof window!=='undefined'?localStorage.getItem('rp_custom_keywords'):'';
-                      const ck=ckStr?JSON.parse(ckStr):[];
+                      let ck=[];try{const ckStr=typeof window!=='undefined'?localStorage.getItem('rp_custom_keywords'):'';if(ckStr){const parsed=JSON.parse(ckStr);if(Array.isArray(parsed))ck=parsed;}}catch(e){}
                       handleBatchSubmit(Array.from(fl),activeFile?.data?.maskOpts||{},ck);
                     }}
                   />

@@ -6,6 +6,7 @@ import {
   buildReadingMap,
   detectRegex,
   detectJapaneseNames,
+  detectCustomKeywords,
   detectAll,
   mergeDetections,
   type Detection,
@@ -303,6 +304,61 @@ describe('detectAll', () => {
     expect(types.has('email')).toBe(true)
     expect(types.has('phone')).toBe(true)
     expect(types.has('url')).toBe(true)
+  })
+})
+
+// ═══ detectCustomKeywords ═══
+describe('detectCustomKeywords', () => {
+  it('detects a single keyword', () => {
+    const dets = detectCustomKeywords('株式会社テスト商事の田中です', ['株式会社テスト商事'])
+    expect(dets).toHaveLength(1)
+    expect(dets[0].value).toBe('株式会社テスト商事')
+    expect(dets[0].category).toBe('custom')
+    expect(dets[0].type).toBe('custom_keyword')
+    expect(dets[0].confidence).toBe(1.0)
+  })
+
+  it('detects multiple keywords', () => {
+    const text = '田中太郎は株式会社ABCで働いています'
+    const dets = detectCustomKeywords(text, ['田中太郎', '株式会社ABC'])
+    expect(dets).toHaveLength(2)
+    const values = dets.map((d) => d.value)
+    expect(values).toContain('田中太郎')
+    expect(values).toContain('株式会社ABC')
+  })
+
+  it('deduplicates same keyword appearing multiple times', () => {
+    const text = '田中と田中と田中'
+    const dets = detectCustomKeywords(text, ['田中'])
+    expect(dets).toHaveLength(1)
+  })
+
+  it('returns empty for no matches', () => {
+    const dets = detectCustomKeywords('テストテキスト', ['存在しない文字列'])
+    expect(dets).toHaveLength(0)
+  })
+
+  it('skips empty keywords', () => {
+    const dets = detectCustomKeywords('テスト', ['', ' ', 'テスト'])
+    expect(dets).toHaveLength(1)
+    expect(dets[0].value).toBe('テスト')
+  })
+})
+
+// ═══ detectAll with customKeywords ═══
+describe('detectAll with customKeywords', () => {
+  it('includes custom keyword detections', () => {
+    const text = '氏名：田中 太郎\nメール：tanaka@example.com\n所属：カスタム組織名'
+    const dets = detectAll(text, ['カスタム組織名'])
+    const customDets = dets.filter((d) => d.category === 'custom')
+    expect(customDets).toHaveLength(1)
+    expect(customDets[0].value).toBe('カスタム組織名')
+  })
+
+  it('works without customKeywords', () => {
+    const text = 'tanaka@example.com'
+    const dets = detectAll(text)
+    expect(dets.some((d) => d.type === 'email')).toBe(true)
   })
 })
 
