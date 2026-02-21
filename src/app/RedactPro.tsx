@@ -1758,8 +1758,8 @@ function Badge({ children, color, bg, style: sx }) {
         </span>
     )
 }
-function Btn({children,variant="primary",onClick,disabled,style:sx}){const base={display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 22px",borderRadius:10,fontSize:14,fontWeight:600,fontFamily:T.font,cursor:disabled?"default":"pointer",border:"none",transition:"all .15s",opacity:disabled?.35:1};const v={primary:{background:T.accent,color:"#fff"},ghost:{background:"transparent",color:T.text2,border:`1px solid ${T.border}`},danger:{background:T.redDim,color:T.red},success:{background:T.greenDim,color:T.green}};return <button onClick={disabled?undefined:onClick} style={{...base,...v[variant],...sx}}>{children}</button>;}
-function Toggle({checked,onChange,size="md",disabled=false}){const w=size==="sm"?32:38,h=size==="sm"?18:22,d=size==="sm"?12:16;return <button onClick={(e)=>{if(disabled)return;e.stopPropagation();onChange&&onChange();}} style={{width:w,height:h,borderRadius:h/2,border:"none",cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,background:checked?T.accent:T.border,position:"relative",transition:"background .2s",flexShrink:0}}><span style={{position:"absolute",top:(h-d)/2,left:checked?w-d-3:3,width:d,height:d,borderRadius:d/2,background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.25)"}}/></button>;}
+function Btn({children,variant="primary",onClick,disabled,style:sx,title,...rest}){const base={display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 22px",borderRadius:10,fontSize:14,fontWeight:600,fontFamily:T.font,cursor:disabled?"default":"pointer",border:"none",transition:"all .15s",opacity:disabled?.35:1};const v={primary:{background:T.accent,color:"#fff"},ghost:{background:"transparent",color:T.text2,border:`1px solid ${T.border}`},danger:{background:T.redDim,color:T.red},success:{background:T.greenDim,color:T.green}};return <button onClick={disabled?undefined:onClick} title={title} aria-label={rest['aria-label']||title} {...rest} style={{...base,...v[variant],...sx}}>{children}</button>;}
+function Toggle({checked,onChange,size="md",disabled=false,title}){const w=size==="sm"?32:38,h=size==="sm"?18:22,d=size==="sm"?12:16;return <button role="switch" aria-checked={checked} aria-label={title} onClick={(e)=>{if(disabled)return;e.stopPropagation();onChange&&onChange();}} style={{width:w,height:h,borderRadius:h/2,border:"none",cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,background:checked?T.accent:T.border,position:"relative",transition:"background .2s",flexShrink:0}}><span style={{position:"absolute",top:(h-d)/2,left:checked?w-d-3:3,width:d,height:d,borderRadius:d/2,background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.25)"}}/></button>;}
 function Pill({ children, active, onClick, color }) {
     return (
         <button
@@ -1829,6 +1829,7 @@ function FileTabBar({files,activeIdx,onSelect,onRemove,onBatchExport,onAddFiles}
           const statusDot=f.status==='done'?T.green:f.status==='error'?T.red:f.status==='processing'?T.amber:T.text3;
           return (
             <button key={f.id} onClick={()=>onSelect(i)}
+              aria-label={`${f.fileName} (${f.status==='done'?'完了':f.status==='processing'?f.stage||'処理中':f.status==='error'?'エラー':f.status==='cancelled'?'キャンセル':'待機中'})`}
               title={`${f.fileName} (${f.status==='done'?'完了':f.status==='processing'?f.stage||'処理中':f.status==='error'?'エラー':f.status==='cancelled'?'キャンセル':'待機中'})`}
               style={{
                 display:'flex',alignItems:'center',gap:5,
@@ -1849,7 +1850,7 @@ function FileTabBar({files,activeIdx,onSelect,onRemove,onBatchExport,onAddFiles}
             </button>
           );
         })}
-        <button onClick={onAddFiles} title="ファイルを追加" style={{
+        <button onClick={onAddFiles} title="ファイルを追加" aria-label="ファイルを追加" style={{
           width:24,height:24,borderRadius:6,border:`1px dashed ${T.border}`,background:'transparent',
           cursor:'pointer',color:T.text3,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center',
           flexShrink:0,fontFamily:T.font,
@@ -1905,6 +1906,7 @@ function BatchErrorView({file,onRetry}){
 
 // ═══ Settings Modal ═══
 function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
+  useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const [provider, setProvider] = useState(settings.provider || 'openai')
   const [model, setModel] = useState(settings.model || 'gpt-5-nano')
   const[apiKey,setApiKey]=useState(settings.apiKey||"");
@@ -2021,6 +2023,9 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
       >
           <div
               className='rp-modal-inner'
+              role="dialog"
+              aria-modal="true"
+              aria-label="設定"
               style={{
                   width: '100%',
                   maxWidth: 560,
@@ -2052,6 +2057,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                   </span>
                   <button
                       onClick={onClose}
+                      aria-label="閉じる"
                       style={{
                           width: 28,
                           height: 28,
@@ -3147,6 +3153,9 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
           onClick={(e) => e.target === e.currentTarget && onClose()}
       >
           <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="PDF プレビュー・編集"
               style={{
                   width: '95vw',
                   maxWidth: 1300,
@@ -3204,6 +3213,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                       </span>
                       <button
                           onClick={onClose}
+                          aria-label="閉じる"
                           style={{
                               background: 'transparent',
                               border: 'none',
@@ -3652,6 +3662,9 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
       >
           <div
               className='rp-modal-inner'
+              role="dialog"
+              aria-modal="true"
+              aria-label={title}
               style={{
                   width: '100%',
                   maxWidth: 820,
@@ -3701,6 +3714,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           <button
                               onClick={() => setView('layout')}
                               title='書式付きプレビュー'
+                              aria-label='書式付きプレビュー'
                               style={{
                                   padding: '6px 10px',
                                   border: 'none',
@@ -3719,6 +3733,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           <button
                               onClick={() => setView('text')}
                               title='プレーンテキスト表示'
+                              aria-label='プレーンテキスト表示'
                               style={{
                                   padding: '6px 10px',
                                   border: 'none',
@@ -3738,6 +3753,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           <button
                               onClick={() => setView('edit')}
                               title='テキストを編集'
+                              aria-label='テキストを編集'
                               style={{
                                   padding: '6px 10px',
                                   border: 'none',
@@ -3758,6 +3774,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                       <button
                           onClick={onClose}
                           title='閉じる'
+                          aria-label='閉じる'
                           style={{
                               width: 28,
                               height: 28,
@@ -3997,6 +4014,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                                   key={f.id}
                                   onClick={() => setFmt(f.id)}
                                   title={`${f.label}形式`}
+                                  aria-label={`${f.label}形式`}
                                   style={{
                                       padding: '5px 12px',
                                       borderRadius: 7,
@@ -5768,6 +5786,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings}){
                           href="/mock-resumes.zip"
                           download="mock-resumes.zip"
                           title="モック履歴書一式をダウンロード（ZIP）"
+                          aria-label="モック履歴書一式をダウンロード（ZIP）"
                           style={{
                               display:"flex",alignItems:"center",gap:8,
                               marginTop:12,padding:"10px 14px",borderRadius:10,
@@ -6413,6 +6432,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                       >
                           <button
                               title='マスク: 個人情報を隠した結果を表示'
+                              aria-label='マスク: 個人情報を隠した結果を表示'
                               onClick={() => setViewMode('original')}
                               style={{
                                   padding: '5px 10px',
@@ -6435,6 +6455,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           </button>
                           <button
                               title='Diff: 元テキストとマスク後の違いを並べて比較'
+                              aria-label='Diff: 元テキストとマスク後の違いを並べて比較'
                               onClick={() => setViewMode('diff')}
                               style={{
                                   padding: '5px 10px',
@@ -6457,6 +6478,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                               <>
                                   <button
                                       title='Raw: ファイルから抽出した生テキストを表示'
+                                      aria-label='Raw: ファイルから抽出した生テキストを表示'
                                       onClick={() => setViewMode('raw')}
                                       style={{
                                           padding: '5px 10px',
@@ -6479,6 +6501,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                                   </button>
                                   <button
                                       title='Raw Diff: 生テキストとAI整形後の違いを比較'
+                                      aria-label='Raw Diff: 生テキストとAI整形後の違いを比較'
                                       onClick={() => setViewMode('raw-diff')}
                                       style={{
                                           padding: '5px 10px',
@@ -6505,6 +6528,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                               <>
                                   <button
                                       title='AI整形: AIが読みやすく整形したテキストを表示'
+                                      aria-label='AI整形: AIが読みやすく整形したテキストを表示'
                                       onClick={() => setViewMode('ai')}
                                       style={{
                                           padding: '5px 10px',
@@ -6527,6 +6551,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                                   </button>
                                   <button
                                       title='AI Diff: マスク結果とAI整形後の違いを比較'
+                                      aria-label='AI Diff: マスク結果とAI整形後の違いを比較'
                                       onClick={() => setViewMode('ai-diff')}
                                       style={{
                                           padding: '5px 10px',
@@ -6588,7 +6613,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                       <div style={{width:1,height:20,background:T.border,marginLeft:4,marginRight:2,flexShrink:0}}/>
                       <div style={{display:'flex',gap:2,alignItems:'center'}}>
                           {LAYOUT_PRESETS.map(p=>(
-                              <button key={p.id} title={p.label} onClick={()=>applyLayoutPreset(p.id)}
+                              <button key={p.id} title={p.label} aria-label={p.label} onClick={()=>applyLayoutPreset(p.id)}
                                   style={{
                                       padding:3,borderRadius:4,cursor:'pointer',
                                       border:`1px solid ${activePreset===p.id?T.accent:'transparent'}`,
@@ -6629,8 +6654,8 @@ function EditorScreen({data,onReset,apiKey,model}){
                       );
                   })}
                   <span style={{flex:1}}/>
-                  <button title='すべての検出を有効にする' onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全ON</button>
-                  <button title='すべての検出を無効にする' onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全OFF</button>
+                  <button title='すべての検出を有効にする' aria-label='すべての検出を有効にする' onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全ON</button>
+                  <button title='すべての検出を無効にする' aria-label='すべての検出を無効にする' onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全OFF</button>
               </div>
               )}
               {showDiff ? (
@@ -6719,6 +6744,7 @@ function EditorScreen({data,onReset,apiKey,model}){
           {previewVisible && (
               <div
                   onMouseDown={startDrag('left')}
+                  role="separator" aria-label="ドラッグでパネル幅を調整"
                   title="ドラッグでパネル幅を調整"
                   style={{...dividerStyle,borderLeft:`1px solid ${T.border}`}}
                   onMouseEnter={(e)=>{e.currentTarget.style.background=T.accentDim;}}
@@ -6739,13 +6765,13 @@ function EditorScreen({data,onReset,apiKey,model}){
                       <span style={{fontSize:12,fontWeight:700,color:T.text}}>A4</span>
                       {editMode && (
                           <>
-                              <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" style={{
+                              <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" aria-label="ゴシック体に切替" style={{
                                   padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
                                   border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
                                   background:previewFontType==="gothic"?T.accentDim:"transparent",
                                   color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
                               }}>ゴシック</button>
-                              <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" style={{
+                              <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" aria-label="明朝体に切替" style={{
                                   padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
                                   border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
                                   background:previewFontType==="mincho"?T.accentDim:"transparent",
@@ -6754,15 +6780,15 @@ function EditorScreen({data,onReset,apiKey,model}){
                           </>
                       )}
                       <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:4}}>
-                          <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小"
+                          <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小" aria-label="縮小"
                               style={{width:22,height:22,borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font}}>
                               &minus;
                           </button>
-                          <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット"
+                          <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット" aria-label="ズームをリセット"
                               style={{padding:"2px 6px",borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text3,cursor:"pointer",fontSize:10,fontFamily:T.mono,fontWeight:600,minWidth:40,textAlign:"center"}}>
                               {Math.round(previewZoom*100)}%
                           </button>
-                          <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大"
+                          <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大" aria-label="拡大"
                               style={{width:22,height:22,borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font}}>
                               +
                           </button>
@@ -6770,22 +6796,22 @@ function EditorScreen({data,onReset,apiKey,model}){
                       <span style={{flex:1}}/>
                       {editMode && (
                           <div style={{display:"flex",gap:4}}>
-                              <button onClick={exportPrintPDF} title="PDFとして印刷" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportPrintPDF} title="PDFとして印刷" aria-label="PDFとして印刷" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   PDF印刷
                               </button>
-                              <button onClick={exportHTML} title="HTML形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportHTML} title="HTML形式でダウンロード" aria-label="HTML形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   HTML
                               </button>
-                              <button onClick={exportWord} title="Word形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportWord} title="Word形式でダウンロード" aria-label="Word形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   Word
                               </button>
                           </div>
                       )}
-                      <button onClick={()=>setShowDesign(true)} title="全画面編集" style={{
+                      <button onClick={()=>setShowDesign(true)} title="全画面編集" aria-label="全画面編集" style={{
                           padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
                           border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
                       }}>&#x2197;</button>
-                      <button onClick={()=>{setPreviewVisible(false);setLeftPct(null);setRightPct(null);}} title="プレビューを閉じる" style={{
+                      <button onClick={()=>{setPreviewVisible(false);setLeftPct(null);setRightPct(null);}} title="プレビューを閉じる" aria-label="プレビューを閉じる" style={{
                           padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
                           border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
                       }}>&#x276F;</button>
@@ -6819,7 +6845,9 @@ function EditorScreen({data,onReset,apiKey,model}){
               </div>
           ) : (
               <div
+                  role="button" tabIndex={0} aria-label="A4プレビューを表示"
                   onClick={()=>{setPreviewVisible(true);setLeftPct(null);setRightPct(null);}}
+                  onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPreviewVisible(true);setLeftPct(null);setRightPct(null);}}}
                   style={{
                       display:"flex",flexDirection:"column",
                       alignItems:"center",justifyContent:"center",gap:8,
@@ -6836,6 +6864,7 @@ function EditorScreen({data,onReset,apiKey,model}){
           {!sidebarCollapsed && (
               <div
                   onMouseDown={startDrag('right')}
+                  role="separator" aria-label="ドラッグでパネル幅を調整"
                   title="ドラッグでパネル幅を調整"
                   style={{...dividerStyle,borderLeft:`1px solid ${T.border}`}}
                   onMouseEnter={(e)=>{e.currentTarget.style.background=T.accentDim;}}
@@ -6845,7 +6874,9 @@ function EditorScreen({data,onReset,apiKey,model}){
           {/* Collapsed sidebar indicator */}
           {sidebarCollapsed && (
               <div
+                  role="button" tabIndex={0} aria-label="サイドバーを展開"
                   onClick={()=>{setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}
+                  onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}}
                   style={{
                       display:"flex",flexDirection:"column",
                       alignItems:"center",justifyContent:"center",gap:8,
@@ -6917,6 +6948,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                       <button
                           onClick={()=>{setSidebarCollapsed(true);setLeftPct(null);setRightPct(null);}}
                           title="サイドバーを折りたたむ"
+                          aria-label="サイドバーを折りたたむ"
                           style={{
                               background:"transparent",border:"none",cursor:"pointer",
                               color:T.text3,fontSize:16,padding:"2px 4px",
@@ -7007,15 +7039,14 @@ function EditorScreen({data,onReset,apiKey,model}){
                                               ({cc.enabled}/{cc.total})
                                           </span>
                                       </div>
-                                      <span title={allOn?'このカテゴリを無効にする':'このカテゴリを有効にする'}>
                                       <Toggle
                                           checked={allOn}
                                           onChange={() =>
                                               setCatEnabled(cat, !allOn)
                                           }
                                           size='sm'
+                                          title={allOn?'このカテゴリを無効にする':'このカテゴリを有効にする'}
                                       />
-                                      </span>
                                   </div>
                               )
                           })}
@@ -7164,7 +7195,10 @@ function EditorScreen({data,onReset,apiKey,model}){
                                   {items.map((item) => (
                                       <div
                                           key={item.id}
+                                          role="button" tabIndex={0}
                                           onClick={() => focusDetection(item.id)}
+                                          onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();focusDetection(item.id);}}}
+                                          aria-label={`${item.value} - 本文の該当箇所へジャンプ`}
                                           title='クリックで本文の該当箇所へジャンプ'
                                           style={{
                                               display: 'flex',
@@ -7281,13 +7315,12 @@ function EditorScreen({data,onReset,apiKey,model}){
                                                   {item.value}
                                               </div>
                                           </div>
-                                          <span title={item.enabled?'この検出を無効にする':'この検出を有効にする'}>
                                           <Toggle
                                               checked={item.enabled}
                                               onChange={() => toggle(item.id)}
                                               size='sm'
+                                              title={item.enabled?'この検出を無効にする':'この検出を有効にする'}
                                           />
-                                          </span>
                                       </div>
                                   ))}
                               </div>
@@ -7646,6 +7679,7 @@ export default function App(){
                   </div>
                   <button
                       title='ダークモード切替'
+                      aria-label='ダークモード切替'
                       onClick={() => setIsDark(!isDark)}
                       style={{
                           width: 36,
@@ -7665,6 +7699,7 @@ export default function App(){
                   </button>
                   <button
                       title='設定'
+                      aria-label='設定'
                       onClick={() => setShowSettings(true)}
                       style={{
                           display: 'flex',
