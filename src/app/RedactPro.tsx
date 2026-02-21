@@ -2844,8 +2844,9 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
   const hrStyle={border:0,borderTop:"1px solid #e5e7eb",margin:"12px 0"};
 
   return (
-    <div style={{flex:1,overflow:"auto",background:"#e5e7eb",display:"flex",justifyContent:"center",padding:"24px 16px"}}>
-      <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${zoom})`,transformOrigin:"top center"}}>
+    <div style={{flex:1,overflow:"auto",background:"#e5e7eb",padding:"24px 16px",display:"flex",justifyContent:"center"}}>
+      <div style={{width:Math.round(595*zoom),flexShrink:0}}>
+        <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${zoom})`,transformOrigin:"top left"}}>
         <div style={pageStyle}>
           {lines.map(({line,raw},li)=>{
             const cls=classifyLine(raw);
@@ -2901,6 +2902,7 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
             }
             return <div key={li} style={{lineHeight:1.75}}>{segs}</div>;
           })}
+        </div>
         </div>
       </div>
     </div>
@@ -6117,32 +6119,51 @@ function EditorScreen({data,onReset,apiKey,model}){
   },[]);
 
   const dividerStyle={
-    width:5,flexShrink:0,cursor:'col-resize',
+    cursor:'col-resize',
     background:'transparent',
     position:'relative',
     zIndex:5,
     transition:'background .15s',
   };
 
+  // CSS Grid列定義: 左パネルは常に1fr（残りスペースすべて）
+  const centerCol=`minmax(280px,min(${Math.round(595*previewZoom)+48}px,42%))`;
+  const gridCols=useMemo(()=>{
+    const d='5px';
+    if(previewVisible&&!sidebarCollapsed){
+      const l=leftPct?`${leftPct}%`:'1fr',c=leftPct?'1fr':centerCol,r=rightPct?`${rightPct}%`:'260px';
+      return `${l} ${d} ${c} ${d} ${r}`;
+    }
+    if(!previewVisible&&!sidebarCollapsed){
+      const r=rightPct?`${rightPct}%`:'300px';
+      return `1fr 36px ${d} ${r}`;
+    }
+    if(previewVisible&&sidebarCollapsed){
+      const l=leftPct?`${leftPct}%`:'1fr',c=leftPct?'1fr':centerCol;
+      return `${l} ${d} ${c} 40px`;
+    }
+    return '1fr 36px 40px';
+  },[previewVisible,sidebarCollapsed,leftPct,rightPct,centerCol]);
+
   return (
       <div
           className='rp-editor-wrap'
           style={{
-              display: 'flex',
+              display: 'grid',
+              gridTemplateColumns: gridCols,
               height: 'calc(100vh - 52px)',
               fontFamily: T.font,
+              transition: presetTransRef.current ? 'grid-template-columns .2s ease' : undefined,
           }}
       >
           <div
               className='rp-editor-left'
               style={{
-                  flex: leftPct ? `0 0 ${leftPct}%` : previewVisible ? '1 1 50%' : '1 1 60%',
                   display: 'flex',
                   flexDirection: 'column',
                   minWidth: 0,
                   minHeight: 0,
                   overflow: 'hidden',
-                  transition: (leftPct&&!presetTransRef.current) ? 'none' : 'flex .2s',
               }}
           >
               <div
@@ -6536,7 +6557,7 @@ function EditorScreen({data,onReset,apiKey,model}){
           {/* Center: A4 Preview Panel (always visible) */}
           {previewVisible ? (
               <div className="rp-editor-center" style={{
-                  flex:"0 1 340px",minWidth:200,display:"flex",flexDirection:"column",
+                  minWidth:0,display:"flex",flexDirection:"column",
                   background:"#e5e7eb",minHeight:0,overflow:"hidden",
               }}>
                   {/* Preview toolbar */}
@@ -6600,15 +6621,17 @@ function EditorScreen({data,onReset,apiKey,model}){
                   </div>
                   {/* Preview content */}
                   {editMode ? (
-                      <div style={{flex:1,overflow:"auto",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16}}>
-                          <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${previewZoom})`,transformOrigin:"top center"}}>
-                              <iframe
-                                  srcDoc={previewHtml}
-                                  sandbox="allow-same-origin"
-                                  style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
-                                  title="A4 Preview"
-                                  onLoad={(e)=>{try{const h=e.target.contentDocument?.documentElement?.scrollHeight;if(h&&h>842)e.target.style.height=h+"px";}catch(ex){}}}
-                              />
+                      <div style={{flex:1,overflow:"auto",display:"flex",justifyContent:"center",padding:16}}>
+                          <div style={{width:Math.round(595*previewZoom),flexShrink:0}}>
+                              <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${previewZoom})`,transformOrigin:"top left"}}>
+                                  <iframe
+                                      srcDoc={previewHtml}
+                                      sandbox="allow-same-origin"
+                                      style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
+                                      title="A4 Preview"
+                                      onLoad={(e)=>{try{const h=e.target.contentDocument?.documentElement?.scrollHeight;if(h&&h>842)e.target.style.height=h+"px";}catch(ex){}}}
+                                  />
+                              </div>
                           </div>
                       </div>
                   ) : (
@@ -6627,7 +6650,7 @@ function EditorScreen({data,onReset,apiKey,model}){
               <div
                   onClick={()=>{setPreviewVisible(true);setLeftPct(null);setRightPct(null);}}
                   style={{
-                      width:36,display:"flex",flexDirection:"column",
+                      display:"flex",flexDirection:"column",
                       alignItems:"center",justifyContent:"center",gap:8,
                       background:T.bg2,borderRight:`1px solid ${T.border}`,
                       cursor:"pointer",padding:"12px 0",transition:"background .15s",
@@ -6653,7 +6676,7 @@ function EditorScreen({data,onReset,apiKey,model}){
               <div
                   onClick={()=>{setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}
                   style={{
-                      width:40,display:"flex",flexDirection:"column",
+                      display:"flex",flexDirection:"column",
                       alignItems:"center",justifyContent:"center",gap:8,
                       background:T.bg2,borderLeft:`1px solid ${T.border}`,
                       cursor:"pointer",padding:"12px 0",
@@ -6671,13 +6694,10 @@ function EditorScreen({data,onReset,apiKey,model}){
           <div
               className='rp-editor-right'
               style={{
-                  flex: rightPct ? `0 0 ${rightPct}%` : previewVisible ? '0 0 260px' : '0 1 300px',
                   display: sidebarCollapsed?'none':'flex',
                   flexDirection: 'column',
-                  minWidth: 200,
-                  maxWidth: previewVisible ? 400 : 480,
+                  minWidth: 0,
                   background: T.bg2,
-                  transition: rightPct ? 'none' : 'flex .2s, max-width .2s',
               }}
           >
               <div
