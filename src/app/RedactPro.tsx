@@ -167,6 +167,9 @@ const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@
 [data-theme="dark"]{--rp-bg:#181A21;--rp-bg2:#1F222B;--rp-surface:#262A36;--rp-surfaceAlt:#2D3240;--rp-border:#3D4258;--rp-text:#D3D6E0;--rp-text2:#9DA1B3;--rp-text3:#6E7388;--rp-diffAdd:#1B3326;--rp-diffDel:#331B1B;--rp-diffAddBorder:#2A5A3A;--rp-diffDelBorder:#5A2A2A;--rp-scrollThumb:#3D4258}
 [data-theme="light"]{--rp-bg:#F5F6FA;--rp-bg2:#FFFFFF;--rp-surface:#FFFFFF;--rp-surfaceAlt:#EDEEF4;--rp-border:#D5D8E0;--rp-text:#1C1E27;--rp-text2:#5C6173;--rp-text3:#838799;--rp-diffAdd:#E8F5E9;--rp-diffDel:#FFEBEE;--rp-diffAddBorder:#A5D6A7;--rp-diffDelBorder:#EF9A9A;--rp-scrollThumb:#C4C7D0}
 body{background:var(--rp-bg);font-size:14px}
+:focus-visible{outline:2px solid #4C85F6!important;outline-offset:2px;border-radius:4px}
+input:focus-visible,textarea:focus-visible{outline:2px solid #4C85F6!important;outline-offset:0}
+[role="button"]:focus-visible{outline:2px solid #4C85F6!important;outline-offset:2px;border-radius:4px}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--rp-scrollThumb);border-radius:3px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -1904,8 +1907,33 @@ function BatchErrorView({file,onRetry}){
   );
 }
 
+// ═══ Focus Trap Hook ═══
+function useFocusTrap(active=true){
+  const ref=useRef(null);
+  const prevFocus=useRef(null);
+  useEffect(()=>{
+    if(!active)return;
+    prevFocus.current=document.activeElement;
+    const el=ref.current;if(!el)return;
+    const focusable=()=>el.querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])');
+    const first=()=>{const f=focusable();return f[0]};
+    const last=()=>{const f=focusable();return f[f.length-1]};
+    const trap=e=>{
+      if(e.key!=='Tab')return;
+      const items=focusable();if(!items.length)return;
+      if(e.shiftKey){if(document.activeElement===items[0]){e.preventDefault();items[items.length-1].focus();}}
+      else{if(document.activeElement===items[items.length-1]){e.preventDefault();items[0].focus();}}
+    };
+    el.addEventListener('keydown',trap);
+    requestAnimationFrame(()=>{const f=first();if(f)f.focus();});
+    return()=>{el.removeEventListener('keydown',trap);if(prevFocus.current&&prevFocus.current.focus)prevFocus.current.focus();};
+  },[active]);
+  return ref;
+}
+
 // ═══ Settings Modal ═══
 function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
+  const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const [provider, setProvider] = useState(settings.provider || 'openai')
   const [model, setModel] = useState(settings.model || 'gpt-5-nano')
@@ -2022,6 +2050,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
           }}
       >
           <div
+              ref={trapRef}
               className='rp-modal-inner'
               role="dialog"
               aria-modal="true"
@@ -2437,6 +2466,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                       </div>
                       <div style={{ position: 'relative' }}>
                           <input
+                              aria-label="APIキー"
                               type={showKey ? 'text' : 'password'}
                               value={apiKey}
                               onChange={(e) => setApiKey(e.target.value)}
@@ -2559,6 +2589,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
                           通常はサーバー経由で自動取得されるため、設定不要です。独自の中継サーバーがある場合のみ入力してください。
                       </div>
                       <input
+                          aria-label="スクレイピングプロキシURL"
                           value={proxyUrl}
                           onChange={(e) => setProxyUrl(e.target.value)}
                           placeholder='https://your-proxy.example.com/fetch?url={url}'
@@ -3083,6 +3114,7 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
 
 // ═══ PDF Review / Edit Modal ═══
 function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
+  const trapRef=useFocusTrap();
   const exportBase=baseNameProp||"redacted_"+fileTimestamp();
   const[editText,setEditText]=useState(text);
   const[fontType,setFontType]=useState("gothic");
@@ -3153,6 +3185,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
           onClick={(e) => e.target === e.currentTarget && onClose()}
       >
           <div
+              ref={trapRef}
               role="dialog"
               aria-modal="true"
               aria-label="PDF プレビュー・編集"
@@ -3370,6 +3403,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                       </div>
                       {/* Textarea */}
                       <textarea
+                          aria-label="HTMLソースを編集"
                           value={editText}
                           onChange={(e) => setEditText(e.target.value)}
                           spellCheck={false}
@@ -3521,6 +3555,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
 }
 // ═══ Preview / Export Modal ═══
 function PreviewModal({title,content,baseName,onClose,onContentChange,editable}){
+  const trapRef=useFocusTrap();
   const[copied,setCopied]=useState(false);
   const[fmt,setFmt]=useState("txt");
   const[view,setView]=useState("layout"); // "layout" | "text" | "edit"
@@ -3661,6 +3696,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
           }}
       >
           <div
+              ref={trapRef}
               className='rp-modal-inner'
               role="dialog"
               aria-modal="true"
@@ -3797,6 +3833,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                   {view === 'edit' ? (
                       <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
                           <textarea
+                              aria-label="テキストを編集"
                               value={editedContent}
                               onChange={(e)=>{setEditedContent(e.target.value);setHasChanges(e.target.value!==content);}}
                               style={{
@@ -5174,6 +5211,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings}){
                                   }}
                               >
                                   <input
+                                      aria-label="ファイルを選択"
                                       ref={inputRef}
                                       type='file'
                                       multiple
@@ -5310,6 +5348,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings}){
                                       }}
                                   >
                                       <input
+                                          aria-label="URLを入力"
                                           value={urlValue}
                                           onChange={(e) =>
                                               setUrlValue(e.target.value)
@@ -5564,6 +5603,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings}){
                                       職務経歴書のテキストをコピー＆ペースト、またはHTMLソースを貼り付けてください
                                   </p>
                                   <textarea
+                                      aria-label="職務経歴書のテキストを貼り付け"
                                       value={pasteValue}
                                       onChange={(e) =>
                                           setPasteValue(e.target.value)
@@ -6005,6 +6045,7 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
                           style={{ display: 'flex', gap: 8, marginBottom: 18 }}
                       >
                           <textarea
+                              aria-label="カスタム指示"
                               value={instruction}
                               onChange={(e) => setInstruction(e.target.value)}
                               placeholder='例: 箇条書きで技術スキルを整理し...'
@@ -6694,6 +6735,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           <span style={{opacity:0.6,marginLeft:8}}>Markdown記法でA4プレビューに反映</span>
                       </div>
                       <textarea
+                          aria-label="Markdown編集"
                           value={editedText??""}
                           onChange={(e)=>setEditedText(e.target.value)}
                           spellCheck={false}
@@ -7743,7 +7785,7 @@ export default function App(){
           </header>
           {batchMode ? (
               <>
-                  <input ref={batchAddRef} type="file" multiple
+                  <input aria-label="バッチファイル追加" ref={batchAddRef} type="file" multiple
                     accept=".pdf,.docx,.doc,.xlsx,.xls,.ods,.csv,.txt,.tsv,.md,.markdown,.html,.htm,.rtf,.json,.odt"
                     style={{display:'none'}}
                     onChange={(e)=>{
