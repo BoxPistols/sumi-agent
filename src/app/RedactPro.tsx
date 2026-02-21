@@ -144,7 +144,7 @@ function getModelsForRun(settings) {
     }
 }
 
-const CATEGORIES={name:{label:"氏名",color:C.red,bg:C.redDim},contact:{label:"連絡先",color:C.accent,bg:C.accentDim},address:{label:"住所・地名",color:C.amber,bg:C.amberDim},personal:{label:"個人情報",color:C.purple,bg:C.purpleDim},web:{label:"URL",color:C.cyan,bg:C.cyanDim},organization:{label:"組織名",color:"#8490A8",bg:"rgba(132,144,168,0.1)"},photo:{label:"顔写真",color:C.red,bg:C.redDim}};
+const CATEGORIES={name:{label:"氏名",color:C.red,bg:C.redDim},contact:{label:"連絡先",color:C.accent,bg:C.accentDim},address:{label:"住所・地名",color:C.amber,bg:C.amberDim},personal:{label:"個人情報",color:C.purple,bg:C.purpleDim},web:{label:"URL",color:C.cyan,bg:C.cyanDim},organization:{label:"組織名",color:"#8490A8",bg:"rgba(132,144,168,0.1)"},custom:{label:"カスタム",color:"#E879A8",bg:"rgba(232,121,168,0.1)"},photo:{label:"顔写真",color:C.red,bg:C.redDim}};
 
 const DEFAULT_MASK={name:true,contact:true,address:true,personal:true,web:true,organization:false,keepPrefecture:true,nameInitial:false};
 const MASK_PRESETS=[
