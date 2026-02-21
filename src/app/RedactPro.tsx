@@ -6086,6 +6086,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                   flexDirection: 'column',
                   minWidth: 0,
                   minHeight: 0,
+                  overflow: 'hidden',
                   transition: leftPct ? 'none' : 'flex .2s',
               }}
           >
@@ -6465,7 +6466,7 @@ function EditorScreen({data,onReset,apiKey,model}){
           {previewVisible ? (
               <div className="rp-editor-center" style={{
                   flex:"1 1 0%",minWidth:200,display:"flex",flexDirection:"column",
-                  background:"#e5e7eb",minHeight:0,
+                  background:"#e5e7eb",minHeight:0,overflow:"hidden",
               }}>
                   {/* Preview toolbar */}
                   <div style={{
