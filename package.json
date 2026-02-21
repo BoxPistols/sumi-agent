@@ -4,6 +4,7 @@
   "private": true,
   "description": "RedactPro - AI-powered Japanese PII masking tool for resumes",
   "scripts": {
+    "predev": "rm -rf .next",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
