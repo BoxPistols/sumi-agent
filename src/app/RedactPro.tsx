@@ -5798,12 +5798,12 @@ function EditorScreen({data,onReset,apiKey,model}){
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
   // A4プレビュー用 memoized HTML
-  const previewSrcText=editedText||redacted;
+  const previewSrcText=editedText??redacted;
   const previewHtml=useMemo(()=>editMode?generatePDFHTML(previewSrcText,previewFontType):"",[editMode,previewSrcText,previewFontType]);
 
   // 共通エクスポートヘルパー
   const exportPrintPDF=useCallback(()=>{
-    const src=editedText||redacted;
+    const src=editedText??redacted;
     const html=generatePDFHTML(src,previewFontType);
     const printHTML=html.replace("</body>",`<script>window.onload=function(){window.print();setTimeout(()=>{window.close()},1000)}<\/script></body>`);
     const blob=new Blob([printHTML],{type:"text/html;charset=utf-8"});
@@ -5814,7 +5814,7 @@ function EditorScreen({data,onReset,apiKey,model}){
   },[editedText,redacted,previewFontType]);
 
   const exportHTML=useCallback(()=>{
-    const src=editedText||redacted;
+    const src=editedText??redacted;
     const html=generatePDFHTML(src,previewFontType);
     const blob=new Blob([html],{type:"text/html;charset=utf-8"});
     const a=document.createElement("a");const url=URL.createObjectURL(blob);
@@ -5823,7 +5823,7 @@ function EditorScreen({data,onReset,apiKey,model}){
   },[editedText,redacted,previewFontType,baseName]);
 
   const exportWord=useCallback(()=>{
-    const src=editedText||redacted;
+    const src=editedText??redacted;
     const html=generatePDFHTML(src,previewFontType);
     const wordHTML=html.replace('<!DOCTYPE html>','').replace('<html lang="ja">','<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40" lang="ja">').replace('<head>','<head><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->');
     const blob=new Blob(["\uFEFF"+wordHTML],{type:"application/msword;charset=utf-8"});
@@ -6187,7 +6187,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           <span style={{opacity:0.6,marginLeft:8}}>Markdown記法でA4プレビューに反映</span>
                       </div>
                       <textarea
-                          value={editedText||""}
+                          value={editedText??""}
                           onChange={(e)=>setEditedText(e.target.value)}
                           spellCheck={false}
                           style={{
@@ -6345,7 +6345,7 @@ function EditorScreen({data,onReset,apiKey,model}){
           <div
               className='rp-editor-right'
               style={{
-                  flex: previewVisible ? '0 0 260' : '1 1 44%',
+                  flex: previewVisible ? '0 0 260px' : '1 1 44%',
                   display: sidebarCollapsed?'none':'flex',
                   flexDirection: 'column',
                   minWidth: 240,
@@ -6889,7 +6889,7 @@ function EditorScreen({data,onReset,apiKey,model}){
           )}
           {showDesign && (
               <DesignExportModal
-                  text={viewMode === 'ai' && aiResult ? aiResult : redacted}
+                  text={editMode ? (editedText??redacted) : viewMode === 'ai' && aiResult ? aiResult : redacted}
                   apiKey={apiKey}
                   model={model}
                   baseName={baseName}
