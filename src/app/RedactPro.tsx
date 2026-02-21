@@ -1710,6 +1710,33 @@ function Pill({ children, active, onClick, color }) {
     )
 }
 
+// ═══ Layout Presets ═══
+const LAYOUT_PRESETS=[
+  {id:'text',  label:'テキスト重視',    cols:[{f:3},{f:1}]},
+  {id:'balanced',label:'バランス',       cols:[{f:5},{f:3},{f:2}]},
+  {id:'preview',label:'プレビュー重視', cols:[{f:2},{f:5},{f:2}]},
+  {id:'focus', label:'集中モード',      cols:[{f:1}]},
+];
+function LayoutIcon({cols,active,color}){
+  return (
+    <div style={{
+      width:28,height:18,borderRadius:3,
+      border:`1.5px solid ${active?color:T.border}`,
+      display:'flex',gap:1,padding:2,
+      background:active?`${color}18`:'transparent',
+      overflow:'hidden',
+    }}>
+      {cols.map((c,i)=>(
+        <span key={i} style={{
+          flex:c.f,borderRadius:1,
+          background:active?color:T.text3,
+          opacity:active?0.7:0.25,
+        }}/>
+      ))}
+    </div>
+  );
+}
+
 // ═══ Settings Modal ═══
 function SettingsModal({settings,onSave,onClose,isDark,setIsDark}){
   const [provider, setProvider] = useState(settings.provider || 'openai')
@@ -2712,7 +2739,7 @@ strong{font-weight:700}
 }
 
 // ═══ A4 Preview (inline) ═══
-function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusDet}){
+function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusDet,zoom=1}){
   const segments=useMemo(()=>{
     return buildAnnotations(text,detections,{
       showRedacted:true,
@@ -2818,7 +2845,7 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
 
   return (
     <div style={{flex:1,overflow:"auto",background:"#e5e7eb",display:"flex",justifyContent:"center",padding:"24px 16px"}}>
-      <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,overflow:"hidden",transformOrigin:"top center"}}>
+      <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${zoom})`,transformOrigin:"top center"}}>
         <div style={pageStyle}>
           {lines.map(({line,raw},li)=>{
             const cls=classifyLine(raw);
@@ -3289,6 +3316,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                       >
                           <iframe
                               srcDoc={htmlContent}
+                              sandbox="allow-same-origin"
                               style={{
                                   width: '100%',
                                   minHeight: 842,
@@ -3352,11 +3380,91 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
   const lines=displayContent.split("\n").length;const chars=displayContent.length;
   const curFmt=EXPORT_FORMATS.find(f=>f.id===fmt);
 
+  // CSV/XLSX: default to layout (table view) when switching format
   useEffect(()=>{
-    if(fmt==="csv"||fmt==="xlsx")setView("text");
+    if((fmt==="csv"||fmt==="xlsx")&&view==="edit")setView("layout");
   },[fmt]);
 
-  const layoutHtml=useMemo(()=>generatePDFHTML(displayContent,"gothic",{stripRedactions:false,highlightRedactions:true,removeRedactionOnlyLines:false}),[displayContent]);
+  const layoutHtml=useMemo(()=>{
+    const redRe=new RegExp(PH_RE.source,"g");
+    const esc=(s)=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    if(fmt==="txt"){
+      return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
+body{font-family:'Consolas','Monaco','Noto Sans JP',monospace;font-size:11pt;line-height:1.8;color:#111;background:#fff;padding:30px 36px;white-space:pre-wrap;word-break:break-word;margin:0}
+</style></head><body>${esc(displayContent)}</body></html>`;
+    }
+    if(fmt==="md"){
+      const body=mdToHTML(displayContent,{stripRedactions:false,highlightRedactions:true,removeRedactionOnlyLines:false});
+      return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
+body{font-family:'Noto Sans JP',sans-serif;font-size:10.5pt;line-height:1.8;color:#111827;background:#fff;padding:26px 30px;margin:0;max-width:660px}
+h2{font-size:14pt;font-weight:700;margin:18px 0 8px;padding-bottom:6px;border-bottom:1.8px solid #0f172a}
+h3{font-size:11.5pt;font-weight:700;margin:14px 0 6px}
+h4{font-size:10.6pt;font-weight:700;margin:12px 0 4px}
+.kv{display:grid;grid-template-columns:minmax(110px,160px) 1fr;gap:12px;padding:2px 0}
+.k{color:#475569;font-weight:700}.v{color:#0f172a}
+.li{padding-left:1em;text-indent:-1em;line-height:1.75;margin:1px 0}
+.rd{background:#fee;color:#c33;padding:0 4px;border-radius:3px;font-weight:700}
+.hr{border:0;border-top:1px solid #e5e7eb;margin:12px 0}
+code{background:#f1f5f9;padding:2px 6px;border-radius:3px;font-size:0.9em}
+pre{background:#f1f5f9;padding:12px 16px;border-radius:6px;overflow-x:auto;font-size:0.9em}
+</style></head><body>${body}</body></html>`;
+    }
+    if(fmt==="csv"){
+      // Note: simple split — quoted fields with commas are not handled (preview-only)
+      const rows=displayContent.split("\n").map(r=>r.split(","));
+      let table="<table><thead><tr>";
+      if(rows.length>0)rows[0].forEach(c=>{table+=`<th>${esc(c.trim())}</th>`;});
+      table+="</tr></thead><tbody>";
+      for(let i=1;i<rows.length;i++){
+        table+="<tr>";rows[i].forEach(c=>{table+=`<td>${esc(c.trim())}</td>`;});table+="</tr>";
+      }
+      table+="</tbody></table>";
+      return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
+body{font-family:'Noto Sans JP',sans-serif;font-size:10pt;margin:0;padding:20px;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:10pt}
+th,td{border:1px solid #d1d5db;padding:6px 10px;text-align:left;white-space:nowrap}
+th{background:#f3f4f6;font-weight:700;color:#374151}
+tr:nth-child(even){background:#f9fafb}
+</style></head><body>${table}</body></html>`;
+    }
+    if(fmt==="xlsx"){
+      const rows=displayContent.split("\n").map(r=>r.split(","));
+      let table="<table><thead><tr><th class='rn'></th>";
+      if(rows.length>0)rows[0].forEach((c,ci)=>{table+=`<th>${esc(c.trim())}</th>`;});
+      table+="</tr></thead><tbody>";
+      for(let i=1;i<rows.length;i++){
+        table+=`<tr><td class='rn'>${i}</td>`;rows[i].forEach(c=>{table+=`<td>${esc(c.trim())}</td>`;});table+="</tr>";
+      }
+      table+="</tbody></table>";
+      return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
+body{font-family:'Calibri','Noto Sans JP',sans-serif;font-size:10pt;margin:0;padding:0;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:10pt}
+th,td{border:1px solid #9ca3af;padding:4px 8px;text-align:left;white-space:nowrap;min-width:60px}
+th{background:#D9E2F3;font-weight:700;color:#1f2937;text-align:center}
+td.rn,th.rn{background:#f3f4f6;color:#6b7280;text-align:center;width:36px;font-size:9pt}
+tr:hover{background:#EBF0FA}
+</style></head><body>${table}</body></html>`;
+    }
+    if(fmt==="docx"){
+      const body=mdToHTML(displayContent,{stripRedactions:false,highlightRedactions:true,removeRedactionOnlyLines:false});
+      return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&display=swap');
+@page{size:A4;margin:25mm 25mm}
+body{font-family:'Noto Serif JP','MS 明朝',serif;font-size:10.5pt;line-height:1.8;color:#111827;background:#fff;margin:0;padding:36px 40px;max-width:660px}
+h2{font-size:13pt;font-weight:700;margin:20px 0 8px;padding-bottom:6px;border-bottom:1.5px solid #374151}
+h3{font-size:11pt;font-weight:700;margin:16px 0 6px}
+h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
+.kv{display:grid;grid-template-columns:minmax(110px,160px) 1fr;gap:12px;padding:2px 0}
+.k{color:#475569;font-weight:700}.v{color:#0f172a}
+.li{padding-left:1em;text-indent:-1em;line-height:1.8;margin:1px 0}
+.rd{background:#fee;color:#c33;padding:0 4px;border-radius:3px;font-weight:700}
+.hr{border:0;border-top:1px solid #d1d5db;margin:14px 0}
+</style></head><body>${body}</body></html>`;
+    }
+    // default: pdf
+    return generatePDFHTML(displayContent,"gothic",{stripRedactions:false,highlightRedactions:true,removeRedactionOnlyLines:false});
+  },[displayContent,fmt]);
   return (
       <div
           style={{
@@ -3424,6 +3532,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                       >
                           <button
                               onClick={() => setView('layout')}
+                              title='書式付きプレビュー'
                               style={{
                                   padding: '6px 10px',
                                   border: 'none',
@@ -3441,6 +3550,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                           </button>
                           <button
                               onClick={() => setView('text')}
+                              title='プレーンテキスト表示'
                               style={{
                                   padding: '6px 10px',
                                   border: 'none',
@@ -3459,6 +3569,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                           {editable!==false&&onContentChange&&(
                           <button
                               onClick={() => setView('edit')}
+                              title='テキストを編集'
                               style={{
                                   padding: '6px 10px',
                                   border: 'none',
@@ -3478,6 +3589,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                       </div>
                       <button
                           onClick={onClose}
+                          title='閉じる'
                           style={{
                               width: 28,
                               height: 28,
@@ -3524,10 +3636,51 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                           style={{
                               display: 'flex',
                               justifyContent: 'center',
-                              padding: 24,
-                              background: T.bg,
+                              padding: (fmt==="csv"||fmt==="xlsx") ? 12 : 24,
+                              background: (fmt==="csv"||fmt==="xlsx") ? '#fff' : T.bg,
+                              overflow: 'auto',
                           }}
                       >
+                          {(fmt==="csv"||fmt==="xlsx") ? (
+                              <iframe
+                                  srcDoc={layoutHtml}
+                                  sandbox="allow-same-origin"
+                                  style={{
+                                      width: '100%',
+                                      minHeight: 400,
+                                      border: 'none',
+                                  }}
+                                  title='TablePreview'
+                                  onLoad={(e) => {
+                                      try {
+                                          const h = e.target.contentDocument?.documentElement?.scrollHeight;
+                                          if (h) e.target.style.height = Math.max(h, 400) + 'px';
+                                      } catch (ex) {}
+                                  }}
+                              />
+                          ) : fmt==="txt" ? (
+                              <div style={{
+                                  width: '100%',
+                                  maxWidth: 700,
+                                  background: '#fff',
+                                  boxShadow: '0 2px 12px rgba(0,0,0,.08)',
+                                  borderRadius: 8,
+                                  overflow: 'hidden',
+                              }}>
+                                  <iframe
+                                      srcDoc={layoutHtml}
+                                      sandbox="allow-same-origin"
+                                      style={{ width: '100%', minHeight: 600, border: 'none' }}
+                                      title='TextPreview'
+                                      onLoad={(e) => {
+                                          try {
+                                              const h = e.target.contentDocument?.documentElement?.scrollHeight;
+                                              if (h && h > 600) e.target.style.height = h + 'px';
+                                          } catch (ex) {}
+                                      }}
+                                  />
+                              </div>
+                          ) : (
                           <div
                               style={{
                                   width: 595,
@@ -3543,6 +3696,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                           >
                               <iframe
                                   srcDoc={layoutHtml}
+                                  sandbox="allow-same-origin"
                                   style={{
                                       width: '100%',
                                       minHeight: 842,
@@ -3562,6 +3716,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                                   }}
                               />
                           </div>
+                          )}
                       </div>
                   ) : (
                       <pre
@@ -3673,6 +3828,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                               <button
                                   key={f.id}
                                   onClick={() => setFmt(f.id)}
+                                  title={`${f.label}形式`}
                                   style={{
                                       padding: '5px 12px',
                                       borderRadius: 7,
@@ -3755,6 +3911,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                       <Btn
                           variant='ghost'
                           onClick={onClose}
+                          title='閉じる'
                           style={{
                               padding: '7px 16px',
                               fontSize: 12,
@@ -3766,6 +3923,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                       <Btn
                           variant='ghost'
                           onClick={handleCopy}
+                          title='クリップボードにコピー'
                           style={{
                               padding: '7px 16px',
                               fontSize: 12,
@@ -3776,6 +3934,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                       </Btn>
                       <Btn
                           onClick={handleDownload}
+                          title={`${curFmt?.label}形式でダウンロード`}
                           style={{
                               padding: '7px 16px',
                               fontSize: 12,
@@ -3794,7 +3953,11 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable})
                               lineHeight: 1.5,
                           }}
                       >
-                          レイアウトはPDF/Word表示のイメージです（閲覧環境により余白や改ページが微調整されることがあります）。
+                          {fmt==='csv'||fmt==='xlsx' ? 'テーブルプレビューはCSV/Excel出力のイメージです。'
+                           : fmt==='txt' ? 'プレーンテキスト表示です。'
+                           : fmt==='md' ? 'Markdownをレンダリングしたプレビューです。'
+                           : fmt==='docx' ? 'Word出力のイメージです（明朝体・広めの余白）。'
+                           : 'PDF出力のイメージです（閲覧環境により余白や改ページが微調整されることがあります）。'}
                       </div>
                   )}
               </div>
@@ -3816,7 +3979,7 @@ function DiffView({original,modified,label}){
   }
   const changeCount=diffs.filter(d=>d.type==="changed").length;
   return (
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <div
               style={{
                   padding: '8px 16px',
@@ -5428,6 +5591,26 @@ function UploadScreen({onAnalyze,settings}){
                               </button>
                           ))}
                       </div>
+                      <a
+                          href="/mock-resumes.zip"
+                          download="mock-resumes.zip"
+                          title="モック履歴書一式をダウンロード（ZIP）"
+                          style={{
+                              display:"flex",alignItems:"center",gap:8,
+                              marginTop:12,padding:"10px 14px",borderRadius:10,
+                              border:`1px solid ${T.border}`,background:T.bg2,
+                              cursor:"pointer",textDecoration:"none",
+                              transition:"all .15s",fontSize:12,color:T.text2,
+                          }}
+                          onMouseEnter={(e)=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
+                          onMouseLeave={(e)=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.text2;}}
+                      >
+                          <span style={{fontSize:16}}>&#x1F4E6;</span>
+                          <div>
+                              <div style={{fontWeight:600,color:"inherit"}}>モック履歴書一式 (ZIP)</div>
+                              <div style={{fontSize:11,color:T.text3}}>18種 / TXT・CSV・XLSX・HTML・MD・JSON・RTF・DOCX</div>
+                          </div>
+                      </a>
                   </div>
               </div>
               {/* end right column */}
@@ -5768,6 +5951,9 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
                   content={result}
                   baseName={`ai_formatted_${fileTimestamp()}`}
                   onClose={() => setShowPreview(false)}
+                  onContentChange={(newText) => {
+                      setResult(newText);
+                  }}
               />
           )}
       </>
@@ -5791,6 +5977,35 @@ function EditorScreen({data,onReset,apiKey,model}){
   const[editedText,setEditedText]=useState(null);
   const[previewVisible,setPreviewVisible]=useState(true);
   const[previewFontType,setPreviewFontType]=useState("gothic");
+  const[previewZoom,setPreviewZoom]=useState(1);
+  // Draggable panel widths (percentages of total width)
+  const[leftPct,setLeftPct]=useState(null);
+  const[rightPct,setRightPct]=useState(null);
+  // Layout presets
+  const[layoutPreset,setLayoutPreset]=useState('balanced');
+  const presetTransRef=useRef(false);
+  const applyLayoutPreset=useCallback((id)=>{
+    setLayoutPreset(id);
+    setLeftPct(null);setRightPct(null);
+    presetTransRef.current=true;
+    setTimeout(()=>{presetTransRef.current=false;},300);
+    switch(id){
+      case 'text':    setPreviewVisible(false);setSidebarCollapsed(false);break;
+      case 'balanced':setPreviewVisible(true);setSidebarCollapsed(false);break;
+      case 'preview': setPreviewVisible(true);setSidebarCollapsed(false);
+        // defer leftPct set after state updates
+        setTimeout(()=>setLeftPct(30),0);break;
+      case 'focus':   setPreviewVisible(false);setSidebarCollapsed(true);break;
+    }
+  },[]);
+  const activePreset=useMemo(()=>{
+    if(rightPct!==null)return null;
+    if(!previewVisible&&sidebarCollapsed&&leftPct===null)return 'focus';
+    if(!previewVisible&&!sidebarCollapsed&&leftPct===null)return 'text';
+    if(previewVisible&&!sidebarCollapsed&&leftPct===null)return 'balanced';
+    if(previewVisible&&!sidebarCollapsed&&leftPct===30)return 'preview';
+    return null;
+  },[previewVisible,sidebarCollapsed,leftPct,rightPct]);
   const hasRawText=data.rawText&&data.rawText!==data.fullText&&data.rawText!==data.text_preview;
 
   const toggle=id=>setDetections(p=>p.map(d=>d.id===id?{...d,enabled:!d.enabled}:d));
@@ -5867,6 +6082,48 @@ function EditorScreen({data,onReset,apiKey,model}){
   const showDiff=viewMode==="diff";
   const showAiDiff=viewMode==="ai-diff";
 
+  const startDrag=useCallback((divider)=>(e)=>{
+    e.preventDefault();
+    const wrap=e.target.closest('.rp-editor-wrap');
+    if(!wrap)return;
+    const totalW=wrap.getBoundingClientRect().width;
+    const startX=e.clientX;
+    const leftEl=wrap.querySelector('.rp-editor-left');
+    const rightEl=wrap.querySelector('.rp-editor-right');
+    const initLeftW=leftEl?leftEl.getBoundingClientRect().width:0;
+    const initRightW=rightEl?rightEl.getBoundingClientRect().width:0;
+
+    const onMove=(ev)=>{
+      const dx=ev.clientX-startX;
+      setLayoutPreset(null);
+      if(divider==='left'){
+        const newLeft=Math.max(160,Math.min(totalW*0.65,initLeftW+dx));
+        setLeftPct((newLeft/totalW)*100);
+      }else{
+        const newRight=Math.max(200,Math.min(totalW*0.55,initRightW-dx));
+        setRightPct((newRight/totalW)*100);
+      }
+    };
+    const onUp=()=>{
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+      document.body.style.cursor='';
+      document.body.style.userSelect='';
+    };
+    document.body.style.cursor='col-resize';
+    document.body.style.userSelect='none';
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  },[]);
+
+  const dividerStyle={
+    width:5,flexShrink:0,cursor:'col-resize',
+    background:'transparent',
+    position:'relative',
+    zIndex:5,
+    transition:'background .15s',
+  };
+
   return (
       <div
           className='rp-editor-wrap'
@@ -5879,12 +6136,13 @@ function EditorScreen({data,onReset,apiKey,model}){
           <div
               className='rp-editor-left'
               style={{
-                  flex: previewVisible ? '1 1 38%' : '1 1 56%',
+                  flex: leftPct ? `0 0 ${leftPct}%` : previewVisible ? '1 1 50%' : '1 1 60%',
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRight: `1px solid ${T.border}`,
                   minWidth: 0,
-                  transition: 'flex .2s',
+                  minHeight: 0,
+                  overflow: 'hidden',
+                  transition: (leftPct&&!presetTransRef.current) ? 'none' : 'flex .2s',
               }}
           >
               <div
@@ -5897,6 +6155,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                       background: T.bg2,
                       flexWrap: 'wrap',
                       gap: 6,
+                      flexShrink: 0,
                   }}
               >
                   <div
@@ -5961,6 +6220,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           }}
                       >
                           <button
+                              title='マスク: 個人情報を隠した結果を表示'
                               onClick={() => setViewMode('original')}
                               style={{
                                   padding: '5px 10px',
@@ -5982,6 +6242,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                               マスク
                           </button>
                           <button
+                              title='Diff: 元テキストとマスク後の違いを並べて比較'
                               onClick={() => setViewMode('diff')}
                               style={{
                                   padding: '5px 10px',
@@ -6003,6 +6264,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           {hasRawText && (
                               <>
                                   <button
+                                      title='Raw: ファイルから抽出した生テキストを表示'
                                       onClick={() => setViewMode('raw')}
                                       style={{
                                           padding: '5px 10px',
@@ -6024,6 +6286,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                                       Raw
                                   </button>
                                   <button
+                                      title='Raw Diff: 生テキストとAI整形後の違いを比較'
                                       onClick={() => setViewMode('raw-diff')}
                                       style={{
                                           padding: '5px 10px',
@@ -6049,6 +6312,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           {aiResult && (
                               <>
                                   <button
+                                      title='AI整形: AIが読みやすく整形したテキストを表示'
                                       onClick={() => setViewMode('ai')}
                                       style={{
                                           padding: '5px 10px',
@@ -6070,6 +6334,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                                       AI整形
                                   </button>
                                   <button
+                                      title='AI Diff: マスク結果とAI整形後の違いを比較'
                                       onClick={() => setViewMode('ai-diff')}
                                       style={{
                                           padding: '5px 10px',
@@ -6095,6 +6360,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                       </div>
                       {!showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
                           <Btn
+                              title={showRedacted ? 'マスク済みテキストを表示中（クリックで元文に切替）' : '元のテキストを表示中（クリックでマスク表示に切替）'}
                               variant={showRedacted ? 'danger' : 'ghost'}
                               onClick={() => setShowRedacted(!showRedacted)}
                               style={{
@@ -6107,6 +6373,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           </Btn>
                       )}
                       <Btn
+                          title='編集: テキストを直接編集してA4プレビューに即反映'
                           variant={editMode ? 'primary' : 'ghost'}
                           onClick={() => {
                               if(!editMode){
@@ -6126,6 +6393,20 @@ function EditorScreen({data,onReset,apiKey,model}){
                       >
                           {editMode ? '編集中' : '編集'}
                       </Btn>
+                      <div style={{width:1,height:20,background:T.border,marginLeft:4,marginRight:2,flexShrink:0}}/>
+                      <div style={{display:'flex',gap:2,alignItems:'center'}}>
+                          {LAYOUT_PRESETS.map(p=>(
+                              <button key={p.id} title={p.label} onClick={()=>applyLayoutPreset(p.id)}
+                                  style={{
+                                      padding:3,borderRadius:4,cursor:'pointer',
+                                      border:`1px solid ${activePreset===p.id?T.accent:'transparent'}`,
+                                      background:activePreset===p.id?T.accentDim:'transparent',
+                                      display:'flex',alignItems:'center',justifyContent:'center',
+                                  }}>
+                                  <LayoutIcon cols={p.cols} active={activePreset===p.id} color={T.accent}/>
+                              </button>
+                          ))}
+                      </div>
                   </div>
               </div>
               {/* カテゴリ別クイックトグル */}
@@ -6133,7 +6414,7 @@ function EditorScreen({data,onReset,apiKey,model}){
               <div style={{
                   padding:"4px 14px",display:"flex",alignItems:"center",gap:4,
                   borderBottom:`1px solid ${T.border}`,background:T.bg2,
-                  flexWrap:"wrap",
+                  flexWrap:"wrap",flexShrink:0,
               }}>
                   <span style={{fontSize:11,color:T.text3,fontWeight:600,marginRight:4}}>カテゴリ</span>
                   {allCats.map(cat=>{
@@ -6156,8 +6437,8 @@ function EditorScreen({data,onReset,apiKey,model}){
                       );
                   })}
                   <span style={{flex:1}}/>
-                  <button onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全ON</button>
-                  <button onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全OFF</button>
+                  <button title='すべての検出を有効にする' onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全ON</button>
+                  <button title='すべての検出を無効にする' onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全OFF</button>
               </div>
               )}
               {showDiff ? (
@@ -6187,7 +6468,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                       label='AI整形変更'
                   />
               ) : editMode ? (
-                  <div style={{flex:1,overflow:"auto",padding:0,background:T.bg,display:"flex",flexDirection:"column"}}>
+                  <div style={{flex:1,overflow:"auto",padding:0,background:T.bg,display:"flex",flexDirection:"column",minHeight:0}}>
                       <div style={{padding:"6px 14px",borderBottom:`1px solid ${T.border}`,fontSize:12,color:T.text3,lineHeight:1.6,flexShrink:0,background:T.bg2}}>
                           <span style={{fontWeight:600,color:T.text2}}>記法: </span>
                           <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono}}>**太字**</code>
@@ -6213,6 +6494,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           overflow: 'auto',
                           padding: 24,
                           background: T.bg,
+                          minHeight: 0,
                       }}
                   >
                       <pre
@@ -6241,12 +6523,21 @@ function EditorScreen({data,onReset,apiKey,model}){
                   </div>
               )}
           </div>
+          {/* Divider: Left ↔ Center */}
+          {previewVisible && (
+              <div
+                  onMouseDown={startDrag('left')}
+                  title="ドラッグでパネル幅を調整"
+                  style={{...dividerStyle,borderLeft:`1px solid ${T.border}`}}
+                  onMouseEnter={(e)=>{e.currentTarget.style.background=T.accentDim;}}
+                  onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
+              />
+          )}
           {/* Center: A4 Preview Panel (always visible) */}
           {previewVisible ? (
               <div className="rp-editor-center" style={{
-                  flex:"1 1 32%",minWidth:320,maxWidth:480,display:"flex",flexDirection:"column",
-                  borderRight:`1px solid ${T.border}`,background:"#e5e7eb",
-                  transition:"flex .2s",overflow:"hidden",
+                  flex:"0 1 340px",minWidth:200,display:"flex",flexDirection:"column",
+                  background:"#e5e7eb",minHeight:0,overflow:"hidden",
               }}>
                   {/* Preview toolbar */}
                   <div style={{
@@ -6256,13 +6547,13 @@ function EditorScreen({data,onReset,apiKey,model}){
                       <span style={{fontSize:12,fontWeight:700,color:T.text}}>A4</span>
                       {editMode && (
                           <>
-                              <button onClick={()=>setPreviewFontType("gothic")} style={{
+                              <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" style={{
                                   padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
                                   border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
                                   background:previewFontType==="gothic"?T.accentDim:"transparent",
                                   color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
                               }}>ゴシック</button>
-                              <button onClick={()=>setPreviewFontType("mincho")} style={{
+                              <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" style={{
                                   padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
                                   border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
                                   background:previewFontType==="mincho"?T.accentDim:"transparent",
@@ -6270,16 +6561,30 @@ function EditorScreen({data,onReset,apiKey,model}){
                               }}>明朝</button>
                           </>
                       )}
+                      <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:4}}>
+                          <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小"
+                              style={{width:22,height:22,borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font}}>
+                              &minus;
+                          </button>
+                          <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット"
+                              style={{padding:"2px 6px",borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text3,cursor:"pointer",fontSize:10,fontFamily:T.mono,fontWeight:600,minWidth:40,textAlign:"center"}}>
+                              {Math.round(previewZoom*100)}%
+                          </button>
+                          <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大"
+                              style={{width:22,height:22,borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font}}>
+                              +
+                          </button>
+                      </div>
                       <span style={{flex:1}}/>
                       {editMode && (
                           <div style={{display:"flex",gap:4}}>
-                              <button onClick={exportPrintPDF} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportPrintPDF} title="PDFとして印刷" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   PDF印刷
                               </button>
-                              <button onClick={exportHTML} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportHTML} title="HTML形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   HTML
                               </button>
-                              <button onClick={exportWord} style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportWord} title="Word形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
                                   Word
                               </button>
                           </div>
@@ -6288,7 +6593,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
                           border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
                       }}>&#x2197;</button>
-                      <button onClick={()=>setPreviewVisible(false)} title="プレビューを閉じる" style={{
+                      <button onClick={()=>{setPreviewVisible(false);setLeftPct(null);setRightPct(null);}} title="プレビューを閉じる" style={{
                           padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
                           border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
                       }}>&#x276F;</button>
@@ -6296,9 +6601,10 @@ function EditorScreen({data,onReset,apiKey,model}){
                   {/* Preview content */}
                   {editMode ? (
                       <div style={{flex:1,overflow:"auto",display:"flex",alignItems:"flex-start",justifyContent:"center",padding:16}}>
-                          <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,overflow:"hidden",transform:"scale(0.62)",transformOrigin:"top center"}}>
+                          <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${previewZoom})`,transformOrigin:"top center"}}>
                               <iframe
                                   srcDoc={previewHtml}
+                                  sandbox="allow-same-origin"
                                   style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
                                   title="A4 Preview"
                                   onLoad={(e)=>{try{const h=e.target.contentDocument?.documentElement?.scrollHeight;if(h&&h>842)e.target.style.height=h+"px";}catch(ex){}}}
@@ -6313,12 +6619,13 @@ function EditorScreen({data,onReset,apiKey,model}){
                           focusDetId={focusDetId}
                           focusPulse={focusPulse}
                           onFocusDet={focusDetection}
+                          zoom={previewZoom}
                       />
                   )}
               </div>
           ) : (
               <div
-                  onClick={()=>setPreviewVisible(true)}
+                  onClick={()=>{setPreviewVisible(true);setLeftPct(null);setRightPct(null);}}
                   style={{
                       width:36,display:"flex",flexDirection:"column",
                       alignItems:"center",justifyContent:"center",gap:8,
@@ -6331,10 +6638,20 @@ function EditorScreen({data,onReset,apiKey,model}){
                   <span style={{fontSize:14,color:T.text3,marginTop:4}}>&#x276E;</span>
               </div>
           )}
+          {/* Divider: Center ↔ Right */}
+          {!sidebarCollapsed && (
+              <div
+                  onMouseDown={startDrag('right')}
+                  title="ドラッグでパネル幅を調整"
+                  style={{...dividerStyle,borderLeft:`1px solid ${T.border}`}}
+                  onMouseEnter={(e)=>{e.currentTarget.style.background=T.accentDim;}}
+                  onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
+              />
+          )}
           {/* Collapsed sidebar indicator */}
           {sidebarCollapsed && (
               <div
-                  onClick={()=>setSidebarCollapsed(false)}
+                  onClick={()=>{setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}
                   style={{
                       width:40,display:"flex",flexDirection:"column",
                       alignItems:"center",justifyContent:"center",gap:8,
@@ -6354,13 +6671,13 @@ function EditorScreen({data,onReset,apiKey,model}){
           <div
               className='rp-editor-right'
               style={{
-                  flex: previewVisible ? '0 0 260px' : '1 1 44%',
+                  flex: rightPct ? `0 0 ${rightPct}%` : previewVisible ? '0 0 260px' : '0 1 300px',
                   display: sidebarCollapsed?'none':'flex',
                   flexDirection: 'column',
-                  minWidth: 240,
-                  maxWidth: previewVisible ? 320 : 480,
+                  minWidth: 200,
+                  maxWidth: previewVisible ? 400 : 480,
                   background: T.bg2,
-                  transition: 'flex .2s, max-width .2s',
+                  transition: rightPct ? 'none' : 'flex .2s, max-width .2s',
               }}
           >
               <div
@@ -6407,7 +6724,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           {enabledCount > 0 ? '保護中' : '未保護'}
                       </Badge>
                       <button
-                          onClick={()=>setSidebarCollapsed(true)}
+                          onClick={()=>{setSidebarCollapsed(true);setLeftPct(null);setRightPct(null);}}
                           title="サイドバーを折りたたむ"
                           style={{
                               background:"transparent",border:"none",cursor:"pointer",
@@ -6499,6 +6816,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                                               ({cc.enabled}/{cc.total})
                                           </span>
                                       </div>
+                                      <span title={allOn?'このカテゴリを無効にする':'このカテゴリを有効にする'}>
                                       <Toggle
                                           checked={allOn}
                                           onChange={() =>
@@ -6506,6 +6824,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                                           }
                                           size='sm'
                                       />
+                                      </span>
                                   </div>
                               )
                           })}
@@ -6575,6 +6894,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                   )}
                   <div style={{ display: 'flex', gap: 6 }}>
                       <Btn
+                          title='すべての検出を有効にする'
                           variant='ghost'
                           onClick={enableAll}
                           style={{
@@ -6586,6 +6906,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           全ON
                       </Btn>
                       <Btn
+                          title='すべての検出を無効にする'
                           variant='ghost'
                           onClick={disableAll}
                           style={{
@@ -6769,11 +7090,13 @@ function EditorScreen({data,onReset,apiKey,model}){
                                                   {item.value}
                                               </div>
                                           </div>
+                                          <span title={item.enabled?'この検出を無効にする':'この検出を有効にする'}>
                                           <Toggle
                                               checked={item.enabled}
                                               onChange={() => toggle(item.id)}
                                               size='sm'
                                           />
+                                          </span>
                                       </div>
                                   ))}
                               </div>
@@ -6792,6 +7115,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                   }}
               >
                   <Btn
+                      title='AIでテキストを再整形'
                       onClick={() => setShowAI(true)}
                       style={{
                           width: '100%',
@@ -6803,6 +7127,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                       AI で再フォーマット
                   </Btn>
                   <Btn
+                      title='PDF編集モードを開く'
                       onClick={() => {
                           if(!editMode){
                               setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
@@ -6822,6 +7147,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                   </Btn>
                   <div style={{ display: 'flex', gap: 8 }}>
                       <Btn
+                          title='マスキング結果をプレビュー'
                           variant='ghost'
                           onClick={() =>
                               setPreview({
@@ -6839,6 +7165,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           プレビュー / 保存
                       </Btn>
                       <Btn
+                          title='クリップボードにコピー'
                           variant='ghost'
                           onClick={handleCopy}
                           style={{
@@ -6852,6 +7179,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                       <Btn
+                          title='検出結果の詳細レポートを表示'
                           variant='ghost'
                           onClick={() =>
                               setPreview({
@@ -6870,6 +7198,7 @@ function EditorScreen({data,onReset,apiKey,model}){
                           検出レポート
                       </Btn>
                       <Btn
+                          title='ファイル選択画面に戻る'
                           variant='ghost'
                           onClick={onReset}
                           style={{
@@ -7021,10 +7350,10 @@ export default function App(){
                       v0.9
                   </Badge>
               </nav>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div
                       className='rp-header-badges'
-                      style={{ display: 'flex', gap: 6, alignItems: 'center' }}
+                      style={{ display: 'flex', gap: 8, alignItems: 'center' }}
                   >
                       {data && (
                           <Badge color={C.accent} bg={C.accentDim}>
@@ -7039,16 +7368,17 @@ export default function App(){
                       )}
                   </div>
                   <button
+                      title='ダークモード切替'
                       onClick={() => setIsDark(!isDark)}
                       style={{
-                          width: 32,
-                          height: 32,
+                          width: 36,
+                          height: 36,
                           borderRadius: 8,
                           border: `1px solid ${T.border}`,
                           background: 'transparent',
                           cursor: 'pointer',
                           color: T.text2,
-                          fontSize: 14,
+                          fontSize: 18,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -7057,35 +7387,37 @@ export default function App(){
                       {isDark ? '☀️' : '🌙'}
                   </button>
                   <button
+                      title='設定'
                       onClick={() => setShowSettings(true)}
                       style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 5,
-                          padding: '5px 10px',
+                          gap: 6,
+                          height: 36,
+                          padding: '0 12px',
                           borderRadius: 8,
                           border: `1px solid ${T.border}`,
                           background: 'transparent',
                           cursor: 'pointer',
                           color: T.text2,
-                          fontSize: 12,
+                          fontSize: 13,
                           fontFamily: T.font,
                           fontWeight: 500,
                       }}
                   >
                       <span
                           style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: 3,
+                              width: 8,
+                              height: 8,
+                              borderRadius: 4,
                               background: curProv.color,
                               flexShrink: 0,
                           }}
                       />
                       <span>{curModel?.label || '設定'}</span>
                       <svg
-                          width='13'
-                          height='13'
+                          width='16'
+                          height='16'
                           viewBox='0 0 24 24'
                           fill='none'
                           stroke='currentColor'
