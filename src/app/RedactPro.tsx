@@ -3298,7 +3298,7 @@ ${fontCSS}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:${fontFamily};color:#111827;background:#fff;font-size:10.2pt;line-height:1.75}
 .page{max-width:660px;margin:0 auto;padding:26px 30px}
-h2{font-size:14pt;font-weight:700;color:#0f172a;margin:18px 0 8px;padding-bottom:7px;border-bottom:1.8px solid #0f172a;letter-spacing:.2px}
+h2{font-size:14pt;font-weight:700;color:#0f172a;margin:18px 0 8px;padding-bottom:7px;border-bottom:1px solid #d1d5db;letter-spacing:.2px}
 h3{font-size:11.5pt;font-weight:700;color:#111827;margin:14px 0 6px}
 h4{font-size:10.6pt;font-weight:700;color:#1f2937;margin:12px 0 4px}
 strong{font-weight:700}
@@ -3412,7 +3412,7 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
     fontSize:"10.2pt",lineHeight:1.75,background:"#fff",
     minHeight:842,
   };
-  const h2Style={fontSize:"14pt",fontWeight:700,color:"#0f172a",margin:"18px 0 8px",paddingBottom:7,borderBottom:"1.8px solid #0f172a",letterSpacing:0.2};
+  const h2Style={fontSize:"14pt",fontWeight:700,color:"#0f172a",margin:"18px 0 8px",paddingBottom:7,borderBottom:"1px solid #d1d5db",letterSpacing:0.2};
   const h3Style={fontSize:"11.5pt",fontWeight:700,color:"#111827",margin:"14px 0 6px"};
   const kvStyle={display:"grid",gridTemplateColumns:"minmax(110px,160px) 1fr",gap:12,padding:"2.5px 0"};
   const kvKeyStyle={color:"#475569",fontWeight:700};
@@ -3929,13 +3929,14 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
   )
 }
 // ═══ Preview / Export Modal ═══
-function PreviewModal({title,content,baseName,onClose,onContentChange,editable}){
+function PreviewModal({title,content,baseName,onClose,onContentChange,editable,meta}){
   const trapRef=useFocusTrap();
   const[copied,setCopied]=useState(false);
   const[fmt,setFmt]=useState("txt");
   const[view,setView]=useState("layout"); // "layout" | "text" | "edit"
   const[editedContent,setEditedContent]=useState(content);
   const[hasChanges,setHasChanges]=useState(false);
+  const[headingRule,setHeadingRule]=useState(()=>{try{return localStorage.getItem('rp_heading_rule')!=='off'}catch{return true}});
 
   useEffect(()=>{setEditedContent(content);setHasChanges(false);},[content]);
 
@@ -3986,7 +3987,7 @@ body{font-family:'Consolas','Monaco','Noto Sans JP',monospace;font-size:11pt;lin
       return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
 body{font-family:'Noto Sans JP',sans-serif;font-size:10.5pt;line-height:1.8;color:#111827;background:#fff;padding:26px 30px;margin:0;max-width:660px}
-h2{font-size:14pt;font-weight:700;margin:18px 0 8px;padding-bottom:6px;border-bottom:1.8px solid #0f172a}
+h2{font-size:14pt;font-weight:700;margin:18px 0 8px;padding-bottom:6px;border-bottom:1px solid #d1d5db}
 h3{font-size:11.5pt;font-weight:700;margin:14px 0 6px}
 h4{font-size:10.6pt;font-weight:700;margin:12px 0 4px}
 .kv{display:grid;grid-template-columns:minmax(110px,160px) 1fr;gap:12px;padding:2px 0}
@@ -4040,7 +4041,7 @@ tr:hover{background:#EBF0FA}
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&display=swap');
 @page{size:A4;margin:25mm 25mm}
 body{font-family:'Noto Serif JP','MS 明朝',serif;font-size:10.5pt;line-height:1.8;color:#111827;background:#fff;margin:0;padding:36px 40px;max-width:660px}
-h2{font-size:13pt;font-weight:700;margin:20px 0 8px;padding-bottom:6px;border-bottom:1.5px solid #374151}
+h2{font-size:13pt;font-weight:700;margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid #d1d5db}
 h3{font-size:11pt;font-weight:700;margin:16px 0 6px}
 h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
 .kv{display:grid;grid-template-columns:minmax(110px,160px) 1fr;gap:12px;padding:2px 0}
@@ -4053,6 +4054,11 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
     // default: pdf
     return generatePDFHTML(displayContent,"gothic",{stripRedactions:false,highlightRedactions:true,removeRedactionOnlyLines:false});
   },[displayContent,fmt]);
+  const ruleOverride=useMemo(()=>{
+    if(!headingRule)return'<style>h2{border-bottom:none!important;padding-bottom:0!important}</style>';
+    return'<style>h2{border-bottom-color:#d1d5db!important;border-bottom-width:1px!important}</style>';
+  },[headingRule]);
+  const finalHtml=useMemo(()=>layoutHtml.replace('</head>',ruleOverride+'</head>'),[layoutHtml,ruleOverride]);
   return (
       <div
           style={{
@@ -4109,8 +4115,13 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                       >
                           {title}
                       </div>
-                      <div style={{ fontSize: 12, color: T.text3 }}>
+                      <div style={{ fontSize: 12, color: T.text3, display:'flex', alignItems:'center', gap:8 }}>
                           {lines} 行 / {chars.toLocaleString()} 文字
+                          {meta && (
+                            <span style={{fontSize:11,color:T.text3,opacity:.8}}>
+                              | {meta.fileName} | マスク: {meta.maskCount}件
+                            </span>
+                          )}
                       </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -4182,6 +4193,22 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           </button>
                           )}
                       </div>
+                      {view==='layout'&&fmt!=='csv'&&fmt!=='xlsx'&&(
+                        <button
+                          onClick={()=>{const next=!headingRule;setHeadingRule(next);try{localStorage.setItem('rp_heading_rule',next?'on':'off')}catch{}}}
+                          title={headingRule?'見出し罫線を非表示':'見出し罫線を表示'}
+                          aria-label='見出し罫線の切替'
+                          style={{
+                            padding:'5px 8px',border:`1px solid ${T.border}`,borderRadius:7,
+                            background:headingRule?T.accentDim:'transparent',
+                            color:headingRule?T.accent:T.text3,cursor:'pointer',fontSize:11,fontWeight:600,
+                            display:'flex',alignItems:'center',gap:4,transition:'all .15s',
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                          罫線
+                        </button>
+                      )}
                       <button
                           onClick={onClose}
                           title='閉じる'
@@ -4265,7 +4292,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                                   overflow: 'hidden',
                               }}>
                                   <iframe
-                                      srcDoc={layoutHtml}
+                                      srcDoc={finalHtml}
                                       sandbox="allow-same-origin"
                                       style={{ width: '100%', minHeight: 600, border: 'none' }}
                                       title='TextPreview'
@@ -4292,7 +4319,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                               }}
                           >
                               <iframe
-                                  srcDoc={layoutHtml}
+                                  srcDoc={finalHtml}
                                   sandbox="allow-same-origin"
                                   style={{
                                       width: '100%',
@@ -5193,23 +5220,20 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
           <div
               style={{
                   textAlign: 'center',
-                  marginBottom: 28,
-                  maxWidth: 900,
-                  margin: '0 auto 28px',
+                  marginBottom: isLite ? 36 : 28,
+                  maxWidth: isLite ? 600 : 900,
+                  margin: isLite ? '0 auto 36px' : '0 auto 28px',
               }}
           >
               <h1
                   style={{
-                      fontSize: 28,
+                      fontSize: isLite ? 32 : 28,
                       fontWeight: 700,
                       color: T.text,
                       lineHeight: 1.35,
                   }}
               >
-                  職務経歴書の
-                  <span style={{ color: T.accent }}>
-                      個人情報を自動マスキング
-                  </span>
+                  {isLite ? <>経歴書を、もっと<span style={{ color: T.accent }}>安全</span>に。</> : <>職務経歴書の<span style={{ color: T.accent }}>個人情報を自動マスキング</span></>}
               </h1>
               <p
                   style={{
@@ -5219,18 +5243,19 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                       lineHeight: 1.7,
                   }}
               >
-                  日本人名辞書 + 正規表現 + AI検出 + AIテキスト再構成で高精度
+                  {isLite ? 'ファイルをアップロードするだけで個人情報を自動検出・マスキング' : '日本人名辞書 + 正規表現 + AI検出 + AIテキスト再構成で高精度'}
               </p>
           </div>
           <div
               className='rp-upload-main'
               style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  display: isLite ? 'flex' : 'grid',
+                  flexDirection: isLite ? 'column' : undefined,
+                  gridTemplateColumns: isLite ? undefined : '1fr 1fr',
                   gap: 24,
-                  maxWidth: 1200,
+                  maxWidth: isLite ? 560 : 1200,
                   margin: '0 auto',
-                  alignItems: 'start',
+                  alignItems: isLite ? 'stretch' : 'start',
               }}
           >
               <div
@@ -5250,7 +5275,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                       }}
                   >
                       マスキング設定{' '}
-                      <span
+                      {!isLite && <span
                           style={{
                               fontSize: 12,
                               fontWeight: 400,
@@ -5258,7 +5283,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                           }}
                       >
                           -- アップロード前に対象を選択
-                      </span>
+                      </span>}
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                       {MASK_PRESETS.map((p, i) => (
@@ -5310,7 +5335,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                           </button>
                       ))}
                   </div>
-                  <div
+                  {!isLite && <div
                       style={{
                           display: 'grid',
                           gridTemplateColumns: '1fr 1fr',
@@ -5351,9 +5376,9 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                                   />
                               </div>
                           ))}
-                  </div>
+                  </div>}
                   {/* Advanced options */}
-                  <div
+                  {!isLite && <div
                       style={{
                           marginTop: 12,
                           padding: '10px 12px',
@@ -5448,7 +5473,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                               />
                           </div>
                       </div>
-                  </div>
+                  </div>}
                   {/* カスタムキーワード */}
                   {!isLite && <div style={{marginTop:12,padding:'10px 12px',borderRadius:10,background:T.bg,border:`1px solid ${T.border}`}}>
                     <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:8}}>カスタムキーワード</div>
@@ -5517,13 +5542,37 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                           </Badge>
                       )}
                   </div>
+                  {isLite && (
+                    <div
+                      onClick={()=>{setEdition('pro');try{localStorage.setItem('rp_edition','pro')}catch{}}}
+                      style={{
+                        marginTop:12,padding:'12px 16px',borderRadius:10,
+                        background:`linear-gradient(135deg,${C.accent}10,${C.purple}10)`,
+                        border:`1px solid ${C.accent}20`,
+                        cursor:'pointer',display:'flex',alignItems:'center',gap:10,
+                        transition:'all .2s',
+                      }}
+                      onMouseEnter={e=>e.currentTarget.style.borderColor=`${C.accent}40`}
+                      onMouseLeave={e=>e.currentTarget.style.borderColor=`${C.accent}20`}
+                    >
+                      <div style={{flex:1}}>
+                        <div style={{fontSize:12,fontWeight:600,color:T.text}}>
+                          Pro版に切替
+                        </div>
+                        <div style={{fontSize:11,color:T.text3,marginTop:2}}>
+                          AI検出・URL取込・バッチ処理・カスタムキーワード等
+                        </div>
+                      </div>
+                      <span style={{fontSize:16,color:C.accent}}>&rarr;</span>
+                    </div>
+                  )}
               </div>
               {/* Right Column: Input + Samples */}
               <div
-                  style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 20, order: isLite ? -1 : 0 }}
               >
                   <div>
-                      <div
+                      {!isLite && <div
                           className='rp-input-tabs'
                           style={{
                               display: 'flex',
@@ -5541,7 +5590,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                                   icon: '\u{1F4C1}',
                                   label: 'ファイル',
                               },
-                              ...(!isLite?[{
+                              {
                                   id: 'url',
                                   icon: '\u{1F310}',
                                   label: 'URLスクレイピング',
@@ -5550,7 +5599,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                                   id: 'paste',
                                   icon: '\u{1F4CB}',
                                   label: 'テキスト/HTML貼付',
-                              }]:[]),
+                              },
                           ].map((tab) => (
                               <button
                                   key={tab.id}
@@ -5585,17 +5634,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                                   {tab.icon} {tab.label}
                               </button>
                           ))}
-                      </div>
+                      </div>}
                       <div
                           style={{
                               border: `1px solid ${T.border}`,
-                              borderTop: 'none',
-                              borderRadius: '0 0 12px 12px',
+                              borderTop: isLite ? undefined : 'none',
+                              borderRadius: isLite ? 14 : '0 0 12px 12px',
                               background: T.bg2,
                               overflow: 'hidden',
                           }}
                       >
-                          {inputMode === 'file' && (
+                          {(isLite || inputMode === 'file') && (
                               <div
                                   onClick={() => inputRef.current?.click()}
                                   onDragOver={(e) => {
@@ -5611,7 +5660,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                                       handleFile(fl?.[0]);
                                   }}
                                   style={{
-                                      padding: '44px 32px',
+                                      padding: isLite ? '56px 32px' : '44px 32px',
                                       display: 'flex',
                                       flexDirection: 'column',
                                       alignItems: 'center',
@@ -6682,7 +6731,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const displayText=viewMode==="ai"&&aiResult?aiResult:viewMode==="raw"&&hasRawText?data.rawText:showRedacted?applyRedaction(data.text_preview,detections,data.maskOpts):data.text_preview;
   const handleCopy=()=>{navigator.clipboard.writeText(viewMode==="ai"&&aiResult?aiResult:redacted);setCopied(true);setTimeout(()=>setCopied(false),2000);};
   const baseName=data.file_name.replace(/\.[^.]+$/,"")+"_redacted_"+fileTimestamp();
-  const buildTxt=()=>`# マスキング済み\n# 元ファイル: ${data.file_name}\n# 日時: ${new Date().toLocaleString("ja-JP")}\n# マスク: ${enabledCount}件\n\n${viewMode==="ai"&&aiResult?aiResult:redacted}`;
+  const buildTxt=()=>viewMode==="ai"&&aiResult?aiResult:redacted;
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
   // A4プレビュー用 memoized HTML
@@ -7886,6 +7935,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   content: buildTxt(),
                                   baseName,
                                   editable: true,
+                                  meta: { fileName: data.file_name, maskCount: enabledCount },
                                   onContentChange: (newContent) => {
                                       setPreview(prev => prev ? {...prev, content: newContent} : null)
                                   },
@@ -7972,6 +8022,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   content={preview.content}
                   baseName={preview.baseName}
                   editable={preview.editable}
+                  meta={preview.meta}
                   onClose={() => setPreview(null)}
                   onContentChange={preview.onContentChange}
               />
@@ -8169,22 +8220,21 @@ export default function App(){
                           Redact<span style={{ color: C.accent }}>Pro</span>
                       </span>
                   </a>
-                  <Badge color={T.text3} bg={T.surfaceAlt}>
-                      v0.9
-                  </Badge>
-                  <div role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:6,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:11,fontWeight:600}}>
-                      {[{id:'lite',label:'Lite'},{id:'pro',label:'Pro'}].map(ed=>(
+                  <div role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
+                      {[{id:'lite',label:'Lite',sub:'シンプル'},{id:'pro',label:'Pro',sub:'全機能'}].map(ed=>(
                         <button key={ed.id} role="radio" aria-checked={edition===ed.id}
                           onClick={()=>{setEdition(ed.id);try{localStorage.setItem('rp_edition',ed.id)}catch{}}}
                           onMouseEnter={e=>{if(edition!==ed.id)e.currentTarget.style.background=T.surfaceAlt}}
                           onMouseLeave={e=>{if(edition!==ed.id)e.currentTarget.style.background='transparent'}}
                           style={{
-                          padding:'3px 10px',border:'none',cursor:'pointer',
+                          padding:'5px 14px',border:'none',cursor:'pointer',
                           background:edition===ed.id?(ed.id==='pro'?C.accent:T.text3):'transparent',
                           color:edition===ed.id?'#fff':T.text2,
                           transition:'background .2s ease-out, color .2s ease-out',
+                          display:'flex',alignItems:'center',gap:4,
                         }}>
                           {ed.label}
+                          <span style={{fontSize:10,fontWeight:400,opacity:edition===ed.id?0.85:0.6}}>{ed.sub}</span>
                         </button>
                       ))}
                   </div>
