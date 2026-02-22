@@ -2052,6 +2052,7 @@ function ChatWidget(){
           background:T.bg,
           boxShadow:'0 8px 32px rgba(0,0,0,.2)',
           display:'flex',flexDirection:'column',
+          overflow:'hidden',
           animation:'fadeUp .2s ease',
           fontFamily:C.font,
         }}>
@@ -2112,7 +2113,7 @@ function ChatWidget(){
           <div style={{
             padding:'8px 16px 12px',
             borderTop:`1px solid ${T.border}`,
-            overflowY:'auto',minHeight:80,maxHeight:220,
+            overflowY:'auto',flexShrink:0,maxHeight:180,
           }}>
             {CHAT_FAQ.map((cat,ci)=>(
               <div key={ci}>
@@ -4793,7 +4794,7 @@ function formatDuration(ms){
 // ═══ Upload Screen ═══
 function UploadScreen({onAnalyze,onSubmitBatch,settings}){
   const[dragOver,setDragOver]=useState(false);const[loading,setLoading]=useState(false);const[error,setError]=useState(null);const[fileName,setFileName]=useState("");const[stage,setStage]=useState(0);const[mask,setMask]=useState({...DEFAULT_MASK});const inputRef=useRef(null);
-  const[customKeywords,setCustomKeywords]=useState([]);const[customInput,setCustomInput]=useState("");
+  const[customKeywords,setCustomKeywords]=useState([]);const[customInput,setCustomInput]=useState("");const kwLoadedRef=useRef(false);
   const[aiStatus,setAiStatus]=useState("");
   const[elapsedMs,setElapsedMs]=useState(0);
   const startAtRef=useRef(0);
@@ -4834,8 +4835,8 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings}){
     return()=>clearInterval(id);
   },[loading]);
 
-  useEffect(()=>{(async()=>{try{const v=await safeGet("rp_custom_keywords");if(v){const parsed=JSON.parse(v);if(Array.isArray(parsed))setCustomKeywords(parsed);}}catch(e){}})();},[]);
-  useEffect(()=>{storage.set("rp_custom_keywords",JSON.stringify(customKeywords));},[customKeywords]);
+  useEffect(()=>{(async()=>{try{const v=await safeGet("rp_custom_keywords");if(v){const parsed=JSON.parse(v);if(Array.isArray(parsed))setCustomKeywords(parsed);}}catch(e){}finally{kwLoadedRef.current=true;}})();},[]);
+  useEffect(()=>{if(kwLoadedRef.current)storage.set("rp_custom_keywords",JSON.stringify(customKeywords));},[customKeywords]);
 
   const processText=useCallback(async(text,name,format,pageCount,fileSize,rawText,sparsePages,pdfData)=>{
     let workText=text;
