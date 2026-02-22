@@ -8172,15 +8172,19 @@ export default function App(){
                   <Badge color={T.text3} bg={T.surfaceAlt}>
                       v0.9
                   </Badge>
-                  <div style={{display:'flex',borderRadius:6,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:11,fontWeight:600}}>
-                      {['lite','pro'].map(ed=>(
-                        <button key={ed} onClick={()=>{setEdition(ed);try{localStorage.setItem('rp_edition',ed)}catch{}}} style={{
+                  <div role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:6,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:11,fontWeight:600}}>
+                      {[{id:'lite',label:'Lite'},{id:'pro',label:'Pro'}].map(ed=>(
+                        <button key={ed.id} role="radio" aria-checked={edition===ed.id}
+                          onClick={()=>{setEdition(ed.id);try{localStorage.setItem('rp_edition',ed.id)}catch{}}}
+                          onMouseEnter={e=>{if(edition!==ed.id)e.currentTarget.style.background=T.surfaceAlt}}
+                          onMouseLeave={e=>{if(edition!==ed.id)e.currentTarget.style.background='transparent'}}
+                          style={{
                           padding:'3px 10px',border:'none',cursor:'pointer',
-                          background:edition===ed?C.accent:'transparent',
-                          color:edition===ed?'#fff':T.text2,
-                          transition:'background .15s',
+                          background:edition===ed.id?(ed.id==='pro'?C.accent:T.text3):'transparent',
+                          color:edition===ed.id?'#fff':T.text2,
+                          transition:'background .2s ease-out, color .2s ease-out',
                         }}>
-                          {ed==='lite'?'Lite':'Pro'}
+                          {ed.label}
                         </button>
                       ))}
                   </div>
