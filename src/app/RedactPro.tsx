@@ -4815,7 +4815,7 @@ function formatDuration(ms){
 }
 
 // ═══ Upload Screen ═══
-function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
+function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
   const[dragOver,setDragOver]=useState(false);const[loading,setLoading]=useState(false);const[error,setError]=useState(null);const[fileName,setFileName]=useState("");const[stage,setStage]=useState(0);const[mask,setMask]=useState({...DEFAULT_MASK});const inputRef=useRef(null);
   const[customKeywords,setCustomKeywords]=useState([]);const[customInput,setCustomInput]=useState("");const kwLoadedRef=useRef(false);
   const[aiStatus,setAiStatus]=useState("");
@@ -5544,7 +5544,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                   </div>}
                   {isLite && (
                     <div
-                      onClick={()=>{setEdition('pro');try{localStorage.setItem('rp_edition','pro')}catch{}}}
+                      onClick={()=>{if(onSwitchPro)onSwitchPro();}}
                       style={{
                         marginTop:12,padding:'12px 16px',borderRadius:10,
                         background:`linear-gradient(135deg,${C.accent}10,${C.purple}10)`,
@@ -8395,7 +8395,7 @@ export default function App(){
                   isLite={isLite}
               />
           ) : (
-              <UploadScreen onAnalyze={setData} onSubmitBatch={handleBatchSubmit} settings={settings} isLite={isLite} />
+              <UploadScreen onAnalyze={setData} onSubmitBatch={handleBatchSubmit} settings={settings} isLite={isLite} onSwitchPro={()=>{setEdition('pro');try{localStorage.setItem('rp_edition','pro')}catch{}}} />
           )}
           </main>
           {showSettings && (
