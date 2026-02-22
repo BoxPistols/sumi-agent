@@ -5507,7 +5507,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                       </div>
                     )}
                   </div>}
-                  <div
+                  {!isLite && <div
                       style={{
                           marginTop: 10,
                           display: 'flex',
@@ -5541,7 +5541,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                               イニシャル化
                           </Badge>
                       )}
-                  </div>
+                  </div>}
                   {isLite && (
                     <div
                       onClick={()=>{setEdition('pro');try{localStorage.setItem('rp_edition','pro')}catch{}}}
@@ -6176,7 +6176,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                           ! {error}
                       </div>
                   )}
-                  <div
+                  {!isLite && <div
                       style={{
                           background: T.surface,
                           border: `1px solid ${T.border}`,
@@ -6305,7 +6305,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite}){
                               <div style={{fontSize:11,color:T.text3}}>18種 / TXT・CSV・XLSX・HTML・MD・JSON・RTF・DOCX</div>
                           </div>
                       </a>
-                  </div>
+                  </div>}
               </div>
               {/* end right column */}
           </div>
@@ -6841,6 +6841,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const centerCol=`minmax(280px,min(${Math.round(595*previewZoom)+48}px,42%))`;
   const gridCols=useMemo(()=>{
     const d='5px';
+    if(isLite){
+      // Lite: テキスト + サイドバー の2カラム
+      const r=rightPct?`${rightPct}%`:'280px';
+      return `1fr ${d} ${r}`;
+    }
     if(previewVisible&&!sidebarCollapsed){
       const l=leftPct?`${leftPct}%`:'1fr',c=leftPct?'1fr':centerCol,r=rightPct?`${rightPct}%`:'260px';
       return `${l} ${d} ${c} ${d} ${r}`;
@@ -6854,7 +6859,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
       return `${l} ${d} ${c} 40px`;
     }
     return '1fr 36px 40px';
-  },[previewVisible,sidebarCollapsed,leftPct,rightPct,centerCol]);
+  },[isLite,previewVisible,sidebarCollapsed,leftPct,rightPct,centerCol]);
 
   return (
       <div
@@ -6942,7 +6947,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       )}
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
-                      <div
+                      {!isLite && <div
                           className='rp-view-tabs'
                           style={{
                               display: 'flex',
@@ -7095,8 +7100,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   </button>
                               </>
                           )}
-                      </div>
-                      {!showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
+                      </div>}
+                      {!isLite && !showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
                           <Btn
                               title={showRedacted ? 'マスク済みテキストを表示中（クリックで元文に切替）' : '元のテキストを表示中（クリックでマスク表示に切替）'}
                               variant={showRedacted ? 'danger' : 'ghost'}
@@ -7110,7 +7115,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               {showRedacted ? 'マスク' : '元文'}
                           </Btn>
                       )}
-                      <Btn
+                      {!isLite && <Btn
                           title='編集: テキストを直接編集してA4プレビューに即反映'
                           variant={editMode ? 'primary' : 'ghost'}
                           onClick={() => {
@@ -7130,7 +7135,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           }}
                       >
                           {editMode ? '編集完了' : '編集'}
-                      </Btn>
+                      </Btn>}
+                      {!isLite && <>
                       <div style={{width:1,height:20,background:T.border,marginLeft:4,marginRight:2,flexShrink:0}}/>
                       <div style={{display:'flex',gap:2,alignItems:'center'}}>
                           {LAYOUT_PRESETS.map(p=>(
@@ -7145,6 +7151,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               </button>
                           ))}
                       </div>
+                      </>}
                   </div>
               </div>
               {/* カテゴリ別クイックトグル */}
@@ -7263,7 +7270,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               )}
           </div>
           {/* Divider: Left ↔ Center */}
-          {previewVisible && (
+          {!isLite && previewVisible && (
               <div
                   onMouseDown={startDrag('left')}
                   role="separator" aria-label="ドラッグでパネル幅を調整"
@@ -7273,8 +7280,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
               />
           )}
-          {/* Center: A4 Preview Panel (always visible) */}
-          {previewVisible ? (
+          {/* Center: A4 Preview Panel */}
+          {!isLite && (previewVisible ? (
               <div className="rp-editor-center" style={{
                   minWidth:0,display:"flex",flexDirection:"column",
                   background:"#e5e7eb",minHeight:0,overflow:"hidden",
@@ -7381,9 +7388,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   <span style={{writingMode:"vertical-rl",fontSize:12,fontWeight:600,color:T.text2,letterSpacing:1}}>A4</span>
                   <span style={{fontSize:14,color:T.text3,marginTop:4}}>&#x276E;</span>
               </div>
-          )}
-          {/* Divider: Center ↔ Right */}
-          {!sidebarCollapsed && (
+          ))}
+          {/* Divider: Center ↔ Right (Pro only when A4 visible) */}
+          {!isLite && !sidebarCollapsed && (
               <div
                   onMouseDown={startDrag('right')}
                   role="separator" aria-label="ドラッグでパネル幅を調整"
@@ -7393,8 +7400,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
               />
           )}
-          {/* Collapsed sidebar indicator */}
-          {sidebarCollapsed && (
+          {/* Collapsed sidebar indicator (Pro only) */}
+          {!isLite && sidebarCollapsed && (
               <div
                   role="button" tabIndex={0} aria-label="サイドバーを展開"
                   onClick={()=>{setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}
@@ -7469,7 +7476,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       >
                           {enabledCount > 0 ? '保護中' : '未保護'}
                       </Badge>
-                      <button
+                      {!isLite && <button
                           onClick={()=>{setSidebarCollapsed(true);setLeftPct(null);setRightPct(null);}}
                           title="サイドバーを折りたたむ"
                           aria-label="サイドバーを折りたたむ"
@@ -7478,14 +7485,18 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               color:T.text3,fontSize:16,padding:"2px 4px",
                               display:"flex",alignItems:"center",
                           }}
-                      >&#x276F;</button>
+                      >&#x276F;</button>}
                       </div>
                   </div>
-                  <div role="button" tabIndex={0} onClick={()=>setSideSettingsOpen(p=>!p)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSideSettingsOpen(p=>!p);}}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',margin:'8px -18px 8px',cursor:'pointer',userSelect:'none',background:sideSettingsOpen?T.surface:'transparent',borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,transition:'background .15s'}}>
+                  {isLite && <div style={{display:'flex',gap:6,marginTop:4}}>
+                      <Btn title='すべての検出を有効にする' variant='ghost' onClick={enableAll} style={{padding:'3px 10px',fontSize:12,borderRadius:7}}>全ON</Btn>
+                      <Btn title='すべての検出を無効にする' variant='ghost' onClick={disableAll} style={{padding:'3px 10px',fontSize:12,borderRadius:7}}>全OFF</Btn>
+                  </div>}
+                  {!isLite && <div role="button" tabIndex={0} onClick={()=>setSideSettingsOpen(p=>!p)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSideSettingsOpen(p=>!p);}}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',margin:'8px -18px 8px',cursor:'pointer',userSelect:'none',background:sideSettingsOpen?T.surface:'transparent',borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,transition:'background .15s'}}>
                       <span style={{fontSize:13,fontWeight:700,color:T.text,display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:16,lineHeight:1,transition:'transform .2s',transform:sideSettingsOpen?'rotate(90deg)':'rotate(0deg)',display:'inline-block'}}>&#9654;</span>マスキング設定</span>
                       <span style={{fontSize:10,padding:'2px 8px',borderRadius:4,background:sideSettingsOpen?'transparent':T.accentDim,border:sideSettingsOpen?'none':`1px solid ${T.accent}40`,color:sideSettingsOpen?T.text3:T.accent,fontWeight:500}}>{sideSettingsOpen?'閉じる':'開く'}</span>
-                  </div>
-                  {sideSettingsOpen && (<>
+                  </div>}
+                  {!isLite && sideSettingsOpen && (<>
                   <div style={{ marginBottom: 12 }}>
                       <div
                           style={{
