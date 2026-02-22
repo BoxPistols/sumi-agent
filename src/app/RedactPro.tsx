@@ -6972,7 +6972,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       )}
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
-                      {!isLite && <div
+                      <div
                           className='rp-view-tabs'
                           style={{
                               display: 'flex',
@@ -7025,7 +7025,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           >
                               Diff
                           </button>
-                          {hasRawText && (
+                          {!isLite && hasRawText && (
                               <>
                                   <button
                                       title='Raw: ファイルから抽出した生テキストを表示'
@@ -7075,7 +7075,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   </button>
                               </>
                           )}
-                          {aiResult && (
+                          {!isLite && aiResult && (
                               <>
                                   <button
                                       title='AI整形: AIが読みやすく整形したテキストを表示'
@@ -7125,7 +7125,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   </button>
                               </>
                           )}
-                      </div>}
+                      </div>
                       {!isLite && !showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
                           <Btn
                               title={showRedacted ? 'マスク済みテキストを表示中（クリックで元文に切替）' : '元のテキストを表示中（クリックでマスク表示に切替）'}
