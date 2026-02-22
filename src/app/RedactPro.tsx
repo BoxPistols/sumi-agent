@@ -7426,16 +7426,16 @@ function EditorScreen({data,onReset,apiKey,model}){
                           全OFF
                       </Btn>
                   </div>
-                  <div style={{marginTop:8}}>
-                      <div style={{fontSize:11,fontWeight:600,color:T.text3,marginBottom:4,letterSpacing:0.3}}>カスタムキーワード</div>
+                  </>)}
+                  <div style={{marginTop:4,padding:'6px 0',borderTop:`1px solid ${T.border}`}}>
                       <div style={{display:'flex',gap:4,alignItems:'center',marginBottom:4}}>
-                          <input type="text" value={editorCustomInput} onChange={(e)=>setEditorCustomInput(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'&&editorCustomInput.trim()){e.preventDefault();addCustomKeyword(editorCustomInput.trim());setEditorCustomInput("");}}} placeholder="キーワードを入力" aria-label="カスタムキーワード追加" style={{flex:1,padding:'4px 8px',fontSize:11,borderRadius:5,border:`1px solid ${T.border}`,background:'transparent',color:T.text,outline:'none',minWidth:0}}/>
-                          <button type="button" onClick={()=>{if(editorCustomInput.trim()){addCustomKeyword(editorCustomInput.trim());setEditorCustomInput("");}}} disabled={!editorCustomInput.trim()} style={{padding:'4px 8px',fontSize:11,fontWeight:600,borderRadius:5,border:'none',background:editorCustomInput.trim()?CATEGORIES.custom.color:'transparent',color:editorCustomInput.trim()?'#fff':T.text3,cursor:editorCustomInput.trim()?'pointer':'default',transition:'all .2s',whiteSpace:'nowrap'}}>追加</button>
+                          <input type="text" value={editorCustomInput} onChange={(e)=>setEditorCustomInput(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'&&editorCustomInput.trim()){e.preventDefault();addCustomKeyword(editorCustomInput.trim());setEditorCustomInput("");}}} placeholder="+ カスタムキーワード追加" aria-label="カスタムキーワード追加" style={{flex:1,padding:'5px 10px',fontSize:12,borderRadius:6,border:`1px solid ${T.border}`,background:'transparent',color:T.text,outline:'none',minWidth:0}}/>
+                          <button type="button" onClick={()=>{if(editorCustomInput.trim()){addCustomKeyword(editorCustomInput.trim());setEditorCustomInput("");}}} disabled={!editorCustomInput.trim()} style={{padding:'5px 12px',fontSize:11,fontWeight:600,borderRadius:6,border:'none',background:editorCustomInput.trim()?CATEGORIES.custom.color:'transparent',color:editorCustomInput.trim()?'#fff':T.text3,cursor:editorCustomInput.trim()?'pointer':'default',transition:'all .2s',whiteSpace:'nowrap'}}>追加</button>
                       </div>
                       {detections.filter(d=>d.type==="custom_keyword").length>0&&(
                           <div style={{display:'flex',flexWrap:'wrap',gap:3}}>
                               {detections.filter(d=>d.type==="custom_keyword").map(d=>(
-                                  <span key={d.id} style={{display:'inline-flex',alignItems:'center',gap:3,padding:'1px 7px',borderRadius:4,fontSize:10,background:d.enabled?`${CATEGORIES.custom.color}18`:'transparent',color:d.enabled?CATEGORIES.custom.color:T.text3,border:`1px solid ${d.enabled?`${CATEGORIES.custom.color}30`:T.border}`,cursor:'pointer',transition:'all .15s'}} onClick={()=>toggle(d.id)} title={d.enabled?'クリックで無効':'クリックで有効'}>
+                                  <span key={d.id} style={{display:'inline-flex',alignItems:'center',gap:3,padding:'2px 8px',borderRadius:4,fontSize:10,background:d.enabled?`${CATEGORIES.custom.color}18`:'transparent',color:d.enabled?CATEGORIES.custom.color:T.text3,border:`1px solid ${d.enabled?`${CATEGORIES.custom.color}30`:T.border}`,cursor:'pointer',transition:'all .15s'}} onClick={()=>toggle(d.id)} title={d.enabled?'クリックで無効':'クリックで有効'}>
                                       {d.value}
                                       <span style={{fontSize:8,opacity:0.7}}>{d.enabled?'●':'○'}</span>
                                   </span>
@@ -7443,7 +7443,6 @@ function EditorScreen({data,onReset,apiKey,model}){
                           </div>
                       )}
                   </div>
-                  </>)}
               </div>
               <div style={{ flex: 1, overflow: 'auto', padding: '6px 12px' }}>
                   {filtered.length === 0 ? (
