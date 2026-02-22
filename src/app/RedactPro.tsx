@@ -6176,6 +6176,31 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                           ! {error}
                       </div>
                   )}
+                  {isLite && (
+                      <button
+                          onClick={() => handleDemo('pdf')}
+                          style={{
+                              padding: '12px 16px',
+                              borderRadius: 10,
+                              border: `1px solid ${T.border}`,
+                              background: T.bg2,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all .15s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              width: '100%',
+                          }}
+                      >
+                          <span style={{width:8,height:8,borderRadius:4,background:C.red,flexShrink:0}}/>
+                          <div>
+                              <div style={{fontSize:12,fontWeight:600,color:T.text}}>
+                                  PDF DEMO <span style={{fontSize:11,color:T.text3,fontWeight:400}}>経歴書 2ページ</span>
+                              </div>
+                          </div>
+                      </button>
+                  )}
                   {!isLite && <div
                       style={{
                           background: T.surface,
