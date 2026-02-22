@@ -6842,9 +6842,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const gridCols=useMemo(()=>{
     const d='5px';
     if(isLite){
-      // Lite: テキスト + サイドバー の2カラム
+      // Lite: テキスト + サイドバー の2カラム（子要素2つ）
       const r=rightPct?`${rightPct}%`:'280px';
-      return `1fr ${d} ${r}`;
+      return `1fr ${r}`;
     }
     if(previewVisible&&!sidebarCollapsed){
       const l=leftPct?`${leftPct}%`:'1fr',c=leftPct?'1fr':centerCol,r=rightPct?`${rightPct}%`:'260px';
