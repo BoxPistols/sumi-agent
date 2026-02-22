@@ -2088,11 +2088,11 @@ function ChatWidget(){
             </button>
           </div>
 
-          {/* Messages */}
+          {/* Messages + Options (single scroll area) */}
           <div ref={scrollRef} style={{
             flex:'1 1 0',overflowY:'auto',padding:16,
             display:'flex',flexDirection:'column',gap:8,
-            minHeight:0,maxHeight:'calc(100% - 230px)',
+            minHeight:0,
           }}>
             {messages.map((m,i)=>(
               <div key={i} style={{
@@ -2107,32 +2107,27 @@ function ChatWidget(){
                 {m.text}
               </div>
             ))}
-          </div>
-
-          {/* Options */}
-          <div style={{
-            padding:'8px 16px 12px',
-            borderTop:`1px solid ${T.border}`,
-            overflowY:'auto',flexShrink:0,maxHeight:180,
-          }}>
-            {CHAT_FAQ.map((cat,ci)=>(
-              <div key={ci}>
-                <div style={{fontSize:11,fontWeight:700,color:T.text3,padding:'6px 0 3px',textTransform:'uppercase',letterSpacing:'.5px'}}>
-                  {cat.category}
+            {/* FAQ options inline */}
+            <div style={{marginTop:4}}>
+              {CHAT_FAQ.map((cat,ci)=>(
+                <div key={ci}>
+                  <div style={{fontSize:11,fontWeight:700,color:T.text3,padding:'6px 0 3px',textTransform:'uppercase',letterSpacing:'.5px'}}>
+                    {cat.category}
+                  </div>
+                  {cat.questions.map((item,qi)=>(
+                    <button
+                      key={qi}
+                      onClick={()=>selectQuestion(item.q,item.a)}
+                      onMouseEnter={e=>e.currentTarget.style.background=T.bg2}
+                      onMouseLeave={e=>e.currentTarget.style.background=T.surface}
+                      style={optionBtnStyle}
+                    >
+                      {item.q}
+                    </button>
+                  ))}
                 </div>
-                {cat.questions.map((item,qi)=>(
-                  <button
-                    key={qi}
-                    onClick={()=>selectQuestion(item.q,item.a)}
-                    onMouseEnter={e=>e.currentTarget.style.background=T.bg2}
-                    onMouseLeave={e=>e.currentTarget.style.background=T.surface}
-                    style={optionBtnStyle}
-                  >
-                    {item.q}
-                  </button>
-                ))}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
