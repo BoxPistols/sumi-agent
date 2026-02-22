@@ -1973,6 +1973,8 @@ function ChatWidget(){
   const[messages,setMessages]=useState([{type:'bot',text:'こんにちは！RedactProのサポートです。\nカテゴリを選んでください。'}]);
   const[nav,setNav]=useState({level:'top',categoryIdx:null});
   const scrollRef=useRef(null);
+  const[size,setSize]=useState({w:420,h:560});
+  const dragRef=useRef(null);
 
   useEffect(()=>{
     if(!open)return;
@@ -1984,6 +1986,20 @@ function ChatWidget(){
   useEffect(()=>{
     if(scrollRef.current)scrollRef.current.scrollTop=scrollRef.current.scrollHeight;
   },[messages]);
+
+  const onResizeStart=useCallback((e)=>{
+    e.preventDefault();
+    const startX=e.clientX,startY=e.clientY;
+    const startW=size.w,startH=size.h;
+    const onMove=(ev)=>{
+      const newW=Math.max(280,Math.min(600,startW-(ev.clientX-startX)));
+      const newH=Math.max(320,Math.min(800,startH-(ev.clientY-startY)));
+      setSize({w:newW,h:newH});
+    };
+    const onUp=()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);};
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  },[size]);
 
   const addBot=(text)=>setMessages(prev=>[...prev,{type:'bot',text}]);
   const addUser=(text)=>setMessages(prev=>[...prev,{type:'user',text}]);
@@ -2008,23 +2024,23 @@ function ChatWidget(){
   };
 
   const chatBtnSvg=(
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   );
 
   const closeSvg=(
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
     </svg>
   );
 
   const optionBtnStyle={
     display:'block',width:'100%',textAlign:'left',
-    padding:'8px 12px',marginBottom:4,borderRadius:8,
+    padding:'7px 12px',marginBottom:3,borderRadius:8,
     border:`1px solid ${T.border}`,background:T.surface,
     color:T.text,fontSize:13,cursor:'pointer',
-    transition:'background .15s',
+    transition:'background .15s',lineHeight:1.4,
   };
 
   return(
@@ -2035,10 +2051,10 @@ function ChatWidget(){
         aria-label={open?'サポートチャットを閉じる':'サポートチャットを開く'}
         style={{
           position:'fixed',right:16,bottom:16,zIndex:98,
-          width:56,height:56,borderRadius:'50%',border:'none',
+          width:40,height:40,borderRadius:'50%',border:'none',
           background:C.accent,color:'#fff',cursor:'pointer',
           display:'flex',alignItems:'center',justifyContent:'center',
-          boxShadow:'0 4px 12px rgba(0,0,0,.25)',
+          boxShadow:'0 2px 8px rgba(0,0,0,.2)',
           transition:'transform .2s',
           transform:open?'rotate(90deg)':'rotate(0deg)',
         }}
@@ -2049,8 +2065,8 @@ function ChatWidget(){
       {/* Chat panel */}
       {open&&(
         <div style={{
-          position:'fixed',right:16,bottom:80,zIndex:98,
-          width:360,maxHeight:480,
+          position:'fixed',right:16,bottom:64,zIndex:98,
+          width:size.w,height:size.h,
           borderRadius:16,
           border:`1px solid ${T.border}`,
           background:T.bg,
@@ -2059,6 +2075,20 @@ function ChatWidget(){
           animation:'fadeUp .2s ease',
           fontFamily:C.font,
         }}>
+          {/* Resize handle (top-left corner) */}
+          <div
+            onMouseDown={onResizeStart}
+            style={{
+              position:'absolute',left:0,top:0,width:18,height:18,
+              cursor:'nw-resize',zIndex:1,borderRadius:'16px 0 0 0',
+            }}
+            title='ドラッグでリサイズ'
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" style={{position:'absolute',left:4,top:4,opacity:.4}}>
+              <line x1="0" y1="10" x2="10" y2="0" stroke={T.text2} strokeWidth="1.5"/>
+              <line x1="0" y1="5" x2="5" y2="0" stroke={T.text2} strokeWidth="1.5"/>
+            </svg>
+          </div>
           {/* Header */}
           <div style={{
             padding:'14px 16px',
@@ -2081,7 +2111,7 @@ function ChatWidget(){
           <div ref={scrollRef} style={{
             flex:1,overflowY:'auto',padding:16,
             display:'flex',flexDirection:'column',gap:8,
-            maxHeight:300,
+            minHeight:0,
           }}>
             {messages.map((m,i)=>(
               <div key={i} style={{
