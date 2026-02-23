@@ -1981,9 +1981,9 @@ function ChatWidget(){
     return()=>window.removeEventListener('keydown',h);
   },[open]);
 
-  const lastMsgRef=useRef(null);
+  const botMsgRef=useRef(null);
   useEffect(()=>{
-    if(lastMsgRef.current)lastMsgRef.current.scrollIntoView({behavior:'smooth',block:'start'});
+    if(botMsgRef.current)botMsgRef.current.scrollIntoView({behavior:'smooth',block:'nearest'});
   },[messages]);
 
   const onResizeStart=useCallback((e)=>{
@@ -2095,8 +2095,10 @@ function ChatWidget(){
             display:'flex',flexDirection:'column',gap:8,
             minHeight:0,
           }}>
-            {messages.map((m,i)=>(
-              <div key={i} ref={i===messages.length-1?lastMsgRef:null} style={{
+            {messages.map((m,i)=>{
+              // 最後のbotメッセージにrefを付与（回答が見えるようスクロール）
+              const isLastBot=m.type==='bot'&&messages.slice(i+1).every(x=>x.type!=='bot');
+              return(<div key={i} ref={isLastBot?botMsgRef:null} style={{
                 alignSelf:m.type==='user'?'flex-end':'flex-start',
                 maxWidth:'85%',
                 padding:'8px 12px',borderRadius:12,
@@ -2106,8 +2108,8 @@ function ChatWidget(){
                 whiteSpace:'pre-wrap',
               }}>
                 {m.text}
-              </div>
-            ))}
+              </div>);
+            })}
             {/* FAQ options inline */}
             <div style={{marginTop:4}}>
               {CHAT_FAQ.map((cat,ci)=>(
