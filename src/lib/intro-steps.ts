@@ -192,8 +192,6 @@ export const EDITOR_STEPS_PRO: IntroStep[] = [
     },
 ]
 
-/** 後方互換: 既存のEDITOR_STEPSを参照するコードがあれば */
-export const EDITOR_STEPS = EDITOR_STEPS_LITE
 
 /**
  * PreviewModal ステップ（エクスポートプレビュー初回表示時）

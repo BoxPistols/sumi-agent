@@ -146,7 +146,7 @@ export const REGEX_PATTERNS: RegexPattern[] = [
     id: 'sns_note',
     label: 'noteアカウント',
     category: 'contact',
-    regex: /(?:note\.com|note)\s*[：:・\s]\s*@?([a-zA-Z0-9_-]{1,30})/gi,
+    regex: /(?:note\.com|noteアカウント|noteプロフィール)\s*[：:・\s]\s*@?([a-zA-Z0-9_-]{1,30})/gi,
     group: 1,
   },
   {
@@ -223,7 +223,7 @@ export const REGEX_PATTERNS: RegexPattern[] = [
     id: 'sns_line',
     label: 'LINE ID',
     category: 'contact',
-    regex: /(?:LINE|Line|ライン)\s*(?:ID)?\s*[：:・\s]\s*@?([a-zA-Z0-9_.-]{1,20})/gi,
+    regex: /(?:LINE|Line|ライン)\s*ID\s*[：:・\s]\s*@?([a-zA-Z0-9_.-]{1,20})/gi,
     group: 1,
   },
   {
@@ -251,7 +251,7 @@ export const REGEX_PATTERNS: RegexPattern[] = [
     id: 'sns_stackoverflow',
     label: 'Stack Overflowアカウント',
     category: 'contact',
-    regex: /(?:Stack\s*Overflow|stackoverflow|SO)\s*[：:・\s]\s*@?([a-zA-Z0-9_.-]{1,50})/gi,
+    regex: /(?:Stack\s*Overflow|stackoverflow)\s*[：:・\s]\s*@?([a-zA-Z0-9_.-]{1,50})/gi,
     group: 1,
   },
   {
