@@ -1668,6 +1668,24 @@ async function processFileEntry(file,maskConfig,settings,callbacks,customKeyword
   workText=p.text;originalRaw=p.text;format=p.format;pageCount=p.pageCount;sparsePages=p.sparsePages;pdfData=p.pdfData;
   onProgress?.(20);
 
+  // Stage 1.5: サーバーサイド pdftotext フォールバック
+  if(format==="PDF"&&pdfData&&sparsePages?.length>0&&pageCount>0&&sparsePages.length/pageCount>=0.3){
+    try{
+      onStage?.("サーバー側PDF抽出中...");
+      const bytes=new Uint8Array(pdfData.slice(0));
+      const chunks=[];const cs=8192;
+      for(let i=0;i<bytes.length;i+=cs)chunks.push(String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+cs,bytes.length))));
+      const pdfB64=btoa(chunks.join(""));
+      const res=await fetch("/api/pdf/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pdfBase64:pdfB64})});
+      if(res.ok){
+        const{text:serverText,pageCount:sp}=await res.json();
+        if(serverText&&serverText.length>workText.length*1.5){
+          workText=serverText;originalRaw=serverText;sparsePages=[];if(sp)pageCount=sp;
+          onStage?.(`pdftotext: ${sp||"?"}ページ抽出完了`);
+        }
+      }
+    }catch(e){console.warn("pdftotext fallback failed:",e);}
+  }
   // Stage 2: OCR for image-heavy PDF
   if(aiOn&&format==="PDF"&&sparsePages?.length>0){
     if(signal?.aborted)throw new DOMException("Aborted","AbortError");
@@ -4909,11 +4927,33 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
     let originalRaw=rawText||text;
     const runModels = aiOn ? getModelsForRun(settings) : null
 
-    // Warn if image-heavy PDF but no API key for OCR
-    if(!settings?.apiKey&&format==="PDF"&&sparsePages&&sparsePages.length>0&&pageCount>0){
+    // サーバーサイド pdftotext フォールバック（pdf.js CIDフォント問題対策）
+    if(format==="PDF"&&pdfData&&sparsePages&&sparsePages.length>0&&pageCount>0){
       const sparseRatio=sparsePages.length/pageCount;
-      if(sparseRatio>=0.5){
-        setAiStatus(`⚠ ${sparsePages.length}/${pageCount}ページがテキスト未検出（画像PDF）。設定でAPIキーを登録するとAI OCRで抽出できます`);
+      if(sparseRatio>=0.3){
+        try{
+          setAiStatus("サーバー側PDF抽出中（pdftotext）...");
+          const bytes=new Uint8Array(pdfData.slice(0));
+          const chunks=[];
+          const cs=8192;
+          for(let i=0;i<bytes.length;i+=cs)chunks.push(String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+cs,bytes.length))));
+          const pdfB64=btoa(chunks.join(""));
+          const res=await fetch("/api/pdf/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pdfBase64:pdfB64})});
+          if(res.ok){
+            const{text:serverText,pageCount:serverPages}=await res.json();
+            if(serverText&&serverText.length>workText.length*1.5){
+              workText=serverText;
+              originalRaw=serverText;
+              sparsePages=[];
+              if(serverPages)pageCount=serverPages;
+              setAiStatus(`pdftotext: ${serverPages||"?"}ページ抽出完了`);
+            }else{
+              setAiStatus("pdftotext: pdf.jsと同等（フォールバック不要）");
+            }
+          }
+        }catch(e){
+          console.warn("pdftotext fallback failed:",e);
+        }
       }
     }
     // OCR fallback for image-heavy PDF pages
