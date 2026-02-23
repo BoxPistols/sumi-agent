@@ -167,15 +167,57 @@ export const EDITOR_STEPS_PRO: IntroStep[] = [
         position: 'left',
     },
     {
+        element: '[data-intro="ai-reformat"]',
+        title: 'AI再フォーマット',
+        intro: 'AIがマスキング済みテキストを推薦書やスキルシートなどの形式に自動整形します。',
+        position: 'left',
+    },
+    {
+        element: '[data-intro="pdf-edit"]',
+        title: 'PDFプレビュー・編集',
+        intro: 'A4レイアウトでプレビュー。テキストを直接編集してPDF出力できます。',
+        position: 'left',
+    },
+    {
         element: '[data-intro="export-buttons"]',
-        title: 'エクスポート',
-        intro: 'テキスト・Markdown・CSV・Excel・PDF・Wordの6形式。レポート出力も可能です。',
+        title: 'プレビュー / 保存',
+        intro: 'マスキング結果のプレビュー表示やクリップボードコピーはこちらから。',
+        position: 'top',
+    },
+    {
+        element: '[data-intro="detection-report"]',
+        title: '検出レポート',
+        intro: '検出結果の詳細をCSV形式でレポート出力。監査や記録用に利用できます。',
         position: 'top',
     },
 ]
 
 /** 後方互換: 既存のEDITOR_STEPSを参照するコードがあれば */
 export const EDITOR_STEPS = EDITOR_STEPS_LITE
+
+/**
+ * PreviewModal ステップ（エクスポートプレビュー初回表示時）
+ */
+export const PREVIEW_MODAL_STEPS: IntroStep[] = [
+    {
+        element: '[data-intro="preview-tabs"]',
+        title: '表示切替',
+        intro: '「レイアウト」で書式付きプレビュー、「テキスト」でプレーンテキスト、「編集」で直接編集できます。',
+        position: 'bottom',
+    },
+    {
+        element: '[data-intro="export-formats"]',
+        title: '出力形式',
+        intro: 'Text・Markdown・CSV・Excel・PDF（印刷）・Wordの6形式から選択。形式を切り替えるとプレビューも変わります。',
+        position: 'top',
+    },
+    {
+        element: '[data-intro="export-actions"]',
+        title: '保存 / コピー',
+        intro: '選択した形式でファイル保存、またはクリップボードにコピーできます。',
+        position: 'top',
+    },
+]
 
 /**
  * Pro切替時ステップ（Lite→Pro切替直後に表示）

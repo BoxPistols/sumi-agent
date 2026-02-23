@@ -3967,6 +3967,18 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable,m
   const[headingRule,setHeadingRule]=useState(()=>{try{return localStorage.getItem('rp_heading_rule')!=='off'}catch{return true}});
 
   useEffect(()=>{setEditedContent(content);setHasChanges(false);},[content]);
+  // プレビューモーダル初回ツアー
+  useEffect(()=>{
+    const done=localStorage.getItem('rp_tour_preview_done');
+    if(done)return;
+    const timer=setTimeout(async()=>{
+      try{
+        const{PREVIEW_MODAL_STEPS}=await import('@/lib/intro-steps');
+        await launchTour(PREVIEW_MODAL_STEPS,'rp_tour_preview_done');
+      }catch(e){console.warn('preview tour failed:',e);}
+    },600);
+    return()=>clearTimeout(timer);
+  },[]);
 
   const handleSave=useCallback(()=>{
     if(onContentChange&&hasChanges){onContentChange(editedContent);}
@@ -4154,6 +4166,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div
+                          data-intro="preview-tabs"
                           style={{
                               display: 'flex',
                               border: `1px solid ${T.border}`,
@@ -4474,6 +4487,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           出力形式:
                       </span>
                       <div
+                          data-intro="export-formats"
                           style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}
                       >
                           {EXPORT_FORMATS.map((f) => (
@@ -4539,6 +4553,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                       </div>
                   </div>
                   <div
+                      data-intro="export-actions"
                       style={{
                           display: 'flex',
                           gap: 8,
@@ -7981,6 +7996,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   }}
               >
                   {!isLite && <Btn
+                      data-intro="ai-reformat"
                       title='AIでテキストを再整形'
                       onClick={() => setShowAI(true)}
                       style={{
@@ -7993,6 +8009,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       AI で再フォーマット
                   </Btn>}
                   {!isLite && <Btn
+                      data-intro="pdf-edit"
                       title='PDF編集モードを開く'
                       onClick={() => {
                           if(!editMode){
@@ -8050,6 +8067,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                       {!isLite && <Btn
+                          data-intro="detection-report"
                           title='検出結果の詳細レポートを表示'
                           variant='ghost'
                           onClick={() =>
