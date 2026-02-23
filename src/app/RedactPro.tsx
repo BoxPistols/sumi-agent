@@ -8926,12 +8926,12 @@ export default function App(){
                               AI
                           </Badge>
                       )}
-                      {aiUsage && aiUsage.used > 0 && !settings.apiKey && (
+                      {aiUsage && !settings.apiKey && (
                           <Badge color={aiUsage.remaining<=5?'#f59e0b':C.text3} bg={aiUsage.remaining<=5?'#f59e0b20':C.surfaceAlt}
                               style={{cursor:'help'}}
                               title={`サーバー共用AI: ${aiUsage.used}/${aiUsage.limit}回使用済み${aiUsage.resetAt ? `（リセット: ${new Date(aiUsage.resetAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}）` : ''}\n自分のAPIキーを設定すると無制限に利用できます。`}>
                               AI {aiUsage.used}/{aiUsage.limit}
-                              {aiUsage.resetAt>0 && <span style={{opacity:0.7,marginLeft:4,fontSize:10}}>{(() => {const h=Math.max(0,Math.ceil((aiUsage.resetAt-Date.now())/3600000));return h>0?`${h}h後リセット`:'リセット済';})()}</span>}
+                              {aiUsage.resetAt>0 && aiUsage.used>0 && <span style={{opacity:0.7,marginLeft:4,fontSize:10}}>{(() => {const h=Math.max(0,Math.ceil((aiUsage.resetAt-Date.now())/3600000));return h>0?`${h}h後リセット`:'リセット済';})()}</span>}
                           </Badge>
                       )}
                   </div>
