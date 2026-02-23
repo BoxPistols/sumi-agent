@@ -5544,7 +5544,9 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   </div>}
                   {isLite && (
                     <div
+                      role="button" tabIndex={0}
                       onClick={()=>{if(onSwitchPro)onSwitchPro();}}
+                      onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&onSwitchPro){e.preventDefault();onSwitchPro();}}}
                       style={{
                         marginTop:12,padding:'12px 16px',borderRadius:10,
                         background:`linear-gradient(135deg,${C.accent}10,${C.purple}10)`,
@@ -8077,7 +8079,7 @@ export default function App(){
   const[showHelp,setShowHelp]=useState(false);
   const[edition,setEdition]=useState(()=>{try{return localStorage.getItem('rp_edition')||'lite'}catch{return'lite'}});
   const isLite=edition==='lite';
-  const toggleEdition=useCallback(()=>{const next=edition==='lite'?'pro':'lite';setEdition(next);try{localStorage.setItem('rp_edition',next)}catch{}},[edition]);
+  const switchEdition=useCallback((id)=>{setEdition(id);try{localStorage.setItem('rp_edition',id)}catch{}},[]);
   const[isDark,setIsDark]=useState(true);
   const [settings, setSettings] = useState({
       apiKey: '',
@@ -8259,7 +8261,7 @@ export default function App(){
                   <div role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
                       {[{id:'lite',label:'Lite',sub:'シンプル'},{id:'pro',label:'Pro',sub:'全機能'}].map(ed=>(
                         <button key={ed.id} role="radio" aria-checked={edition===ed.id}
-                          onClick={()=>{setEdition(ed.id);try{localStorage.setItem('rp_edition',ed.id)}catch{}}}
+                          onClick={()=>switchEdition(ed.id)}
                           onMouseEnter={e=>{if(edition!==ed.id)e.currentTarget.style.background=T.surfaceAlt}}
                           onMouseLeave={e=>{if(edition!==ed.id)e.currentTarget.style.background='transparent'}}
                           style={{
@@ -8420,7 +8422,7 @@ export default function App(){
                   isLite={isLite}
               />
           ) : (
-              <UploadScreen onAnalyze={setData} onSubmitBatch={handleBatchSubmit} settings={settings} isLite={isLite} onSwitchPro={()=>{setEdition('pro');try{localStorage.setItem('rp_edition','pro')}catch{}}} />
+              <UploadScreen onAnalyze={setData} onSubmitBatch={handleBatchSubmit} settings={settings} isLite={isLite} onSwitchPro={()=>switchEdition('pro')} />
           )}
           </main>
           {showSettings && (
