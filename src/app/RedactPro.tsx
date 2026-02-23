@@ -2412,7 +2412,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
 }
 
 // ═══ Settings Modal ═══
-function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
+function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,switchEdition}){
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const [provider, setProvider] = useState(settings.provider || 'openai')
@@ -2639,10 +2639,31 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                           size='sm'
                       />
                   </div>
+                  {/* エディション切替 */}
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
+                      <div>
+                          <div style={{fontSize:12,fontWeight:600,color:T.text}}>エディション</div>
+                          <div style={{fontSize:12,color:T.text3,lineHeight:1.5}}>
+                              {isLite ? 'Lite — 基本的なマスキング機能' : 'Pro — AI検出・アドバイザー・再フォーマット等を含む全機能'}
+                          </div>
+                          <div style={{fontSize:11,color:T.accent,marginTop:2}}>Pro版は現在無料でご利用いただけます</div>
+                      </div>
+                      <div style={{display:'flex',gap:4}}>
+                          {['lite','pro'].map(ed=>(
+                              <button key={ed} onClick={()=>switchEdition(ed)}
+                                  style={{padding:'5px 14px',fontSize:12,fontWeight:edition===ed?700:500,
+                                      borderRadius:6,border:`1.5px solid ${edition===ed?T.accent:T.border}`,
+                                      background:edition===ed?`${T.accent}18`:'transparent',
+                                      color:edition===ed?T.accent:T.text2,cursor:'pointer',transition:'all .15s',textTransform:'capitalize'}}>
+                                  {ed==='lite'?'Lite':'Pro'}
+                              </button>
+                          ))}
+                      </div>
+                  </div>
                   {/* ─── Pro版設定（Liteではdisabledで表示） ─── */}
                   {isLite && (
                   <div style={{fontSize:12,color:T.text3,padding:'6px 10px',borderRadius:8,background:`${T.accent}10`,border:`1px solid ${T.accent}30`}}>
-                      以下のAI設定はPro版で利用できます。ヘッダーの「Pro」ボタンで切り替えられます。
+                      以下のAI設定はPro版に切り替えると有効になります。
                   </div>
                   )}
                   <fieldset disabled={isLite} style={{border:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:20,opacity:isLite?0.5:1}}>
@@ -9040,6 +9061,8 @@ export default function App(){
                   isDark={isDark}
                   setIsDark={setIsDark}
                   isLite={isLite}
+                  edition={edition}
+                  switchEdition={switchEdition}
               />
           )}
           {showHelp && (
