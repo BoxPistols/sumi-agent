@@ -18,12 +18,17 @@
     "fix": "pnpm lint:fix && pnpm format:write"
   },
   "dependencies": {
+    "@remotion/cli": "^4.0.427",
+    "@remotion/player": "^4.0.427",
+    "intro.js": "^8.3.2",
+    "intro.js-react": "^1.0.0",
     "jszip": "^3.10.1",
     "mammoth": "^1.8.0",
     "next": "^15.2.0",
     "papaparse": "^5.4.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "remotion": "^4.0.427",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
@@ -41,6 +46,13 @@
     "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@9.15.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BoxPistols/redact-pro.git"
+  },
+  "homepage": "https://redact-pro.vercel.app",
+  "license": "MIT",
+  "author": "BoxPistols",
   "engines": {
     "node": ">=20.0.0"
   }
