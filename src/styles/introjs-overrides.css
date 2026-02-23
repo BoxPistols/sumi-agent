@@ -25,7 +25,7 @@
   font-weight: 700 !important;
   color: #fff !important;
   margin-bottom: 4px !important;
-  padding-right: 60px !important;
+  width: auto;
 }
 
 .introjs-tooltipbuttons {
@@ -75,8 +75,8 @@
 .introjs-skipbutton {
   position: absolute !important;
   top: 8px !important;
-  right: 8px !important;
-  background: transparent !important;
+  right: 6px !important;
+  background: none !important;
   border: none !important;
   color: rgba(255, 255, 255, 0.4) !important;
   font-size: 11px !important;
@@ -85,6 +85,9 @@
   white-space: nowrap !important;
   overflow: visible !important;
   z-index: 1 !important;
+  display: block;
+  width: auto;
+  line-height: 1.5;
 }
 
 .introjs-skipbutton:hover {
