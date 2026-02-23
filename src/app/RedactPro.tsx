@@ -200,7 +200,7 @@ async function callAI({provider,model,messages,maxTokens=4000,apiKey,system}){
   }
   const d=await res.json();
   if(typeof d.remaining==='number'&&typeof d.limit==='number'){
-    _lastRateLimit={remaining:d.remaining,limit:d.limit};
+    _lastRateLimit={remaining:d.remaining,limit:d.limit,resetAt:d.resetAt||0};
     _rateLimitListeners.forEach(fn=>fn(_lastRateLimit));
   }
   return d.text||"";
@@ -7105,7 +7105,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
       const result=await callAdvisor({messages:allMsgs,context:ctx,apiKey,model,modelMode:advisorModelMode,presetId,jobDescription:jobDescription.trim()||undefined});
       setAdvisorLastModel(result.modelLabel);
       setAdvisorMessages(prev=>[...prev,{role:'assistant',content:result.text,timestamp:Date.now()}]);
-      if(result.rateLimit)setAiRateLimit(result.rateLimit);
+      if(result.rateLimit){setAiRateLimit(result.rateLimit);_rateLimitListeners.forEach(fn=>fn(result.rateLimit));}
       // コスト更新
       const{getCostRecord,checkCostAlert}=await import('@/lib/advisor/model-selector');
       const rec=getCostRecord();
@@ -8677,6 +8677,11 @@ export default function App(){
     }
   },[]);
   const[isDark,setIsDark]=useState(false);
+  const[aiUsage,setAiUsage]=useState(null); // {used,limit,remaining,resetAt}
+  useEffect(()=>{
+    fetch('/api/ai').then(r=>r.json()).then(d=>{if(typeof d.used==='number')setAiUsage(d)}).catch(()=>{});
+    return onRateLimitUpdate(rl=>setAiUsage(prev=>{const used=rl.limit-rl.remaining;return prev?{...prev,used,remaining:rl.remaining,resetAt:rl.resetAt||prev.resetAt}:{used,limit:rl.limit,remaining:rl.remaining,resetAt:rl.resetAt||0}}));
+  },[]);
   const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
@@ -8911,14 +8916,22 @@ export default function App(){
                   >
                       {(data||batchMode) && (
                           <Badge color={C.accent} bg={C.accentDim}>
-                              {batchMode
-                                ? `${batchFiles.reduce((s,f)=>s+(f.data?.detections?.filter(d=>d.enabled).length||0),0)} 件 (${batchFiles.filter(f=>f.status==='done').length}/${batchFiles.length})`
-                                : `${data.detections.filter((d) => d.enabled).length} 件`}
+                              検出 {batchMode
+                                ? `${batchFiles.reduce((s,f)=>s+(f.data?.detections?.filter(d=>d.enabled).length||0),0)}件 (${batchFiles.filter(f=>f.status==='done').length}/${batchFiles.length})`
+                                : `${data.detections.filter((d) => d.enabled).length}件`}
                           </Badge>
                       )}
                       {settings.aiDetect && (
                           <Badge color={C.purple} bg={C.purpleDim}>
                               AI
+                          </Badge>
+                      )}
+                      {aiUsage && aiUsage.used > 0 && !settings.apiKey && (
+                          <Badge color={aiUsage.remaining<=5?'#f59e0b':C.text3} bg={aiUsage.remaining<=5?'#f59e0b20':C.surfaceAlt}
+                              style={{cursor:'help'}}
+                              title={`サーバー共用AI: ${aiUsage.used}/${aiUsage.limit}回使用済み${aiUsage.resetAt ? `（リセット: ${new Date(aiUsage.resetAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}）` : ''}\n自分のAPIキーを設定すると無制限に利用できます。`}>
+                              AI {aiUsage.used}/{aiUsage.limit}
+                              {aiUsage.resetAt>0 && <span style={{opacity:0.7,marginLeft:4,fontSize:10}}>{(() => {const h=Math.max(0,Math.ceil((aiUsage.resetAt-Date.now())/3600000));return h>0?`${h}h後リセット`:'リセット済';})()}</span>}
                           </Badge>
                       )}
                   </div>

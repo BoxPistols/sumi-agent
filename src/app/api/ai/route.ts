@@ -30,6 +30,7 @@ interface RateLimitResult {
   allowed: boolean
   remaining: number
   limit: number
+  resetAt: number
 }
 
 function checkRateLimit(ip: string): RateLimitResult {
@@ -37,11 +38,11 @@ function checkRateLimit(ip: string): RateLimitResult {
   const entry = rateMap.get(ip)
   if (!entry || now > entry.resetAt) {
     rateMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
-    return { allowed: true, remaining: RATE_LIMIT - 1, limit: RATE_LIMIT }
+    return { allowed: true, remaining: RATE_LIMIT - 1, limit: RATE_LIMIT, resetAt: now + RATE_WINDOW }
   }
-  if (entry.count >= RATE_LIMIT) return { allowed: false, remaining: 0, limit: RATE_LIMIT }
+  if (entry.count >= RATE_LIMIT) return { allowed: false, remaining: 0, limit: RATE_LIMIT, resetAt: entry.resetAt }
   entry.count++
-  return { allowed: true, remaining: RATE_LIMIT - entry.count, limit: RATE_LIMIT }
+  return { allowed: true, remaining: RATE_LIMIT - entry.count, limit: RATE_LIMIT, resetAt: entry.resetAt }
 }
 
 function getClientIP(request: NextRequest): string {
@@ -155,10 +156,12 @@ export async function GET(request: NextRequest) {
   const now = Date.now()
   const entry = rateMap.get(ip)
   let used = 0
+  let resetAt = 0
   if (entry && now <= entry.resetAt) {
     used = entry.count
+    resetAt = entry.resetAt
   }
-  return NextResponse.json({ used, limit: RATE_LIMIT, remaining: RATE_LIMIT - used })
+  return NextResponse.json({ used, limit: RATE_LIMIT, remaining: RATE_LIMIT - used, resetAt })
 }
 
 export async function POST(request: NextRequest) {
@@ -250,7 +253,7 @@ export async function POST(request: NextRequest) {
 
       const d = (await res.json()) as OpenAIResponseBody
       const text = extractOpenAIText(d)
-      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit })
+      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit, resetAt: userKey ? undefined : rl.resetAt })
     }
 
     if (provider === 'google') {
@@ -301,7 +304,7 @@ export async function POST(request: NextRequest) {
       const text =
         d.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') ||
         ''
-      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit })
+      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit, resetAt: userKey ? undefined : rl.resetAt })
     }
 
     if (provider === 'anthropic') {
@@ -341,7 +344,7 @@ export async function POST(request: NextRequest) {
         d.content
           ?.map((c: { type: string; text?: string }) => (c.type === 'text' ? c.text : ''))
           .join('') || ''
-      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit })
+      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit, resetAt: userKey ? undefined : rl.resetAt })
     }
 
     return NextResponse.json({ error: `Unknown provider: ${provider}` }, { status: 400 })
