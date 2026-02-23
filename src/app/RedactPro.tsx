@@ -8180,7 +8180,7 @@ export default function App(){
       }
     }
   },[]);
-  const[isDark,setIsDark]=useState(true);
+  const[isDark,setIsDark]=useState(false);
   const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
@@ -8429,7 +8429,7 @@ export default function App(){
                   <button
                       title='ダークモード切替'
                       aria-label='ダークモード切替'
-                      onClick={() => setIsDark(!isDark)}
+                      onClick={() => { const next = !isDark; setIsDark(next); storage.set('rp_theme', next ? 'dark' : 'light') }}
                       style={{
                           width: 36,
                           height: 36,
