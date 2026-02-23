@@ -2097,7 +2097,7 @@ function ChatWidget(){
           }}>
             {messages.map((m,i)=>{
               // 最後のbotメッセージにrefを付与（回答が見えるようスクロール）
-              const isLastBot=m.type==='bot'&&messages.slice(i+1).every(x=>x.type!=='bot');
+              const isLastBot=i===messages.findLastIndex(x=>x.type==='bot');
               return(<div key={i} ref={isLastBot?botMsgRef:null} style={{
                 alignSelf:m.type==='user'?'flex-end':'flex-start',
                 maxWidth:'85%',
@@ -2139,7 +2139,7 @@ function ChatWidget(){
 }
 
 // ═══ Help Modal ═══
-function HelpModal({onClose}){
+function HelpModal({onClose,onStartTour,onShowVideo}){
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const sectionStyle={marginBottom:20};
@@ -2192,6 +2192,17 @@ function HelpModal({onClose}){
                   >✕</button>
               </div>
               <div style={{padding:'18px 20px'}}>
+                  {/* ガイドツアー & 紹介動画 */}
+                  {(onStartTour||onShowVideo)&&<div style={{display:'flex',gap:8,marginBottom:18}}>
+                    {onShowVideo&&<button onClick={()=>{onClose();onShowVideo();}} style={{flex:1,padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6,transition:'background .15s'}} onMouseEnter={e=>e.currentTarget.style.background=T.surfaceAlt} onMouseLeave={e=>e.currentTarget.style.background=T.surface}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      紹介動画を見る
+                    </button>}
+                    {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:`linear-gradient(135deg,${C.accent},${C.purple})`,color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                      ガイドツアー
+                    </button>}
+                  </div>}
                   {/* クイックスタート */}
                   <div style={sectionStyle}>
                       <div style={headingStyle}>
@@ -6710,16 +6721,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     if(done)return;
     const timer=setTimeout(async()=>{
       try{
-        const introJs=(await import('intro.js')).default;
-        await import('intro.js/introjs.css');
-        await import('@/styles/introjs-overrides.css');
-        const{EDITOR_STEPS,INTRO_OPTIONS}=await import('@/lib/intro-steps');
-        const validSteps=EDITOR_STEPS.filter(s=>document.querySelector(s.element));
-        if(validSteps.length===0)return;
-        const tour=introJs();
-        tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
-        tour.oncomplete(()=>{try{localStorage.setItem('rp_tour_editor_done','1')}catch{}});
-        tour.start();
+        const{EDITOR_STEPS,LS_TOUR_EDITOR_DONE}=await import('@/lib/intro-steps');
+        await launchTour(EDITOR_STEPS,LS_TOUR_EDITOR_DONE);
       }catch(e){console.warn('editor tour failed:',e);}
     },800);
     return()=>clearTimeout(timer);
@@ -8137,22 +8140,26 @@ export default function App(){
     if(!visited&&!onboardingDone){setShowWelcome(true);await storage.set("rp_visited","1");}
     else if(!visited){setShowHelp(true);await storage.set("rp_visited","1");}
   })();},[]);
+  // intro.js ツアー共通ヘルパー
+  async function launchTour(steps,doneKey){
+    const introJs=(await import('intro.js')).default;
+    await import('intro.js/introjs.css');
+    await import('@/styles/introjs-overrides.css');
+    const{INTRO_OPTIONS}=await import('@/lib/intro-steps');
+    const validSteps=steps.filter(s=>document.querySelector(s.element));
+    if(validSteps.length===0)return;
+    const tour=introJs();
+    tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
+    if(doneKey)tour.oncomplete(()=>{try{localStorage.setItem(doneKey,'1')}catch{}});
+    tour.start();
+  }
   // オンボーディングツアー
   const startTour=useCallback(()=>{
-    // 少し待ってからintro.jsを起動（DOM描画待ち）
     setTimeout(async()=>{
       try{
-        const introJs=(await import('intro.js')).default;
-        await import('intro.js/introjs.css');
-        await import('@/styles/introjs-overrides.css');
-        const{UPLOAD_STEPS_LITE,UPLOAD_STEPS_PRO,INTRO_OPTIONS,LS_TOUR_UPLOAD_DONE}=await import('@/lib/intro-steps');
+        const{UPLOAD_STEPS_LITE,UPLOAD_STEPS_PRO,LS_TOUR_UPLOAD_DONE}=await import('@/lib/intro-steps');
         const steps=isLite?UPLOAD_STEPS_LITE:UPLOAD_STEPS_PRO;
-        const validSteps=steps.filter(s=>document.querySelector(s.element));
-        if(validSteps.length===0)return;
-        const tour=introJs();
-        tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
-        tour.oncomplete(()=>{try{localStorage.setItem(LS_TOUR_UPLOAD_DONE,'1')}catch{}});
-        tour.start();
+        await launchTour(steps,LS_TOUR_UPLOAD_DONE);
       }catch(e){console.warn('intro.js tour failed:',e);}
     },400);
   },[isLite]);
@@ -8382,12 +8389,9 @@ export default function App(){
                       {isDark ? '☀️' : '🌙'}
                   </button>
                   <button
-                      title='ヘルプ / ガイドツアー'
+                      title='ヘルプ'
                       aria-label='ヘルプを表示'
-                      onClick={() => {
-                        if(!data&&!batchMode){setShowWelcome(true);}
-                        else{startTour();}
-                      }}
+                      onClick={() => setShowHelp(true)}
                       style={{
                           width: 36,
                           height: 36,
@@ -8506,7 +8510,7 @@ export default function App(){
               />
           )}
           {showHelp && (
-              <HelpModal onClose={() => setShowHelp(false)} />
+              <HelpModal onClose={() => setShowHelp(false)} onStartTour={()=>{setShowHelp(false);startTour();}} onShowVideo={()=>{setShowHelp(false);setShowWelcome(true);}} />
           )}
           {!isLite && <ChatWidget />}
           {showWelcome && <WelcomeVideoModalWrapper onClose={handleWelcomeClose} onStartTour={handleWelcomeStartTour} />}
