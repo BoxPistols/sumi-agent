@@ -5431,6 +5431,21 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
               >
                   {isLite ? 'ファイルをアップロードするだけで個人情報を自動検出・マスキング' : '日本人名辞書 + 正規表現 + AI検出 + AIテキスト再構成で高精度'}
               </p>
+              {/* セキュリティ根拠バッジ */}
+              <div style={{display:'flex',flexWrap:'wrap',gap:8,marginTop:12}}>
+                  {[
+                      {icon:'\u{1F512}',text:'ブラウザ内完結',tip:'ファイルはサーバーに送信されません。すべてブラウザ内で処理されます'},
+                      {icon:'\u{1F6AB}',text:'DB保存なし',tip:'データベースは一切使用しません。処理結果はブラウザのメモリ上のみに存在します'},
+                      {icon:'\u2699',text:'AI利用は任意',tip:'AI検出・AI整形はユーザーが有効にした場合のみ動作します（デフォルトOFF）'},
+                      {icon:'\u2705',text:'AI API学習除外',tip:'OpenAI / Anthropic / Google のAPIはトレーニングデータに使用されません（オプトアウト済み）'},
+                  ].map((b,i)=>(
+                      <span key={i} title={b.tip} style={{display:'inline-flex',alignItems:'center',gap:4,padding:'4px 10px',
+                          fontSize:11,color:T.text2,background:T.surface,border:`1px solid ${T.border}`,borderRadius:20,
+                          cursor:'help',lineHeight:1.4,whiteSpace:'nowrap'}}>
+                          <span style={{fontSize:13}}>{b.icon}</span>{b.text}
+                      </span>
+                  ))}
+              </div>
           </div>
           <div
               className='rp-upload-main'
@@ -8962,6 +8977,8 @@ export default function App(){
           {showWelcome && <WelcomeVideoModalWrapper onClose={handleWelcomeClose} onStartTour={handleWelcomeStartTour} />}
           <footer style={{position:'fixed',bottom:0,left:0,right:0,display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'6px 16px',fontSize:11,color:T.text3,background:T.bg,borderTop:`1px solid ${T.border}`,zIndex:10}}>
             <span>© {new Date().getFullYear()} RedactPro</span>
+            <span style={{color:T.text3}}>|</span>
+            <span style={{cursor:'help'}} title="データはブラウザ内で処理され、サーバーやDBに保存されません。AI機能利用時のみAPIに送信されますが、各社のAPI利用規約によりトレーニングには使用されません。">プライバシー</span>
             <a href="https://github.com/BoxPistols/redact-pro" target="_blank" rel="noopener noreferrer" style={{color:T.text3,textDecoration:'none',display:'flex',alignItems:'center',gap:4,transition:'color .15s'}} onMouseEnter={e=>e.currentTarget.style.color=T.text} onMouseLeave={e=>e.currentTarget.style.color=T.text3}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
               GitHub
