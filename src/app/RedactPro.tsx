@@ -5285,7 +5285,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                           -- アップロード前に対象を選択
                       </span>}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <div data-intro="mask-presets" style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                       {MASK_PRESETS.map((p, i) => (
                           <button
                               key={p.id}
@@ -5336,6 +5336,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       ))}
                   </div>
                   {!isLite && <div
+                      data-intro="category-toggles"
                       style={{
                           display: 'grid',
                           gridTemplateColumns: '1fr 1fr',
@@ -5379,6 +5380,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   </div>}
                   {/* Advanced options */}
                   {!isLite && <div
+                      data-intro="detail-options"
                       style={{
                           marginTop: 12,
                           padding: '10px 12px',
@@ -5475,7 +5477,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </div>
                   </div>}
                   {/* カスタムキーワード */}
-                  {!isLite && <div style={{marginTop:12,padding:'10px 12px',borderRadius:10,background:T.bg,border:`1px solid ${T.border}`}}>
+                  {!isLite && <div data-intro="custom-keywords" style={{marginTop:12,padding:'10px 12px',borderRadius:10,background:T.bg,border:`1px solid ${T.border}`}}>
                     <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:8}}>カスタムキーワード</div>
                     <div style={{fontSize:11,color:T.text3,marginBottom:8}}>任意の文字列を指定してマスキング対象に追加</div>
                     <div style={{display:'flex',gap:6,marginBottom:8}}>
@@ -5544,6 +5546,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   </div>}
                   {isLite && (
                     <div
+                      data-intro="edition-toggle"
                       role="button" tabIndex={0}
                       onClick={()=>{if(onSwitchPro)onSwitchPro();}}
                       onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&onSwitchPro){e.preventDefault();onSwitchPro();}}}
@@ -5575,6 +5578,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
               >
                   <div>
                       {!isLite && <div
+                          data-intro="input-tabs"
                           className='rp-input-tabs'
                           style={{
                               display: 'flex',
@@ -5648,6 +5652,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       >
                           {(isLite || inputMode === 'file') && (
                               <div
+                                  data-intro="upload-zone"
                                   onClick={() => inputRef.current?.click()}
                                   onDragOver={(e) => {
                                       e.preventDefault()
@@ -6180,6 +6185,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   )}
                   {isLite && (
                       <button
+                          data-intro="sample-demo"
                           onClick={() => handleDemo('pdf')}
                           style={{
                               padding: '12px 16px',
@@ -6204,6 +6210,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </button>
                   )}
                   {!isLite && <div
+                      data-intro="sample-files"
                       style={{
                           background: T.surface,
                           border: `1px solid ${T.border}`,
@@ -6695,6 +6702,25 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const[focusDetId,setFocusDetId]=useState(null);
   const[focusPulse,setFocusPulse]=useState(0);
   const[sidebarCollapsed,setSidebarCollapsed]=useState(false);
+  // EditorScreen 初回ツアー
+  useEffect(()=>{
+    const done=localStorage.getItem('rp_tour_editor_done');
+    if(done)return;
+    const timer=setTimeout(async()=>{
+      try{
+        const introJs=(await import('intro.js')).default;
+        await import('intro.js/introjs.css');
+        const{EDITOR_STEPS,INTRO_OPTIONS}=await import('@/lib/intro-steps');
+        const validSteps=EDITOR_STEPS.filter(s=>document.querySelector(s.element));
+        if(validSteps.length===0)return;
+        const tour=introJs();
+        tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
+        tour.oncomplete(()=>{try{localStorage.setItem('rp_tour_editor_done','1')}catch{}});
+        tour.start();
+      }catch(e){console.warn('editor tour failed:',e);}
+    },800);
+    return()=>clearTimeout(timer);
+  },[]);
   const[editMode,setEditMode]=useState(false);
   const[editedText,setEditedText]=useState(null);
   const[previewVisible,setPreviewVisible]=useState(true);
@@ -6975,6 +7001,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   </div>
                   <div style={{ display: 'flex', gap: 4 }}>
                       <div
+                          data-intro="view-tabs"
                           className='rp-view-tabs'
                           style={{
                               display: 'flex',
@@ -7725,7 +7752,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       ):null})()}
                   </div>}
               </div>
-              <div style={{ flex: 1, overflow: 'auto', padding: '6px 12px' }}>
+              <div data-intro="detection-list" style={{ flex: 1, overflow: 'auto', padding: '6px 12px' }}>
                   {filtered.length === 0 ? (
                       <div
                           style={{
@@ -7920,6 +7947,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   )}
               </div>
               <div
+                  data-intro="export-buttons"
                   style={{
                       padding: '10px 16px 70px',
                       borderTop: `1px solid ${T.border}`,
@@ -8081,6 +8109,7 @@ export default function App(){
   const isLite=edition==='lite';
   const switchEdition=useCallback((id)=>{setEdition(id);try{localStorage.setItem('rp_edition',id)}catch{}},[]);
   const[isDark,setIsDark]=useState(true);
+  const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
       model: pickFormatModelForProfile('openai', 'balanced') || 'gpt-5-nano',
@@ -8100,8 +8129,40 @@ export default function App(){
     const px=await safeGet("rp_proxy_url");if(px)setSettings(p=>({...p,proxyUrl:px}));
     const th=await safeGet("rp_theme");if(th)setIsDark(th!=="light");
     const visited=await safeGet("rp_visited");
-    if(!visited){setShowHelp(true);await storage.set("rp_visited","1");}
+    const onboardingDone=await safeGet("rp_onboarding_done");
+    if(!visited&&!onboardingDone){setShowWelcome(true);await storage.set("rp_visited","1");}
+    else if(!visited){setShowHelp(true);await storage.set("rp_visited","1");}
   })();},[]);
+  // オンボーディングツアー
+  const startTour=useCallback(()=>{
+    // 少し待ってからintro.jsを起動（DOM描画待ち）
+    setTimeout(async()=>{
+      try{
+        const introJs=(await import('intro.js')).default;
+        await import('intro.js/introjs.css');
+        const{UPLOAD_STEPS_LITE,UPLOAD_STEPS_PRO,INTRO_OPTIONS,LS_TOUR_UPLOAD_DONE}=await import('@/lib/intro-steps');
+        const steps=isLite?UPLOAD_STEPS_LITE:UPLOAD_STEPS_PRO;
+        const validSteps=steps.filter(s=>document.querySelector(s.element));
+        if(validSteps.length===0)return;
+        const tour=introJs();
+        tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
+        tour.oncomplete(()=>{try{localStorage.setItem(LS_TOUR_UPLOAD_DONE,'1')}catch{}});
+        tour.start();
+      }catch(e){console.warn('intro.js tour failed:',e);}
+    },400);
+  },[isLite]);
+
+  const handleWelcomeClose=useCallback(()=>{
+    setShowWelcome(false);
+    try{localStorage.setItem('rp_onboarding_done','1')}catch{}
+  },[]);
+
+  const handleWelcomeStartTour=useCallback(()=>{
+    setShowWelcome(false);
+    try{localStorage.setItem('rp_onboarding_done','1')}catch{}
+    startTour();
+  },[startTour]);
+
   const curProv=AI_PROVIDERS.find(p=>p.id===settings.provider)||AI_PROVIDERS[0];
   const curModel=curProv.models.find(m=>m.id===settings.model)||curProv.models[0];
   const goHome=useCallback(()=>{
@@ -8258,7 +8319,7 @@ export default function App(){
                           Redact<span style={{ color: C.accent }}>Pro</span>
                       </span>
                   </a>
-                  <div role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
+                  <div data-intro="header-edition-toggle" role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
                       {[{id:'lite',label:'Lite',sub:'シンプル'},{id:'pro',label:'Pro',sub:'全機能'}].map(ed=>(
                         <button key={ed.id} role="radio" aria-checked={edition===ed.id}
                           onClick={()=>switchEdition(ed.id)}
@@ -8316,9 +8377,12 @@ export default function App(){
                       {isDark ? '☀️' : '🌙'}
                   </button>
                   <button
-                      title='ヘルプ'
+                      title='ヘルプ / ガイドツアー'
                       aria-label='ヘルプを表示'
-                      onClick={() => setShowHelp(true)}
+                      onClick={() => {
+                        if(!data&&!batchMode){setShowWelcome(true);}
+                        else{startTour();}
+                      }}
                       style={{
                           width: 36,
                           height: 36,
@@ -8337,6 +8401,7 @@ export default function App(){
                       ?
                   </button>
                   <button
+                      data-intro="settings-button"
                       title='設定'
                       aria-label='設定'
                       onClick={() => setShowSettings(true)}
@@ -8439,8 +8504,19 @@ export default function App(){
               <HelpModal onClose={() => setShowHelp(false)} />
           )}
           {!isLite && <ChatWidget />}
+          {showWelcome && <WelcomeVideoModalWrapper onClose={handleWelcomeClose} onStartTour={handleWelcomeStartTour} />}
       </div>
   )
+}
+
+// WelcomeVideoModal を dynamic import でロード（SSR回避）
+function WelcomeVideoModalWrapper({onClose,onStartTour}){
+  const[Comp,setComp]=useState(null);
+  useEffect(()=>{
+    import('@/components/remotion/WelcomeVideoModal').then(m=>setComp(()=>m.WelcomeVideoModal));
+  },[]);
+  if(!Comp)return null;
+  return <Comp onClose={onClose} onStartTour={onStartTour}/>;
 }
 
 // For unit tests (Node env): pure formatting helpers
