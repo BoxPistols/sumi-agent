@@ -8108,7 +8108,7 @@ export default function App(){
   const batchAddRef=useRef(null);
   const[showSettings,setShowSettings]=useState(false);
   const[showHelp,setShowHelp]=useState(false);
-  const[edition,setEdition]=useState(()=>{try{return localStorage.getItem('rp_edition')||'lite'}catch{return'lite'}});
+  const[edition,setEdition]=useState('lite');
   const isLite=edition==='lite';
   const switchEdition=useCallback((id)=>{setEdition(id);try{localStorage.setItem('rp_edition',id)}catch{}},[]);
   const[isDark,setIsDark]=useState(true);
@@ -8123,6 +8123,7 @@ export default function App(){
   })
   useEffect(()=>{(async()=>{
     const safeGet=async(key)=>storage.get(key);
+    const ed=await safeGet("rp_edition");if(ed)setEdition(ed);
     const k=await safeGet("rp_api_key");if(k)setSettings(p=>({...p,apiKey:k}));
     const m=await safeGet("rp_model");if(m)setSettings(p=>({...p,model:m}));
     const ad=await safeGet("rp_ai_detect");if(ad)setSettings(p=>({...p,aiDetect:ad!=="false"}));
