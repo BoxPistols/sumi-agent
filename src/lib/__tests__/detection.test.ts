@@ -272,6 +272,41 @@ describe('SNS detection', () => {
     expect(dets.some((d) => d.type === 'sns_facebook' && d.value === 'taro.tanaka')).toBe(true)
   })
 
+  it('detects Qiita accounts', () => {
+    const dets = detectRegex('Qiita: tech_writer')
+    expect(dets.some((d) => d.type === 'sns_qiita' && d.value === 'tech_writer')).toBe(true)
+  })
+
+  it('detects Dribbble accounts (including typo Dribble)', () => {
+    const dets = detectRegex('Dribble: asagiri')
+    expect(dets.some((d) => d.type === 'sns_dribbble' && d.value === 'asagiri')).toBe(true)
+  })
+
+  it('detects Zenn accounts', () => {
+    const dets = detectRegex('Zenn: dev_taro')
+    expect(dets.some((d) => d.type === 'sns_zenn' && d.value === 'dev_taro')).toBe(true)
+  })
+
+  it('detects LINE ID', () => {
+    const dets = detectRegex('LINE ID: taro_123')
+    expect(dets.some((d) => d.type === 'sns_line' && d.value === 'taro_123')).toBe(true)
+  })
+
+  it('detects Wantedly accounts', () => {
+    const dets = detectRegex('Wantedly: taro-tanaka')
+    expect(dets.some((d) => d.type === 'sns_wantedly' && d.value === 'taro-tanaka')).toBe(true)
+  })
+
+  it('detects YouTube accounts', () => {
+    const dets = detectRegex('YouTube: @channel_name')
+    expect(dets.some((d) => d.type === 'sns_youtube' && d.value === 'channel_name')).toBe(true)
+  })
+
+  it('detects Bluesky accounts', () => {
+    const dets = detectRegex('Bluesky: user.bsky.social')
+    expect(dets.some((d) => d.type === 'sns_bluesky' && d.value === 'user.bsky.social')).toBe(true)
+  })
+
   it('does not detect email addresses as SNS', () => {
     const dets = detectRegex('連絡先: user@example.com')
     expect(dets.some((d) => d.type.startsWith('sns_'))).toBe(false)
