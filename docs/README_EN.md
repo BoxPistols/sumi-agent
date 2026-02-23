@@ -182,7 +182,11 @@ SCRAPE_RATE_LIMIT=30
 pnpm dev
 ```
 
-Opens at http://localhost:3000.
+Runs via [portless](https://github.com/BoxPistols/portless) at [http://redact-pro.localhost:1355](http://redact-pro.localhost:1355).
+This provides a stable URL and avoids port conflicts when developing multiple projects.
+
+> [!NOTE]
+> On the first run, you may be asked for `sudo` password to add a certificate to your system trust store.
 
 ---
 
@@ -256,7 +260,7 @@ pnpm test:watch
 
 | Command           | Description                  |
 | ----------------- | ---------------------------- |
-| `pnpm dev`        | Start dev server (Turbopack) |
+| `pnpm dev`        | Start dev server (via portless) |
 | `pnpm build`      | Production build             |
 | `pnpm start`      | Start production server      |
 | `pnpm test`       | Run tests                    |

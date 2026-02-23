@@ -184,7 +184,11 @@ SCRAPE_RATE_LIMIT=30
 pnpm dev
 ```
 
-http://localhost:3000 で起動する。
+[portless](https://github.com/BoxPistols/portless) を使用して、[http://redact-pro.localhost:1355](http://redact-pro.localhost:1355) で起動します。
+ポート番号を意識せずにアクセスでき、複数のプロジェクトを同時に開発する際の競合を避けられます。
+
+> [!NOTE]
+> 初回実行時に、システム信頼ストアに証明書を追加するために `sudo` パスワードを求められる場合があります。
 
 ---
 
@@ -283,7 +287,7 @@ pnpm test:watch
 
 | コマンド          | 説明                          |
 | ----------------- | ----------------------------- |
-| `pnpm dev`        | 開発サーバー起動（Turbopack） |
+| `pnpm dev`        | 開発サーバー起動（portless経由） |
 | `pnpm build`      | プロダクションビルド          |
 | `pnpm start`      | プロダクションサーバー起動    |
 | `pnpm test`       | テスト実行                    |
