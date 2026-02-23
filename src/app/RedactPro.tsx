@@ -1672,10 +1672,7 @@ async function processFileEntry(file,maskConfig,settings,callbacks,customKeyword
   if(format==="PDF"&&pdfData&&sparsePages?.length>0&&pageCount>0&&sparsePages.length/pageCount>=0.3){
     try{
       onStage?.("サーバー側PDF抽出中...");
-      const bytes=new Uint8Array(pdfData.slice(0));
-      const chunks=[];const cs=8192;
-      for(let i=0;i<bytes.length;i+=cs)chunks.push(String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+cs,bytes.length))));
-      const pdfB64=btoa(chunks.join(""));
+      const pdfB64=arrayBufferToBase64(pdfData);
       const res=await fetch("/api/pdf/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pdfBase64:pdfB64})});
       if(res.ok){
         const{text:serverText,pageCount:sp}=await res.json();
@@ -1747,6 +1744,14 @@ async function processFileEntry(file,maskConfig,settings,callbacks,customKeyword
   };
 }
 
+// ArrayBuffer → Base64 変換ユーティリティ
+function arrayBufferToBase64(buf){
+  const bytes=new Uint8Array(buf instanceof ArrayBuffer?buf:buf.slice(0));
+  const chunks=[];const cs=8192;
+  for(let i=0;i<bytes.length;i+=cs)chunks.push(String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+cs,bytes.length))));
+  return btoa(chunks.join(""));
+}
+
 // ═══ Export generators ═══
 function generateExport(rawContent,format,baseName){
   const bom="\uFEFF",ts=new Date().toLocaleString("ja-JP");
@@ -1785,7 +1790,7 @@ function generateExport(rawContent,format,baseName){
         aoa=[["項目","内容"]];
         for(const line of allLines){
           if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(line)){aoa.push([line,""]);continue;}
-          const kv=line.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||line.match(/^(.+?)\s*[：:]\s+(.+)$/);
+          const kv=line.match(/^[-・]\s*(.+?)\s*[：:]\s*(.+)$/)||line.match(/^(.+?)\s*[：:]\s*(.+)$/);
           if(kv&&kv[1].length<=30){aoa.push([kv[1].replace(/^[-・]\s*/,""),kv[2]]);continue;}
           if(line.includes(" | ")){aoa.push(line.split(" | ").map(p=>p.trim()));continue;}
           if(/^[-・]/.test(line)){aoa.push(["",line.replace(/^[-・]\s*/,"")]);continue;}
@@ -5014,11 +5019,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
       if(sparseRatio>=0.3){
         try{
           setAiStatus("サーバー側PDF抽出中（pdftotext）...");
-          const bytes=new Uint8Array(pdfData.slice(0));
-          const chunks=[];
-          const cs=8192;
-          for(let i=0;i<bytes.length;i+=cs)chunks.push(String.fromCharCode.apply(null,bytes.subarray(i,Math.min(i+cs,bytes.length))));
-          const pdfB64=btoa(chunks.join(""));
+          const pdfB64=arrayBufferToBase64(pdfData);
           const res=await fetch("/api/pdf/extract",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pdfBase64:pdfB64})});
           if(res.ok){
             const{text:serverText,pageCount:serverPages}=await res.json();
@@ -7375,7 +7376,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   </div>
               </div>
               {/* 画像PDF警告（APIキー未設定でOCRスキップ時） */}
-              {data.sparsePageCount>0&&data.page_count>0&&data.sparsePageCount/data.page_count>=0.5&&!settings?.apiKey&&(
+              {data.sparsePageCount>0&&data.page_count>0&&data.sparsePageCount/data.page_count>=0.5&&!apiKey&&(
               <div style={{padding:"8px 14px",background:"#78350f18",borderBottom:`1px solid #92400e40`,display:"flex",alignItems:"center",gap:8,fontSize:12,color:T.amber||"#f59e0b"}}>
                 <span style={{fontSize:16}}>&#9888;</span>
                 <span>{data.sparsePageCount}/{data.page_count}ページがテキスト未検出（画像PDF）。設定でAPIキーを登録するとAI OCRで画像からテキストを抽出できます。</span>

@@ -115,11 +115,8 @@ export async function POST(request: NextRequest) {
     // フォームフィード(\f)をページ区切りに変換
     const pages = rawText.split('\f')
     const formatted = pages
-      .map((page, i) => {
-        const trimmed = page.trim()
-        return `--- Page ${i + 1} ---\n${trimmed}`
-      })
-      .filter((_, i) => i < pages.length - (pages[pages.length - 1]?.trim() === '' ? 1 : 0))
+      .filter((p) => p.trim().length > 0)
+      .map((page, i) => `--- Page ${i + 1} ---\n${page.trim()}`)
       .join('\n\n')
 
     return NextResponse.json({
