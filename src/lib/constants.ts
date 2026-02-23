@@ -85,6 +85,17 @@ export const AI_PROVIDERS: AIProvider[] = [
     ],
     defaultModel: 'gemini-2.5-flash',
   },
+  {
+    id: 'local',
+    label: 'ローカルAI',
+    icon: 'L',
+    color: '#8B5CF6',
+    needsKey: false,
+    models: [
+      { id: 'local-auto', label: '自動検出', desc: 'ローカルサーバーに接続', tier: 1 },
+    ],
+    defaultModel: 'local-auto',
+  },
 ]
 
 export const AI_MODELS = AI_PROVIDERS.flatMap((p) =>
@@ -92,6 +103,7 @@ export const AI_MODELS = AI_PROVIDERS.flatMap((p) =>
 )
 
 export function getProviderForModel(modelId: string): string {
+  if (modelId === 'local-auto' || modelId.startsWith('local-')) return 'local'
   for (const p of AI_PROVIDERS) {
     if (p.models.some((m) => m.id === modelId)) return p.id
   }

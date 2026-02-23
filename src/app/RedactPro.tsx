@@ -188,11 +188,11 @@ let _lastRateLimit:{remaining:number,limit:number}|null=null;
 let _rateLimitListeners:Array<(rl:{remaining:number,limit:number})=>void>=[];
 function onRateLimitUpdate(fn:(rl:{remaining:number,limit:number})=>void){_rateLimitListeners.push(fn);return()=>{_rateLimitListeners=_rateLimitListeners.filter(f=>f!==fn);};};
 
-async function callAI({provider,model,messages,maxTokens=4000,apiKey,system}){
+async function callAI({provider,model,messages,maxTokens=4000,apiKey,system,localEndpoint}){
   const res=await fetch("/api/ai",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({provider,model,messages,maxTokens,system,apiKey}),
+    body:JSON.stringify({provider,model,messages,maxTokens,system,apiKey,localEndpoint}),
   });
   if(!res.ok){
     const e=await res.json().catch(()=>({error:`HTTP ${res.status}`}));
@@ -2421,6 +2421,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   const[aiDetect,setAiDetect]=useState(settings.aiDetect!==false);
   const [aiProfile, setAiProfile] = useState(settings.aiProfile || 'balanced')
   const[proxyUrl,setProxyUrl]=useState(settings.proxyUrl||"");
+  const[localEndpoint,setLocalEndpoint]=useState(settings.localEndpoint||"http://localhost:11434/v1");
   const[showKey,setShowKey]=useState(false);
   const[saved,setSaved]=useState(false);
   const [testingKey, setTestingKey] = useState(false)
@@ -2431,7 +2432,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   },[]);
   const safeSet=async(key,val)=>{await storage.set(key,val);};
   const handleSave = () => {
-      onSave({ apiKey, model, aiDetect, aiProfile, provider, proxyUrl })
+      onSave({ apiKey, model, aiDetect, aiProfile, provider, proxyUrl, localEndpoint })
       ;(async () => {
           await safeSet('rp_api_key', apiKey)
           await safeSet('rp_model', model)
@@ -2439,6 +2440,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
           await safeSet('rp_ai_profile', aiProfile)
           await safeSet('rp_provider', provider)
           await safeSet('rp_proxy_url', proxyUrl)
+          await safeSet('rp_local_endpoint', localEndpoint)
           await safeSet('rp_theme', isDark ? 'dark' : 'light')
       })()
       setSaved(true)
@@ -3152,6 +3154,30 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           </div>
                       )}
                   </div>
+                  {/* ローカルAI設定 */}
+                  {provider==='local' && (
+                  <div>
+                      <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:4}}>
+                          ローカルAIエンドポイント
+                      </div>
+                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.6}}>
+                          Ollama、LM Studio、LocalAI等のOpenAI互換APIエンドポイントを指定します。
+                          ローカルで動作するためデータが外部に送信されず、利用回数の制限もありません。
+                      </div>
+                      <input
+                          aria-label="ローカルAIエンドポイント"
+                          value={localEndpoint}
+                          onChange={(e) => setLocalEndpoint(e.target.value)}
+                          placeholder='http://localhost:11434/v1'
+                          style={{width:'100%',padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontFamily:T.mono,outline:'none',boxSizing:'border-box'}}
+                      />
+                      <div style={{fontSize:12,color:T.text3,marginTop:6,lineHeight:1.6}}>
+                          Ollama: <span style={{fontFamily:T.mono}}>http://localhost:11434/v1</span><br/>
+                          LM Studio: <span style={{fontFamily:T.mono}}>http://localhost:1234/v1</span><br/>
+                          モデル名はサーバー側で設定されたデフォルトが使用されます。
+                      </div>
+                  </div>
+                  )}
                   </fieldset>
                   {/* 利用制限 */}
                   <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
@@ -3201,7 +3227,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               if(!confirm('すべての設定を初期値に戻しますか？\n（テーマ・AIプロバイダー・モデル・APIキー・プロファイルをデフォルトに戻します。アップロード済みのファイルデータには影響しません）'))return;
                               setProvider('openai');setModel('gpt-5-nano');
                               setApiKey('');setAiDetect(true);
-                              setAiProfile('balanced');setProxyUrl('');
+                              setAiProfile('balanced');setProxyUrl('');setLocalEndpoint('http://localhost:11434/v1');
                           }}
                           title="AIプロバイダー・モデル・APIキーなどの設定を初期値に戻します。ファイルデータには影響しません。"
                           style={{
@@ -8701,6 +8727,7 @@ export default function App(){
     if (ap) setSettings((p) => ({ ...p, aiProfile: ap }))
     const prov=await safeGet("rp_provider");if(prov)setSettings(p=>({...p,provider:prov}));
     const px=await safeGet("rp_proxy_url");if(px)setSettings(p=>({...p,proxyUrl:px}));
+    const le=await safeGet("rp_local_endpoint");if(le)setSettings(p=>({...p,localEndpoint:le}));
     const th=await safeGet("rp_theme");if(th)setIsDark(th!=="light");
     const visited=await safeGet("rp_visited");
     const onboardingDone=await safeGet("rp_onboarding_done");
@@ -9006,7 +9033,7 @@ export default function App(){
                               flexShrink: 0,
                           }}
                       />
-                      <span>{curModel?.label || '設定'}</span>
+                      <span>{settings.aiProfile==='balanced'?'Auto':curModel?.label || '設定'}</span>
                       <svg
                           width='16'
                           height='16'

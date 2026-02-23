@@ -61,12 +61,13 @@ interface ContentBlock {
 }
 
 interface AIRequestBody {
-  provider: 'openai' | 'anthropic' | 'google'
+  provider: 'openai' | 'anthropic' | 'google' | 'local'
   model: string
   messages: Array<{ role: string; content: string | ContentBlock[] }>
   maxTokens?: number
   system?: string
   apiKey?: string
+  localEndpoint?: string
 }
 
 const AI_REQUEST_TIMEOUT_MS = 90_000
@@ -345,6 +346,44 @@ export async function POST(request: NextRequest) {
           ?.map((c: { type: string; text?: string }) => (c.type === 'text' ? c.text : ''))
           .join('') || ''
       return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit, resetAt: userKey ? undefined : rl.resetAt })
+    }
+
+    if (provider === 'local') {
+      // Ollama / LM Studio 等 — OpenAI互換API
+      const endpoint = body.localEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434/v1'
+      const localModel = model === 'local-auto' ? undefined : model
+
+      const msgs: Array<{ role: string; content: unknown }> = []
+      if (system) msgs.push({ role: 'system', content: system })
+      for (const m of messages) {
+        if (typeof m.content === 'string') {
+          msgs.push(m)
+        } else {
+          const text = m.content.filter((c: ContentBlock) => c.type === 'text').map((c: ContentBlock) => c.text).join('\n')
+          msgs.push({ role: m.role, content: text })
+        }
+      }
+
+      const reqBody: Record<string, unknown> = { messages: msgs, max_tokens: maxTokens }
+      if (localModel) reqBody.model = localModel
+
+      const res = await fetchWithTimeout(`${endpoint.replace(/\/+$/, '')}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reqBody),
+      })
+
+      if (!res.ok) {
+        const e = await res.text().catch(() => '')
+        return NextResponse.json(
+          { error: `ローカルAI ${res.status}: ${e.slice(0, 200)}` },
+          { status: 502 },
+        )
+      }
+
+      const d = (await res.json()) as OpenAIResponseBody
+      const text = extractOpenAIText(d)
+      return NextResponse.json({ text })
     }
 
     return NextResponse.json({ error: `Unknown provider: ${provider}` }, { status: 400 })
