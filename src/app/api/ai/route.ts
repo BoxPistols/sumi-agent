@@ -149,6 +149,18 @@ async function fetchWithTimeout(
   }
 }
 
+/** GET /api/ai — 現在のレートリミット状況を返す（カウントは増やさない） */
+export async function GET(request: NextRequest) {
+  const ip = getClientIP(request)
+  const now = Date.now()
+  const entry = rateMap.get(ip)
+  let used = 0
+  if (entry && now <= entry.resetAt) {
+    used = entry.count
+  }
+  return NextResponse.json({ used, limit: RATE_LIMIT, remaining: RATE_LIMIT - used })
+}
+
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request)
   const rl = checkRateLimit(ip)

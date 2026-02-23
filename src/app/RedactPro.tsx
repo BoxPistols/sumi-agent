@@ -2425,6 +2425,10 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
   const[saved,setSaved]=useState(false);
   const [testingKey, setTestingKey] = useState(false)
   const [keyTest, setKeyTest] = useState(null)
+  const [rateInfo, setRateInfo] = useState(null) // {used,limit,remaining}
+  useEffect(()=>{
+    fetch('/api/ai').then(r=>r.json()).then(d=>{if(typeof d.used==='number')setRateInfo(d)}).catch(()=>{});
+  },[]);
   const safeSet=async(key,val)=>{await storage.set(key,val);};
   const handleSave = () => {
       onSave({ apiKey, model, aiDetect, aiProfile, provider, proxyUrl })
@@ -3130,10 +3134,31 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                   </fieldset>
                   {/* 利用制限 */}
                   <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
-                      <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>利用制限</div>
-                      <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
-                          APIキー未設定時: AI機能は24時間あたり30回まで（IP単位）。自分のAPIキーを設定すると無制限に利用できます。
+                      <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>利用制限（サーバー共用キー）</div>
+                      {rateInfo && !apiKey ? (
+                      <div style={{marginBottom:6}}>
+                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                              <div style={{flex:1,height:6,borderRadius:3,background:T.border,overflow:'hidden'}}>
+                                  <div style={{width:`${Math.min(100,(rateInfo.used/rateInfo.limit)*100)}%`,height:'100%',borderRadius:3,background:rateInfo.used>=rateInfo.limit?T.red:rateInfo.used>=rateInfo.limit*0.8?'#f59e0b':T.accent,transition:'width .3s'}}/>
+                              </div>
+                              <span style={{fontSize:12,fontWeight:600,color:rateInfo.used>=rateInfo.limit?T.red:T.text,whiteSpace:'nowrap'}}>
+                                  {rateInfo.used} / {rateInfo.limit} 回使用
+                              </span>
+                          </div>
+                          <div style={{fontSize:12,color:T.text3,lineHeight:1.5}}>
+                              24時間あたり{rateInfo.limit}回まで（IP単位）。残り {rateInfo.remaining} 回
+                          </div>
                       </div>
+                      ) : apiKey ? (
+                      <div style={{fontSize:12,color:T.green,lineHeight:1.6}}>
+                          自分のAPIキーを使用中 — 利用回数の制限はありません。
+                      </div>
+                      ) : (
+                      <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
+                          APIキー未設定時: AI機能は24時間あたり30回まで（IP単位）。
+                      </div>
+                      )}
+                      {!apiKey && <div style={{fontSize:12,color:T.text3,marginTop:4,lineHeight:1.5}}>自分のAPIキーを設定すると無制限に利用できます。</div>}
                   </div>
                   {/* プライバシー */}
                   <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
@@ -8435,8 +8460,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   </span>
                   )}
                   {aiRateLimit&&!apiKey&&(
-                  <span style={{color:aiRateLimit.remaining<=5?'#f59e0b':T.text3}} title={`サーバーAPIの残り利用回数（24時間で${aiRateLimit.limit}回まで）。自身のAPIキーを設定すると無制限に利用できます。`}>
-                      残り {aiRateLimit.remaining}/{aiRateLimit.limit}回
+                  <span style={{color:aiRateLimit.remaining<=5?'#f59e0b':T.text3}} title={`サーバー共用キーの利用状況（24時間で${aiRateLimit.limit}回まで）。自身のAPIキーを設定すると無制限。`}>
+                      {aiRateLimit.limit-aiRateLimit.remaining}/{aiRateLimit.limit}回使用
                   </span>
                   )}
               </div>
