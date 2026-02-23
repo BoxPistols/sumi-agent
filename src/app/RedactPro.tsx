@@ -1755,8 +1755,59 @@ function generateExport(rawContent,format,baseName){
   switch(format){
     case"txt":return{data:bom+content,mime:"text/plain;charset=utf-8",name:baseName+".txt"};
     case"md":return{data:bom+`# ${baseName}\n\n> Exported: ${ts}\n\n---\n\n${content}`,mime:"text/markdown;charset=utf-8",name:baseName+".md"};
-    case"csv":{const rows=content.split("\n").map((l,i)=>`"${i+1}","${l.replace(/"/g,'""')}"`);return{data:bom+"行番号,内容\n"+rows.join("\n"),mime:"text/csv;charset=utf-8",name:baseName+".csv"};}
-    case"xlsx":{const lines=content.split("\n");const ws=XLSX.utils.aoa_to_sheet(lines.map((l,i)=>[i+1,l]));ws["!cols"]=[{wch:6},{wch:100}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"マスキング済み");const out=XLSX.write(wb,{type:"base64",bookType:"xlsx"});return{dataUri:"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+out,name:baseName+".xlsx"};}
+    case"csv":{
+      const csvRows=["項目,内容"];
+      for(const line of content.split("\n")){
+        const t=line.trim();if(!t)continue;
+        const kv=t.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||t.match(/^(.+?)\s*[：:]\s+(.+)$/);
+        if(kv&&kv[1].length<=30){csvRows.push(`"${kv[1].replace(/^[-・]\s*/,"").replace(/"/g,'""')}","${kv[2].replace(/"/g,'""')}"`);}
+        else if(t.includes(" | ")){const ps=t.split(" | ");csvRows.push(ps.map(p=>`"${p.trim().replace(/"/g,'""')}"`).join(","));}
+        else if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(t)){csvRows.push(`"${t.replace(/"/g,'""')}",""`);}
+        else{csvRows.push(`"","${t.replace(/"/g,'""')}"`);}
+      }
+      return{data:bom+csvRows.join("\n"),mime:"text/csv;charset=utf-8",name:baseName+".csv"};
+    }
+    case"xlsx":{
+      // テキストを「項目 | 内容」の2カラム構造に変換
+      const xlRows=[["項目","内容"]];
+      let currentSection="";
+      for(const line of content.split("\n")){
+        const trimmed=line.trim();
+        if(!trimmed)continue;
+        // セクション見出し検出: (1) 基本情報、## 見出し、【見出し】等
+        if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(trimmed)){
+          xlRows.push([trimmed,""]);
+          currentSection=trimmed;
+          continue;
+        }
+        // Key:Value / Key：Value パターン
+        const kvMatch=trimmed.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||trimmed.match(/^(.+?)\s*[：:]\s+(.+)$/);
+        if(kvMatch&&kvMatch[1].length<=30){
+          xlRows.push([kvMatch[1].replace(/^[-・]\s*/,""),kvMatch[2]]);
+          continue;
+        }
+        // パイプ区切り（テーブル行）
+        if(trimmed.includes(" | ")){
+          const parts=trimmed.split(" | ").map(p=>p.trim());
+          if(parts.length>=2){xlRows.push(parts);continue;}
+        }
+        // リスト項目
+        if(/^[-・]/.test(trimmed)){
+          xlRows.push(["",trimmed.replace(/^[-・]\s*/,"")]);
+          continue;
+        }
+        // その他: 内容カラムに
+        xlRows.push(["",trimmed]);
+      }
+      const ws=XLSX.utils.aoa_to_sheet(xlRows);
+      ws["!cols"]=[{wch:24},{wch:80}];
+      // ヘッダー行のスタイル用にフリーズ
+      ws["!freeze"]={xSplit:0,ySplit:1};
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,"マスキング済み");
+      const out=XLSX.write(wb,{type:"base64",bookType:"xlsx"});
+      return{dataUri:"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,"+out,name:baseName+".xlsx"};
+    }
     case"pdf":{
       const doc=`# ${baseName}\n\n**出力日時:** ${ts}\n\n---\n\n${content}`;
       const html=generatePDFHTML(doc,"gothic",{stripRedactions:false,highlightRedactions:true,removeRedactionOnlyLines:false});
@@ -4076,20 +4127,25 @@ tr:nth-child(even){background:#f9fafb}
 </style></head><body>${table}</body></html>`;
     }
     if(fmt==="xlsx"){
-      const rows=displayContent.split("\n").map(r=>r.split(","));
-      let table="<table><thead><tr><th class='rn'></th>";
-      if(rows.length>0)rows[0].forEach((c,ci)=>{table+=`<th>${esc(c.trim())}</th>`;});
-      table+="</tr></thead><tbody>";
-      for(let i=1;i<rows.length;i++){
-        table+=`<tr><td class='rn'>${i}</td>`;rows[i].forEach(c=>{table+=`<td>${esc(c.trim())}</td>`;});table+="</tr>";
+      // テキストをKV構造テーブルに変換
+      let table="<table><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody>";
+      for(const line of displayContent.split("\n")){
+        const t=line.trim();if(!t)continue;
+        const isSection=/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(t);
+        if(isSection){table+=`<tr class='sec'><td colspan='2'>${esc(t)}</td></tr>`;continue;}
+        const kv=t.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||t.match(/^(.+?)\s*[：:]\s+(.+)$/);
+        if(kv&&kv[1].length<=30){table+=`<tr><td class='k'>${esc(kv[1].replace(/^[-・]\s*/,""))}</td><td>${esc(kv[2])}</td></tr>`;continue;}
+        if(t.includes(" | ")){const ps=t.split(" | ");table+=`<tr>${ps.map(p=>`<td>${esc(p.trim())}</td>`).join("")}</tr>`;continue;}
+        table+=`<tr><td></td><td>${esc(t)}</td></tr>`;
       }
       table+="</tbody></table>";
       return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
 body{font-family:'Calibri','Noto Sans JP',sans-serif;font-size:10pt;margin:0;padding:0;background:#fff}
 table{border-collapse:collapse;width:100%;font-size:10pt}
-th,td{border:1px solid #9ca3af;padding:4px 8px;text-align:left;white-space:nowrap;min-width:60px}
+th,td{border:1px solid #9ca3af;padding:4px 8px;text-align:left;min-width:60px;white-space:pre-wrap;word-break:break-word}
 th{background:#D9E2F3;font-weight:700;color:#1f2937;text-align:center}
-td.rn,th.rn{background:#f3f4f6;color:#6b7280;text-align:center;width:36px;font-size:9pt}
+td.k{background:#f8f9fa;font-weight:600;color:#374151;width:180px;white-space:nowrap}
+tr.sec td{background:#e8ecf4;font-weight:700;color:#1e3a5f;text-align:center;padding:6px 8px}
 tr:hover{background:#EBF0FA}
 </style></head><body>${table}</body></html>`;
     }
