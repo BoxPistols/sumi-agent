@@ -6710,6 +6710,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
       try{
         const introJs=(await import('intro.js')).default;
         await import('intro.js/introjs.css');
+        await import('@/styles/introjs-overrides.css');
         const{EDITOR_STEPS,INTRO_OPTIONS}=await import('@/lib/intro-steps');
         const validSteps=EDITOR_STEPS.filter(s=>document.querySelector(s.element));
         if(validSteps.length===0)return;
@@ -8140,6 +8141,7 @@ export default function App(){
       try{
         const introJs=(await import('intro.js')).default;
         await import('intro.js/introjs.css');
+        await import('@/styles/introjs-overrides.css');
         const{UPLOAD_STEPS_LITE,UPLOAD_STEPS_PRO,INTRO_OPTIONS,LS_TOUR_UPLOAD_DONE}=await import('@/lib/intro-steps');
         const steps=isLite?UPLOAD_STEPS_LITE:UPLOAD_STEPS_PRO;
         const validSteps=steps.filter(s=>document.querySelector(s.element));
