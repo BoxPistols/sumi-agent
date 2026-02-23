@@ -28,6 +28,7 @@ export interface CallAdvisorResult {
   modelUsed: string
   modelLabel: string
   costYen: number
+  rateLimit?: { remaining: number; limit: number }
 }
 
 /**
@@ -98,5 +99,6 @@ export async function callAdvisor(params: CallAdvisorParams): Promise<CallAdviso
     modelUsed: modelId,
     modelLabel: costInfo.label,
     costYen: costInfo.costYen,
+    rateLimit: typeof d.remaining === 'number' ? { remaining: d.remaining, limit: d.limit } : undefined,
   }
 }

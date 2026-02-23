@@ -183,6 +183,11 @@ input:focus-visible,textarea:focus-visible{outline:2px solid #4C85F6!important;o
 @media(max-width:480px){.rp-header{padding:0 12px!important}.rp-header h1{font-size:14px!important}}`
 
 // ═══ Unified AI Call (via server-side proxy) ═══
+// 最新のレートリミット情報を保持（コンポーネントから参照）
+let _lastRateLimit:{remaining:number,limit:number}|null=null;
+let _rateLimitListeners:Array<(rl:{remaining:number,limit:number})=>void>=[];
+function onRateLimitUpdate(fn:(rl:{remaining:number,limit:number})=>void){_rateLimitListeners.push(fn);return()=>{_rateLimitListeners=_rateLimitListeners.filter(f=>f!==fn);};};
+
 async function callAI({provider,model,messages,maxTokens=4000,apiKey,system}){
   const res=await fetch("/api/ai",{
     method:"POST",
@@ -194,6 +199,10 @@ async function callAI({provider,model,messages,maxTokens=4000,apiKey,system}){
     throw new Error(e.error||`AI API error: ${res.status}`);
   }
   const d=await res.json();
+  if(typeof d.remaining==='number'&&typeof d.limit==='number'){
+    _lastRateLimit={remaining:d.remaining,limit:d.limit};
+    _rateLimitListeners.forEach(fn=>fn(_lastRateLimit));
+  }
   return d.text||"";
 }
 
@@ -2616,17 +2625,24 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                                   テーマ
                               </div>
                               <div style={{ fontSize: 12, color: T.text3 }}>
-                                  {isDark ? 'ダークモード' : 'ライトモード'}
+                                  {isDark ? 'ダークモード' : 'ライトモード（デフォルト）'}
                               </div>
                           </div>
                       </div>
                       <Toggle
-                          checked={!isDark}
+                          checked={isDark}
                           onChange={() => setIsDark(!isDark)}
                           size='sm'
                       />
                   </div>
-                  {!isLite && <>{/* Provider */}
+                  {/* ─── Pro版設定（Liteではdisabledで表示） ─── */}
+                  {isLite && (
+                  <div style={{fontSize:12,color:T.text3,padding:'6px 10px',borderRadius:8,background:`${T.accent}10`,border:`1px solid ${T.accent}30`}}>
+                      以下のAI設定はPro版で利用できます。ヘッダーの「Pro」ボタンで切り替えられます。
+                  </div>
+                  )}
+                  <fieldset disabled={isLite} style={{border:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:20,opacity:isLite?0.5:1}}>
+                  {/* Provider */}
                   <div>
                       <div
                           style={{
@@ -2637,6 +2653,9 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                           }}
                       >
                           AIプロバイダー
+                      </div>
+                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.5}}>
+                          AI機能（PII検出・再フォーマット・アドバイザー）で使用するAIサービスを選択します。
                       </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                           {AI_PROVIDERS.map((p) => (
@@ -2801,6 +2820,9 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                       >
                           AI品質プロファイル
                       </div>
+                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.5}}>
+                          AI処理の速度と品質のバランスを選択します。コスト（API利用料）に影響します。
+                      </div>
                       <div
                           style={{
                               display: 'grid',
@@ -2899,8 +2921,8 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                           >
                               AI PII検出
                           </div>
-                          <div style={{ fontSize: 12, color: T.text3 }}>
-                              アップロード時にAIで人名を自動検出
+                          <div style={{ fontSize: 12, color: T.text3, lineHeight: 1.5 }}>
+                              アップロード時にAIで人名を追加検出。正規表現では拾えない名前をカバーします。無効にすると正規表現＋辞書のみで検出します。
                           </div>
                       </div>
                       <Toggle
@@ -2930,10 +2952,10 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                           }}
                       >
                           {provider === 'anthropic'
-                              ? '未入力時はclaude.ai組み込みプロキシを使用。'
+                              ? '未入力時はサーバー共用キーを使用（24時間30回まで）。自分のキーを入力すると無制限に利用できます。'
                               : provider === 'openai'
-                                ? '未入力時はサーバー環境変数 OPENAI_API_KEY を使用します。'
-                                : 'APIキーが必須です。右のボタンで接続テストできます。'}
+                                ? '未入力時はサーバー共用キーを使用（24時間30回まで）。自分のAPIキーを入力すると無制限に利用できます。'
+                                : 'APIキーが必須です。下のボタンで接続テストできます。'}
                       </div>
                       <div style={{ position: 'relative' }}>
                           <input
@@ -3104,7 +3126,22 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                               がありません。対象URLを渡せないため正しく動作しません。
                           </div>
                       )}
-                  </div></>}
+                  </div>
+                  </fieldset>
+                  {/* 利用制限 */}
+                  <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
+                      <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>利用制限</div>
+                      <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
+                          APIキー未設定時: AI機能は24時間あたり30回まで（IP単位）。自分のAPIキーを設定すると無制限に利用できます。
+                      </div>
+                  </div>
+                  {/* プライバシー */}
+                  <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
+                      <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>プライバシー</div>
+                      <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
+                          ファイルの読み込み・PII検出・マスキングはすべてブラウザ内で処理されます。サーバーやデータベースにデータは保存されません。AI機能を有効にした場合のみ、テキストがAI APIに送信されます（各社APIは学習データとして使用しません）。
+                      </div>
+                  </div>
                   <div
                       style={{
                           display: 'flex',
@@ -3115,11 +3152,12 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                       <Btn
                           variant='ghost'
                           onClick={() => {
-                              if(!confirm('すべての設定を初期値に戻しますか？'))return;
+                              if(!confirm('すべての設定を初期値に戻しますか？\n（テーマ・AIプロバイダー・モデル・APIキー・プロファイルをデフォルトに戻します。アップロード済みのファイルデータには影響しません）'))return;
                               setProvider('openai');setModel('gpt-5-nano');
                               setApiKey('');setAiDetect(true);
                               setAiProfile('balanced');setProxyUrl('');
                           }}
+                          title="AIプロバイダー・モデル・APIキーなどの設定を初期値に戻します。ファイルデータには影響しません。"
                           style={{
                               padding: '8px 16px',
                               fontSize: 12,
@@ -3132,9 +3170,10 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                       <Btn
                           variant='ghost'
                           onClick={() => {
-                              if(!confirm('サイトデータを完全に消去して初期化しますか？\n(LocalStorage, IndexedDB, キャッシュがすべて削除され、ページがリロードされます)'))return;
+                              if(!confirm('サイトデータを完全に消去して初期化しますか？\n\nLocalStorage・IndexedDB・キャッシュがすべて削除され、ページがリロードされます。\nAPIキー・テーマ設定・ツアー完了状態など、ブラウザに保存されたすべてのデータが消去されます。'))return;
                               clearAllSiteData();
                           }}
+                          title="ブラウザに保存されたすべてのデータ（設定・APIキー・キャッシュ等）を完全に消去してページをリロードします。"
                           style={{
                               padding: '8px 16px',
                               fontSize: 12,
@@ -6914,6 +6953,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const[advisorCost,setAdvisorCost]=useState({daily:0,session:0,count:0});
   const[advisorLastModel,setAdvisorLastModel]=useState("");
   const[advisorCostAlert,setAdvisorCostAlert]=useState("none");
+  const[aiRateLimit,setAiRateLimit]=useState(null); // {remaining,limit}
+  useEffect(()=>onRateLimitUpdate(rl=>setAiRateLimit(rl)),[]);
   const advisorEndRef=useRef(null);
   // EditorScreen 初回ツアー
   useEffect(()=>{
@@ -7018,6 +7059,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
       const result=await callAdvisor({messages:allMsgs,context:ctx,apiKey,model,modelMode:advisorModelMode,presetId,jobDescription:jobDescription.trim()||undefined});
       setAdvisorLastModel(result.modelLabel);
       setAdvisorMessages(prev=>[...prev,{role:'assistant',content:result.text,timestamp:Date.now()}]);
+      if(result.rateLimit)setAiRateLimit(result.rateLimit);
       // コスト更新
       const{getCostRecord,checkCostAlert}=await import('@/lib/advisor/model-selector');
       const rec=getCostRecord();
@@ -8390,6 +8432,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   {advisorCost.count>0&&(
                   <span style={{color:T.text3}}>
                       {advisorCost.session.toFixed(1)}円 / {advisorCost.count}回
+                  </span>
+                  )}
+                  {aiRateLimit&&!apiKey&&(
+                  <span style={{color:aiRateLimit.remaining<=5?'#f59e0b':T.text3}} title={`サーバーAPIの残り利用回数（24時間で${aiRateLimit.limit}回まで）。自身のAPIキーを設定すると無制限に利用できます。`}>
+                      残り {aiRateLimit.remaining}/{aiRateLimit.limit}回
                   </span>
                   )}
               </div>

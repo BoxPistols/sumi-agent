@@ -26,16 +26,22 @@ if (typeof globalThis !== 'undefined') {
   }
 }
 
-function checkRateLimit(ip: string): boolean {
+interface RateLimitResult {
+  allowed: boolean
+  remaining: number
+  limit: number
+}
+
+function checkRateLimit(ip: string): RateLimitResult {
   const now = Date.now()
   const entry = rateMap.get(ip)
   if (!entry || now > entry.resetAt) {
     rateMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
-    return true
+    return { allowed: true, remaining: RATE_LIMIT - 1, limit: RATE_LIMIT }
   }
-  if (entry.count >= RATE_LIMIT) return false
+  if (entry.count >= RATE_LIMIT) return { allowed: false, remaining: 0, limit: RATE_LIMIT }
   entry.count++
-  return true
+  return { allowed: true, remaining: RATE_LIMIT - entry.count, limit: RATE_LIMIT }
 }
 
 function getClientIP(request: NextRequest): string {
@@ -145,8 +151,16 @@ async function fetchWithTimeout(
 
 export async function POST(request: NextRequest) {
   const ip = getClientIP(request)
-  if (!checkRateLimit(ip)) {
-    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
+  const rl = checkRateLimit(ip)
+  const rlHeaders = {
+    'X-RateLimit-Limit': String(rl.limit),
+    'X-RateLimit-Remaining': String(rl.remaining),
+  }
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: '本日のAI利用回数上限（30回）に達しました。自身のAPIキーを設定すると無制限に利用できます。' },
+      { status: 429, headers: rlHeaders },
+    )
   }
 
   let body: AIRequestBody
@@ -224,7 +238,7 @@ export async function POST(request: NextRequest) {
 
       const d = (await res.json()) as OpenAIResponseBody
       const text = extractOpenAIText(d)
-      return NextResponse.json({ text })
+      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit })
     }
 
     if (provider === 'google') {
@@ -275,7 +289,7 @@ export async function POST(request: NextRequest) {
       const text =
         d.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') ||
         ''
-      return NextResponse.json({ text })
+      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit })
     }
 
     if (provider === 'anthropic') {
@@ -315,7 +329,7 @@ export async function POST(request: NextRequest) {
         d.content
           ?.map((c: { type: string; text?: string }) => (c.type === 'text' ? c.text : ''))
           .join('') || ''
-      return NextResponse.json({ text })
+      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit })
     }
 
     return NextResponse.json({ error: `Unknown provider: ${provider}` }, { status: 400 })
