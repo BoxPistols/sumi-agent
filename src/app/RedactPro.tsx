@@ -8110,7 +8110,6 @@ export default function App(){
   const switchEdition=useCallback((id)=>{setEdition(id);try{localStorage.setItem('rp_edition',id)}catch{}},[]);
   const[isDark,setIsDark]=useState(true);
   const[showWelcome,setShowWelcome]=useState(false);
-  const[runTour,setRunTour]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
       model: pickFormatModelForProfile('openai', 'balanced') || 'gpt-5-nano',
@@ -8136,7 +8135,6 @@ export default function App(){
   })();},[]);
   // オンボーディングツアー
   const startTour=useCallback(()=>{
-    setRunTour(true);
     // 少し待ってからintro.jsを起動（DOM描画待ち）
     setTimeout(async()=>{
       try{
@@ -8145,13 +8143,12 @@ export default function App(){
         const{UPLOAD_STEPS_LITE,UPLOAD_STEPS_PRO,INTRO_OPTIONS,LS_TOUR_UPLOAD_DONE}=await import('@/lib/intro-steps');
         const steps=isLite?UPLOAD_STEPS_LITE:UPLOAD_STEPS_PRO;
         const validSteps=steps.filter(s=>document.querySelector(s.element));
-        if(validSteps.length===0){setRunTour(false);return;}
+        if(validSteps.length===0)return;
         const tour=introJs();
         tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
-        tour.oncomplete(()=>{try{localStorage.setItem(LS_TOUR_UPLOAD_DONE,'1')}catch{};setRunTour(false);});
-        tour.onexit(()=>setRunTour(false));
+        tour.oncomplete(()=>{try{localStorage.setItem(LS_TOUR_UPLOAD_DONE,'1')}catch{}});
         tour.start();
-      }catch(e){console.warn('intro.js tour failed:',e);setRunTour(false);}
+      }catch(e){console.warn('intro.js tour failed:',e);}
     },400);
   },[isLite]);
 
@@ -8322,7 +8319,7 @@ export default function App(){
                           Redact<span style={{ color: C.accent }}>Pro</span>
                       </span>
                   </a>
-                  <div data-intro="edition-toggle" role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
+                  <div data-intro="header-edition-toggle" role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
                       {[{id:'lite',label:'Lite',sub:'シンプル'},{id:'pro',label:'Pro',sub:'全機能'}].map(ed=>(
                         <button key={ed.id} role="radio" aria-checked={edition===ed.id}
                           onClick={()=>switchEdition(ed.id)}
