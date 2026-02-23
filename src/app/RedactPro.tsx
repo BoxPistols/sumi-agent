@@ -2096,10 +2096,8 @@ function ChatWidget(){
             display:'flex',flexDirection:'column',gap:8,
             minHeight:0,
           }}>
-            {messages.map((m,i)=>{
-              // 最後のbotメッセージにrefを付与（回答が見えるようスクロール）
-              const isLastBot=i===messages.findLastIndex(x=>x.type==='bot');
-              return(<div key={i} ref={isLastBot?botMsgRef:null} style={{
+            {(()=>{const lastBotIdx=messages.findLastIndex(x=>x.type==='bot');return messages.map((m,i)=>(
+              <div key={i} ref={i===lastBotIdx?botMsgRef:null} style={{
                 alignSelf:m.type==='user'?'flex-end':'flex-start',
                 maxWidth:'85%',
                 padding:'8px 12px',borderRadius:12,
@@ -2109,8 +2107,8 @@ function ChatWidget(){
                 whiteSpace:'pre-wrap',
               }}>
                 {m.text}
-              </div>);
-            })}
+              </div>));
+            })()}
             {/* FAQ options inline */}
             <div style={{marginTop:4}}>
               {CHAT_FAQ.map((cat,ci)=>(
@@ -6738,8 +6736,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     if(done)return;
     const timer=setTimeout(async()=>{
       try{
-        const{EDITOR_STEPS,LS_TOUR_EDITOR_DONE}=await import('@/lib/intro-steps');
-        await launchTour(EDITOR_STEPS,LS_TOUR_EDITOR_DONE);
+        const{EDITOR_STEPS_LITE,EDITOR_STEPS_PRO,LS_TOUR_EDITOR_DONE}=await import('@/lib/intro-steps');
+        await launchTour(isLite?EDITOR_STEPS_LITE:EDITOR_STEPS_PRO,LS_TOUR_EDITOR_DONE);
       }catch(e){console.warn('editor tour failed:',e);}
     },800);
     return()=>clearTimeout(timer);
@@ -7180,6 +7178,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       </div>
                       {!isLite && !showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
                           <Btn
+                              data-intro="mask-toggle"
                               title={showRedacted ? 'マスク済みテキストを表示中（クリックで元文に切替）' : '元のテキストを表示中（クリックでマスク表示に切替）'}
                               variant={showRedacted ? 'danger' : 'ghost'}
                               onClick={() => setShowRedacted(!showRedacted)}
@@ -7193,6 +7192,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           </Btn>
                       )}
                       {!isLite && <Btn
+                          data-intro="edit-button"
                           title='編集: テキストを直接編集してA4プレビューに即反映'
                           variant={editMode ? 'primary' : 'ghost'}
                           onClick={() => {
@@ -7233,7 +7233,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               </div>
               {/* カテゴリ別クイックトグル */}
               {(viewMode==='original')&&!editMode&&allCats.length>0&&(
-              <div style={{
+              <div data-intro="category-filter" style={{
                   padding:"4px 14px",display:"flex",alignItems:"center",gap:4,
                   borderBottom:`1px solid ${T.border}`,background:T.bg2,
                   flexWrap:"wrap",flexShrink:0,
@@ -7569,7 +7569,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       <Btn title='すべての検出を有効にする' variant='ghost' onClick={enableAll} style={{padding:'3px 10px',fontSize:12,borderRadius:7}}>全ON</Btn>
                       <Btn title='すべての検出を無効にする' variant='ghost' onClick={disableAll} style={{padding:'3px 10px',fontSize:12,borderRadius:7}}>全OFF</Btn>
                   </div>}
-                  {!isLite && <div role="button" tabIndex={0} onClick={()=>setSideSettingsOpen(p=>!p)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSideSettingsOpen(p=>!p);}}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',margin:'8px -18px 8px',cursor:'pointer',userSelect:'none',background:sideSettingsOpen?T.surface:'transparent',borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,transition:'background .15s'}}>
+                  {!isLite && <div data-intro="side-settings" role="button" tabIndex={0} onClick={()=>setSideSettingsOpen(p=>!p)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSideSettingsOpen(p=>!p);}}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',margin:'8px -18px 8px',cursor:'pointer',userSelect:'none',background:sideSettingsOpen?T.surface:'transparent',borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,transition:'background .15s'}}>
                       <span style={{fontSize:13,fontWeight:700,color:T.text,display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:16,lineHeight:1,transition:'transform .2s',transform:sideSettingsOpen?'rotate(90deg)':'rotate(0deg)',display:'inline-block'}}>&#9654;</span>マスキング設定</span>
                       <span style={{fontSize:10,padding:'2px 8px',borderRadius:4,background:sideSettingsOpen?'transparent':T.accentDim,border:sideSettingsOpen?'none':`1px solid ${T.accent}40`,color:sideSettingsOpen?T.text3:T.accent,fontWeight:500}}>{sideSettingsOpen?'閉じる':'開く'}</span>
                   </div>}
@@ -8120,6 +8120,24 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   )
 }
 
+// intro.js ツアー共通ヘルパー（state非依存のためコンポーネント外に配置）
+async function launchTour(steps,doneKey){
+  const introJs=(await import('intro.js')).default;
+  await import('intro.js/introjs.css');
+  await import('@/styles/introjs-overrides.css');
+  const{INTRO_OPTIONS}=await import('@/lib/intro-steps');
+  const validSteps=steps.filter(s=>document.querySelector(s.element));
+  if(validSteps.length===0)return;
+  const theme=document.querySelector('[data-theme]')?.getAttribute('data-theme')||'dark';
+  document.body.setAttribute('data-theme',theme);
+  const tour=introJs();
+  tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
+  const cleanup=()=>{document.body.removeAttribute('data-theme');if(doneKey)try{localStorage.setItem(doneKey,'1')}catch{}};
+  tour.oncomplete(cleanup);
+  tour.onexit(cleanup);
+  tour.start();
+}
+
 // ═══ App ═══
 export default function App(){
   const[data,setData]=useState(null);
@@ -8130,7 +8148,20 @@ export default function App(){
   const[showHelp,setShowHelp]=useState(false);
   const[edition,setEdition]=useState('lite');
   const isLite=edition==='lite';
-  const switchEdition=useCallback((id)=>{setEdition(id);try{localStorage.setItem('rp_edition',id)}catch{}},[]);
+  const switchEdition=useCallback((id)=>{
+    setEdition(id);try{localStorage.setItem('rp_edition',id)}catch{}
+    if(id==='pro'){
+      const done=localStorage.getItem('rp_tour_pro_done');
+      if(!done){
+        setTimeout(async()=>{
+          try{
+            const{PRO_SWITCH_STEPS,LS_TOUR_PRO_DONE}=await import('@/lib/intro-steps');
+            await launchTour(PRO_SWITCH_STEPS,LS_TOUR_PRO_DONE);
+          }catch(e){console.warn('pro tour failed:',e);}
+        },500);
+      }
+    }
+  },[]);
   const[isDark,setIsDark]=useState(true);
   const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
@@ -8157,34 +8188,21 @@ export default function App(){
     if(!visited&&!onboardingDone){setShowWelcome(true);await storage.set("rp_visited","1");}
     else if(!visited){setShowHelp(true);await storage.set("rp_visited","1");}
   })();},[]);
-  // intro.js ツアー共通ヘルパー
-  async function launchTour(steps,doneKey){
-    const introJs=(await import('intro.js')).default;
-    await import('intro.js/introjs.css');
-    await import('@/styles/introjs-overrides.css');
-    const{INTRO_OPTIONS}=await import('@/lib/intro-steps');
-    const validSteps=steps.filter(s=>document.querySelector(s.element));
-    if(validSteps.length===0)return;
-    // intro.jsはbody直下にツールチップを挿入するので、bodyにもdata-themeを同期
-    const theme=document.querySelector('[data-theme]')?.getAttribute('data-theme')||'dark';
-    document.body.setAttribute('data-theme',theme);
-    const tour=introJs();
-    tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
-    const cleanup=()=>{document.body.removeAttribute('data-theme');if(doneKey)try{localStorage.setItem(doneKey,'1')}catch{}};
-    tour.oncomplete(cleanup);
-    tour.onexit(cleanup);
-    tour.start();
-  }
-  // オンボーディングツアー
+  // オンボーディングツアー（画面に応じてUpload/Editorを自動判定）
   const startTour=useCallback(()=>{
     setTimeout(async()=>{
       try{
-        const{UPLOAD_STEPS_LITE,UPLOAD_STEPS_PRO,LS_TOUR_UPLOAD_DONE}=await import('@/lib/intro-steps');
-        const steps=isLite?UPLOAD_STEPS_LITE:UPLOAD_STEPS_PRO;
-        await launchTour(steps,LS_TOUR_UPLOAD_DONE);
+        const mod=await import('@/lib/intro-steps');
+        if(data){
+          const steps=isLite?mod.EDITOR_STEPS_LITE:mod.EDITOR_STEPS_PRO;
+          await launchTour(steps,null);
+        }else{
+          const steps=isLite?mod.UPLOAD_STEPS_LITE:mod.UPLOAD_STEPS_PRO;
+          await launchTour(steps,null);
+        }
       }catch(e){console.warn('intro.js tour failed:',e);}
     },400);
-  },[isLite]);
+  },[isLite,data]);
 
   const handleWelcomeClose=useCallback(()=>{
     setShowWelcome(false);
