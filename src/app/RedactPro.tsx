@@ -44,6 +44,7 @@ import { useState, useRef, useCallback, useMemo, useEffect, createContext, useCo
 import * as mammoth from "mammoth";
 import * as Papa from "papaparse";
 import * as XLSX from "xlsx";
+import { clearAllSiteData } from "../lib/storage";
 
 // ═══ Theme System (CSS Custom Properties) ═══
 const C={accent:"#4C85F6",accentDim:"rgba(76,133,246,0.12)",red:"#F05656",redDim:"rgba(240,86,86,0.1)",green:"#36C78A",greenDim:"rgba(54,199,138,0.1)",amber:"#DDA032",amberDim:"rgba(221,160,50,0.1)",purple:"#9B6DFF",purpleDim:"rgba(155,109,255,0.1)",cyan:"#22D3EE",cyanDim:"rgba(34,211,238,0.1)",font:"'Noto Sans JP','DM Sans',system-ui,sans-serif",mono:"'JetBrains Mono','Fira Code',monospace"};
@@ -3037,11 +3038,27 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite}){
                               padding: '8px 16px',
                               fontSize: 12,
                               borderRadius: 8,
-                              marginRight: 'auto',
                               color: T.red,
                           }}
                       >
-                          初期化
+                          設定リセット
+                      </Btn>
+                      <Btn
+                          variant='ghost'
+                          onClick={() => {
+                              if(!confirm('サイトデータを完全に消去して初期化しますか？\n(LocalStorage, IndexedDB, キャッシュがすべて削除され、ページがリロードされます)'))return;
+                              clearAllSiteData();
+                          }}
+                          style={{
+                              padding: '8px 16px',
+                              fontSize: 12,
+                              borderRadius: 8,
+                              marginRight: 'auto',
+                              color: T.red,
+                              border: `1px solid ${T.red}44`,
+                          }}
+                      >
+                          全データ削除
                       </Btn>
                       {apiKey && (
                           <Btn
@@ -8148,9 +8165,14 @@ export default function App(){
     const{INTRO_OPTIONS}=await import('@/lib/intro-steps');
     const validSteps=steps.filter(s=>document.querySelector(s.element));
     if(validSteps.length===0)return;
+    // intro.jsはbody直下にツールチップを挿入するので、bodyにもdata-themeを同期
+    const theme=document.querySelector('[data-theme]')?.getAttribute('data-theme')||'dark';
+    document.body.setAttribute('data-theme',theme);
     const tour=introJs();
     tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
-    if(doneKey)tour.oncomplete(()=>{try{localStorage.setItem(doneKey,'1')}catch{}});
+    const cleanup=()=>{document.body.removeAttribute('data-theme');if(doneKey)try{localStorage.setItem(doneKey,'1')}catch{}};
+    tour.oncomplete(cleanup);
+    tour.onexit(cleanup);
     tour.start();
   }
   // オンボーディングツアー

@@ -1,5 +1,7 @@
 /* intro.js ダークテーマ対応 + レイアウト修正 */
 
+/* === ダークモード（デフォルト） === */
+
 .introjs-tooltip {
   background: #1e293b !important;
   color: #e2e8f0 !important;
@@ -23,6 +25,7 @@
   font-weight: 700 !important;
   color: #fff !important;
   margin-bottom: 4px !important;
+  padding-right: 60px !important;
 }
 
 .introjs-tooltipbuttons {
@@ -68,16 +71,20 @@
   background: linear-gradient(135deg, #7c3aed, #8b5cf6) !important;
 }
 
+/* スキップボタン: 絶対配置 + 切れ防止 */
 .introjs-skipbutton {
   position: absolute !important;
   top: 8px !important;
-  right: 12px !important;
+  right: 8px !important;
   background: transparent !important;
   border: none !important;
   color: rgba(255, 255, 255, 0.4) !important;
-  font-size: 12px !important;
+  font-size: 11px !important;
   padding: 4px 8px !important;
   cursor: pointer !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  z-index: 1 !important;
 }
 
 .introjs-skipbutton:hover {
@@ -121,73 +128,65 @@
   border-left-color: #1e293b !important;
 }
 
-/* ライトモード対応 */
-[data-theme="light"] .introjs-tooltip,
-:root:not(.dark) .introjs-tooltip {
+/* === ライトモード（data-theme="light" のみ） === */
+
+[data-theme="light"] .introjs-tooltip {
   background: #fff !important;
   color: #334155 !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
 }
 
-[data-theme="light"] .introjs-tooltiptext,
-:root:not(.dark) .introjs-tooltiptext {
+[data-theme="light"] .introjs-tooltiptext {
   color: #475569 !important;
 }
 
-[data-theme="light"] .introjs-tooltip-title,
-:root:not(.dark) .introjs-tooltip-title {
+[data-theme="light"] .introjs-tooltip-title {
   color: #0f172a !important;
 }
 
-[data-theme="light"] .introjs-tooltipbuttons,
-:root:not(.dark) .introjs-tooltipbuttons {
+[data-theme="light"] .introjs-tooltipbuttons {
   border-top-color: #e2e8f0 !important;
 }
 
-[data-theme="light"] .introjs-button,
-:root:not(.dark) .introjs-button {
+[data-theme="light"] .introjs-button {
   border-color: #d1d5db !important;
   color: #475569 !important;
 }
 
-[data-theme="light"] .introjs-button:hover,
-:root:not(.dark) .introjs-button:hover {
+[data-theme="light"] .introjs-button:hover {
   background: #f1f5f9 !important;
   color: #0f172a !important;
 }
 
-[data-theme="light"] .introjs-skipbutton,
-:root:not(.dark) .introjs-skipbutton {
+[data-theme="light"] .introjs-skipbutton {
   color: #94a3b8 !important;
 }
 
-[data-theme="light"] .introjs-progress,
-:root:not(.dark) .introjs-progress {
+[data-theme="light"] .introjs-skipbutton:hover {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .introjs-progress {
   background: #e2e8f0 !important;
 }
 
-[data-theme="light"] .introjs-helperLayer,
-:root:not(.dark) .introjs-helperLayer {
+[data-theme="light"] .introjs-helperLayer {
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4) !important;
 }
 
-[data-theme="light"] .introjs-arrow.top,
-:root:not(.dark) .introjs-arrow.top {
+[data-theme="light"] .introjs-arrow.top {
   border-bottom-color: #fff !important;
 }
 
-[data-theme="light"] .introjs-arrow.bottom,
-:root:not(.dark) .introjs-arrow.bottom {
+[data-theme="light"] .introjs-arrow.bottom {
   border-top-color: #fff !important;
 }
 
-[data-theme="light"] .introjs-arrow.left,
-:root:not(.dark) .introjs-arrow.left {
+[data-theme="light"] .introjs-arrow.left {
   border-right-color: #fff !important;
 }
 
-[data-theme="light"] .introjs-arrow.right,
-:root:not(.dark) .introjs-arrow.right {
+[data-theme="light"] .introjs-arrow.right {
   border-left-color: #fff !important;
 }
