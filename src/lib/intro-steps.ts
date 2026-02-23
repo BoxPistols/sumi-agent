@@ -167,6 +167,12 @@ export const EDITOR_STEPS_PRO: IntroStep[] = [
         position: 'left',
     },
     {
+        element: '[data-intro="advisor-tab"]',
+        title: '経歴書アドバイザー',
+        intro: 'AIが経歴書をレビューし、強みの発見・改善提案・求人票マッチングを支援します。',
+        position: 'left',
+    },
+    {
         element: '[data-intro="ai-reformat"]',
         title: 'AI再フォーマット',
         intro: 'AIがマスキング済みテキストを推薦書やスキルシートなどの形式に自動整形します。',

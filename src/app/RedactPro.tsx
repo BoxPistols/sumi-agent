@@ -1744,6 +1744,20 @@ async function processFileEntry(file,maskConfig,settings,callbacks,customKeyword
   };
 }
 
+// Markdown簡易レンダリング（アドバイザーチャット用）
+function simpleMarkdown(text){
+  if(!text)return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm,'<h4 style="margin:8px 0 4px;font-size:13px;font-weight:700">$1</h4>')
+    .replace(/^## (.+)$/gm,'<h3 style="margin:10px 0 4px;font-size:14px;font-weight:700">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/^[-*] (.+)$/gm,'<div style="padding-left:12px;text-indent:-12px">・$1</div>')
+    .replace(/^\d+\. (.+)$/gm,(_,c)=>`<div style="padding-left:16px">${c}</div>`)
+    .replace(/\n{2,}/g,'<br/><br/>')
+    .replace(/\n/g,'<br/>');
+}
+
 // ArrayBuffer → Base64 変換ユーティリティ
 function arrayBufferToBase64(buf){
   const bytes=new Uint8Array(buf instanceof ArrayBuffer?buf:buf.slice(0));
@@ -6874,6 +6888,14 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const[focusDetId,setFocusDetId]=useState(null);
   const[focusPulse,setFocusPulse]=useState(0);
   const[sidebarCollapsed,setSidebarCollapsed]=useState(false);
+  // アドバイザーチャット（Pro版のみ）
+  const[rightTab,setRightTab]=useState("detections");
+  const[advisorMessages,setAdvisorMessages]=useState([]);
+  const[advisorInput,setAdvisorInput]=useState("");
+  const[advisorLoading,setAdvisorLoading]=useState(false);
+  const[jobDescription,setJobDescription]=useState("");
+  const[showJobInput,setShowJobInput]=useState(false);
+  const advisorEndRef=useRef(null);
   // EditorScreen 初回ツアー
   useEffect(()=>{
     const done=localStorage.getItem('rp_tour_editor_done');
@@ -6949,6 +6971,47 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const displayText=viewMode==="ai"&&aiResult?aiResult:viewMode==="raw"&&hasRawText?data.rawText:showRedacted?applyRedaction(data.text_preview,detections,data.maskOpts):data.text_preview;
   const handleCopy=()=>{navigator.clipboard.writeText(viewMode==="ai"&&aiResult?aiResult:redacted);setCopied(true);setTimeout(()=>setCopied(false),2000);};
   const baseName=data.file_name.replace(/\.[^.]+$/,"")+"_redacted_"+fileTimestamp();
+
+  // ── アドバイザーチャット ──
+  const advisorPresetsRef=useRef(null);
+  if(!advisorPresetsRef.current){
+    try{const{ADVISOR_PRESETS}=require('@/lib/advisor/prompts');advisorPresetsRef.current=ADVISOR_PRESETS;}catch(e){advisorPresetsRef.current=[];}
+  }
+  const advisorPresets=advisorPresetsRef.current;
+
+  const buildCtx=useCallback(()=>{
+    try{
+      const{buildAdvisorContext}=require('@/lib/advisor/context');
+      return buildAdvisorContext({originalText:data.fullText||data.text_preview,redactedText:redacted,detections,fileName:data.file_name,format:data.format||'text',pageCount:data.page_count});
+    }catch(e){return `【経歴書テキスト】\n${(data.fullText||data.text_preview).slice(0,6000)}`;}
+  },[data,detections,redacted]);
+
+  const handleAdvisorSend=useCallback(async(overridePrompt)=>{
+    const text=typeof overridePrompt==='string'?overridePrompt:advisorInput.trim();
+    if(!text||advisorLoading)return;
+    const userMsg={role:'user',content:text,timestamp:Date.now()};
+    setAdvisorMessages(prev=>[...prev,userMsg]);
+    if(typeof overridePrompt!=='string')setAdvisorInput("");
+    setAdvisorLoading(true);
+    try{
+      const{callAdvisor}=await import('@/lib/advisor/call');
+      const allMsgs=[...advisorMessages,userMsg];
+      const reply=await callAdvisor({messages:allMsgs,context:buildCtx(),apiKey,model,jobDescription:jobDescription.trim()||undefined});
+      setAdvisorMessages(prev=>[...prev,{role:'assistant',content:reply,timestamp:Date.now()}]);
+    }catch(e){
+      setAdvisorMessages(prev=>[...prev,{role:'assistant',content:`エラー: ${e.message||'AI呼び出しに失敗しました'}`,timestamp:Date.now()}]);
+    }finally{setAdvisorLoading(false);}
+  },[advisorInput,advisorLoading,advisorMessages,buildCtx,apiKey,model,jobDescription]);
+
+  const handleAdvisorPreset=useCallback((preset)=>{
+    let prompt=preset.prompt;
+    if(preset.id==='job-match'&&jobDescription.trim()){
+      prompt+=`\n\n【求人票】\n${jobDescription.trim()}`;
+    }
+    handleAdvisorSend(prompt);
+  },[handleAdvisorSend,jobDescription]);
+
+  useEffect(()=>{advisorEndRef.current?.scrollIntoView({behavior:'smooth'});},[advisorMessages]);
   const buildTxt=()=>viewMode==="ai"&&aiResult?aiResult:redacted;
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
@@ -7661,6 +7724,30 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   background: T.bg2,
               }}
           >
+              {/* タブバー（Pro版: 検出結果 / アドバイザー） */}
+              {!isLite && (
+              <div style={{display:'flex',borderBottom:`1px solid ${T.border}`,background:T.bg2,flexShrink:0}}>
+                  {[{id:'detections',label:'検出結果',badge:`${enabledCount}/${detections.length}`},{id:'advisor',label:'アドバイザー',badge:advisorMessages.length>0?`${advisorMessages.filter(m=>m.role==='assistant').length}`:''}].map(tab=>(
+                      <button key={tab.id} data-intro={tab.id==='advisor'?'advisor-tab':undefined}
+                          onClick={()=>setRightTab(tab.id)}
+                          style={{flex:1,padding:'10px 8px',fontSize:13,fontWeight:rightTab===tab.id?700:500,
+                              color:rightTab===tab.id?T.text:T.text3,background:'transparent',border:'none',
+                              borderBottom:rightTab===tab.id?`2px solid ${T.accent}`:'2px solid transparent',
+                              cursor:'pointer',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                      >
+                          {tab.label}
+                          {tab.badge&&<span style={{fontSize:11,padding:'1px 6px',borderRadius:8,background:rightTab===tab.id?T.accentDim:T.surface,color:rightTab===tab.id?T.accent:T.text3}}>{tab.badge}</span>}
+                      </button>
+                  ))}
+                  {!isLite && <button
+                      onClick={()=>{setSidebarCollapsed(true);setLeftPct(null);setRightPct(null);}}
+                      title="サイドバーを折りたたむ"
+                      style={{background:'transparent',border:'none',cursor:'pointer',color:T.text3,fontSize:14,padding:'0 8px',display:'flex',alignItems:'center'}}
+                  >&#x276F;</button>}
+              </div>
+              )}
+              {/* 検出結果タブ */}
+              <div style={{display:rightTab==='detections'||isLite?'flex':'none',flexDirection:'column',flex:1,overflow:'hidden'}}>
               <div
                   style={{
                       padding: '14px 18px',
@@ -7672,28 +7759,28 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          marginBottom: 12,
+                          marginBottom: isLite?12:8,
                       }}
                   >
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                           <div>
                           <span
                               style={{
-                                  fontSize: 16,
+                                  fontSize: isLite?16:14,
                                   fontWeight: 700,
                                   color: T.text,
                               }}
                           >
-                              検出結果
+                              {isLite?'検出結果':''}
                           </span>
                           <span
                               style={{
                                   fontSize: 13,
                                   color: T.text2,
-                                  marginLeft: 10,
+                                  marginLeft: isLite?10:0,
                               }}
                           >
-                              {enabledCount}/{detections.length}
+                              {isLite?`${enabledCount}/${detections.length}`:''}
                           </span>
                       </div>
                       </div>
@@ -7704,7 +7791,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       >
                           {enabledCount > 0 ? '保護中' : '未保護'}
                       </Badge>
-                      {!isLite && <button
+                      {isLite && <button
                           onClick={()=>{setSidebarCollapsed(true);setLeftPct(null);setRightPct(null);}}
                           title="サイドバーを折りたたむ"
                           aria-label="サイドバーを折りたたむ"
@@ -8236,7 +8323,128 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       </Btn>
                   </div>
               </div>
+          </div>{/* /検出結果タブ */}
+          {/* アドバイザータブ（Pro版のみ） */}
+          {!isLite && rightTab==='advisor' && (
+          <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+              {/* プライバシー注意 */}
+              {advisorMessages.length===0 && (
+              <div style={{padding:'8px 14px',background:'#78350f18',borderBottom:`1px solid #92400e40`,fontSize:11,color:T.amber||'#f59e0b',display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:14}}>&#9888;</span>
+                  <span>経歴書の内容がAIサービスに送信されます。社内ポリシーに従ってご利用ください。</span>
+              </div>
+              )}
+              {/* プリセット質問 */}
+              {advisorMessages.length===0 && (
+              <div style={{padding:'12px 14px',borderBottom:`1px solid ${T.border}`,display:'flex',flexDirection:'column',gap:6}}>
+                  <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:2}}>クイック分析</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                      {(advisorPresets||[]).filter(p=>p.id!=='job-match').map(p=>(
+                          <button key={p.id} disabled={advisorLoading}
+                              onClick={()=>handleAdvisorPreset(p)}
+                              title={p.desc}
+                              style={{padding:'8px 10px',fontSize:12,fontWeight:500,color:T.text,background:T.surface,
+                                  border:`1px solid ${T.border}`,borderRadius:8,cursor:advisorLoading?'wait':'pointer',
+                                  textAlign:'left',transition:'all .15s',opacity:advisorLoading?0.5:1}}
+                              onMouseEnter={e=>{if(!advisorLoading)e.currentTarget.style.borderColor=T.accent}}
+                              onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border}}
+                          >
+                              {p.label}
+                          </button>
+                      ))}
+                  </div>
+                  {/* 求人票マッチング */}
+                  <div style={{marginTop:4}}>
+                      <button
+                          onClick={()=>setShowJobInput(p=>!p)}
+                          style={{width:'100%',padding:'8px 10px',fontSize:12,fontWeight:600,
+                              color:'#fff',background:`linear-gradient(135deg,${T.accent},${T.purple})`,
+                              border:'none',borderRadius:8,cursor:'pointer',transition:'opacity .15s',
+                              opacity:advisorLoading?0.5:1}}
+                          disabled={advisorLoading}
+                      >
+                          求人票マッチング
+                      </button>
+                      {showJobInput && (
+                      <div style={{marginTop:8}}>
+                          <textarea
+                              value={jobDescription}
+                              onChange={e=>setJobDescription(e.target.value)}
+                              placeholder="求人票のテキストを貼り付けてください..."
+                              style={{width:'100%',minHeight:80,maxHeight:160,padding:'8px 10px',fontSize:12,
+                                  color:T.text,background:T.surface,border:`1px solid ${T.border}`,borderRadius:8,
+                                  resize:'vertical',fontFamily:'inherit',lineHeight:1.6}}
+                          />
+                          <button
+                              onClick={()=>{
+                                  const jm=(advisorPresets||[]).find(p=>p.id==='job-match');
+                                  if(jm)handleAdvisorPreset(jm);
+                              }}
+                              disabled={advisorLoading||!jobDescription.trim()}
+                              style={{marginTop:6,width:'100%',padding:'7px 10px',fontSize:12,fontWeight:600,
+                                  color:!jobDescription.trim()?T.text3:'#fff',
+                                  background:!jobDescription.trim()?T.surface:T.accent,
+                                  border:`1px solid ${!jobDescription.trim()?T.border:T.accent}`,borderRadius:8,
+                                  cursor:!jobDescription.trim()||advisorLoading?'not-allowed':'pointer'}}
+                          >
+                              マッチング分析を実行
+                          </button>
+                      </div>
+                      )}
+                  </div>
+              </div>
+              )}
+              {/* チャット履歴 */}
+              <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
+                  {advisorMessages.map((msg,i)=>(
+                      <div key={i} style={{
+                          padding:'10px 12px',borderRadius:10,fontSize:13,lineHeight:1.7,
+                          background:msg.role==='user'?T.accentDim:T.surface,
+                          color:T.text,
+                          border:`1px solid ${msg.role==='user'?T.accent+'30':T.border}`,
+                          alignSelf:msg.role==='user'?'flex-end':'flex-start',
+                          maxWidth:'95%',wordBreak:'break-word',
+                      }}>
+                          {msg.role==='user'?(
+                              <div style={{whiteSpace:'pre-wrap'}}>{msg.content}</div>
+                          ):(
+                              <div dangerouslySetInnerHTML={{__html:simpleMarkdown(msg.content)}}/>
+                          )}
+                      </div>
+                  ))}
+                  {advisorLoading && (
+                      <div style={{padding:'10px 12px',borderRadius:10,fontSize:13,background:T.surface,border:`1px solid ${T.border}`,color:T.text2,alignSelf:'flex-start'}}>
+                          <span style={{display:'inline-block',animation:'pulse 1.5s infinite'}}>分析中...</span>
+                      </div>
+                  )}
+                  <div ref={advisorEndRef}/>
+              </div>
+              {/* 入力欄 */}
+              <div style={{padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,display:'flex',gap:8,flexShrink:0}}>
+                  <input
+                      type="text"
+                      value={advisorInput}
+                      onChange={e=>setAdvisorInput(e.target.value)}
+                      onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();handleAdvisorSend();}}}
+                      placeholder="質問を入力..."
+                      disabled={advisorLoading}
+                      style={{flex:1,padding:'8px 12px',fontSize:13,color:T.text,background:T.surface,
+                          border:`1px solid ${T.border}`,borderRadius:8,outline:'none',fontFamily:'inherit'}}
+                  />
+                  <button
+                      onClick={handleAdvisorSend}
+                      disabled={advisorLoading||!advisorInput.trim()}
+                      title="送信"
+                      style={{padding:'8px 14px',fontSize:13,fontWeight:600,color:'#fff',
+                          background:!advisorInput.trim()||advisorLoading?T.text3:T.accent,
+                          border:'none',borderRadius:8,cursor:!advisorInput.trim()||advisorLoading?'not-allowed':'pointer'}}
+                  >
+                      送信
+                  </button>
+              </div>
           </div>
+          )}
+          </div>{/* /.rp-editor-right */}
           {showAI && (
               <AIPanel
                   redactedText={redacted}
