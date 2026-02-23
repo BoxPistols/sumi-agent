@@ -6895,6 +6895,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const[advisorLoading,setAdvisorLoading]=useState(false);
   const[jobDescription,setJobDescription]=useState("");
   const[showJobInput,setShowJobInput]=useState(false);
+  const[advisorModelMode,setAdvisorModelMode]=useState("auto");
+  const[advisorCost,setAdvisorCost]=useState({daily:0,session:0,count:0});
+  const[advisorLastModel,setAdvisorLastModel]=useState("");
+  const[advisorCostAlert,setAdvisorCostAlert]=useState("none");
   const advisorEndRef=useRef(null);
   // EditorScreen 初回ツアー
   useEffect(()=>{
@@ -6984,7 +6988,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     }catch(e){return `【経歴書テキスト】\n${(data.fullText||data.text_preview).slice(0,6000)}`;}
   },[data,detections,redacted]);
 
-  const handleAdvisorSend=useCallback(async(overridePrompt)=>{
+  const handleAdvisorSend=useCallback(async(overridePrompt,presetId)=>{
     const text=typeof overridePrompt==='string'?overridePrompt:advisorInput.trim();
     if(!text||advisorLoading)return;
     const userMsg={role:'user',content:text,timestamp:Date.now()};
@@ -6994,22 +6998,27 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     try{
       const{callAdvisor}=await import('@/lib/advisor/call');
       const ctx=await buildCtx();
-      // prev経由で最新の会話履歴を取得（stale closure回避）
       let allMsgs;
       setAdvisorMessages(prev=>{allMsgs=[...prev];return prev;});
-      const reply=await callAdvisor({messages:allMsgs,context:ctx,apiKey,model,jobDescription:jobDescription.trim()||undefined});
-      setAdvisorMessages(prev=>[...prev,{role:'assistant',content:reply,timestamp:Date.now()}]);
+      const result=await callAdvisor({messages:allMsgs,context:ctx,apiKey,model,modelMode:advisorModelMode,presetId,jobDescription:jobDescription.trim()||undefined});
+      setAdvisorLastModel(result.modelLabel);
+      setAdvisorMessages(prev=>[...prev,{role:'assistant',content:result.text,timestamp:Date.now()}]);
+      // コスト更新
+      const{getCostRecord,checkCostAlert}=await import('@/lib/advisor/model-selector');
+      const rec=getCostRecord();
+      setAdvisorCost({daily:rec.dailyTotal,session:rec.sessionTotal,count:rec.callCount});
+      setAdvisorCostAlert(checkCostAlert(rec));
     }catch(e){
       setAdvisorMessages(prev=>[...prev,{role:'assistant',content:`エラー: ${e.message||'AI呼び出しに失敗しました'}`,timestamp:Date.now()}]);
     }finally{setAdvisorLoading(false);}
-  },[advisorInput,advisorLoading,buildCtx,apiKey,model,jobDescription]);
+  },[advisorInput,advisorLoading,buildCtx,apiKey,model,advisorModelMode,jobDescription]);
 
   const handleAdvisorPreset=useCallback((preset)=>{
     let prompt=preset.prompt;
     if(preset.id==='job-match'&&jobDescription.trim()){
       prompt+=`\n\n【求人票】\n${jobDescription.trim()}`;
     }
-    handleAdvisorSend(prompt);
+    handleAdvisorSend(prompt,preset.id);
   },[handleAdvisorSend,jobDescription]);
 
   useEffect(()=>{advisorEndRef.current?.scrollIntoView({behavior:'smooth'});},[advisorMessages]);
@@ -8335,6 +8344,40 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   <span>経歴書の内容がAIサービスに送信されます。社内ポリシーに従ってご利用ください。</span>
               </div>
               )}
+              {/* コストアラート */}
+              {advisorCostAlert==='daily-warn' && (
+              <div style={{padding:'8px 14px',background:'#dc262618',borderBottom:`1px solid #dc262640`,fontSize:11,color:'#ef4444',display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:14}}>&#x26D4;</span>
+                  <span>本日の利用コストが{advisorCost.daily.toFixed(1)}円に達しました（上限目安: 30円）。引き続き利用する場合は設定画面で自身のAPIキーを登録してください。</span>
+              </div>
+              )}
+              {advisorCostAlert==='daily-alert' && (
+              <div style={{padding:'8px 14px',background:'#78350f18',borderBottom:`1px solid #92400e40`,fontSize:11,color:T.amber||'#f59e0b',display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:14}}>&#9888;</span>
+                  <span>本日の利用コスト: {advisorCost.daily.toFixed(1)}円 / 30円（日次上限に近づいています）</span>
+              </div>
+              )}
+              {/* モデルモード切替 + コスト表示 */}
+              <div style={{padding:'6px 14px',borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'space-between',fontSize:11,color:T.text3,flexShrink:0}}>
+                  <div style={{display:'flex',alignItems:'center',gap:6}}>
+                      <span>モデル:</span>
+                      {['auto','manual'].map(m=>(
+                          <button key={m} onClick={()=>setAdvisorModelMode(m)}
+                              style={{padding:'2px 8px',fontSize:11,fontWeight:advisorModelMode===m?600:400,
+                                  color:advisorModelMode===m?T.accent:T.text3,
+                                  background:advisorModelMode===m?T.accentDim:'transparent',
+                                  border:`1px solid ${advisorModelMode===m?T.accent+'40':T.border}`,
+                                  borderRadius:4,cursor:'pointer'}}
+                          >{m==='auto'?'Auto':'固定'}</button>
+                      ))}
+                      {advisorModelMode==='auto'&&advisorLastModel&&<span style={{color:T.text2}}>{advisorLastModel}</span>}
+                  </div>
+                  {advisorCost.count>0&&(
+                  <span style={{color:T.text3}}>
+                      {advisorCost.session.toFixed(1)}円 / {advisorCost.count}回
+                  </span>
+                  )}
+              </div>
               {/* プリセット質問 */}
               {advisorMessages.length===0 && (
               <div style={{padding:'12px 14px',borderBottom:`1px solid ${T.border}`,display:'flex',flexDirection:'column',gap:6}}>

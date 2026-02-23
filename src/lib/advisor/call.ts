@@ -2,10 +2,12 @@
  * 経歴書アドバイザー: AI呼び出しラッパー
  *
  * 既存の /api/ai エンドポイントを利用し、会話履歴+経歴書コンテキストを構築してAIに送信する。
+ * modelMode='auto' 時はタスク複雑度に応じてnano/miniを動的に選択する。
  */
 
 import { getProviderForModel } from '@/lib/constants'
 import { ADVISOR_SYSTEM_PROMPT } from './prompts'
+import { assessComplexity, selectModel, recordCost, MODEL_COSTS } from './model-selector'
 import type { AdvisorMessage } from './types'
 
 const MAX_HISTORY = 10
@@ -16,18 +18,43 @@ interface CallAdvisorParams {
   context: string
   apiKey?: string
   model?: string
+  modelMode?: 'auto' | 'manual'
+  presetId?: string
   jobDescription?: string
+}
+
+export interface CallAdvisorResult {
+  text: string
+  modelUsed: string
+  modelLabel: string
+  costYen: number
 }
 
 /**
  * アドバイザーAI呼び出し
  *
- * @returns AIの応答テキスト
+ * @returns AIの応答テキスト + 使用モデル情報
  * @throws {Error} API呼び出し失敗時
  */
-export async function callAdvisor(params: CallAdvisorParams): Promise<string> {
-  const { messages, context, apiKey, model, jobDescription } = params
-  const modelId = model || 'claude-sonnet-4-20250514'
+export async function callAdvisor(params: CallAdvisorParams): Promise<CallAdvisorResult> {
+  const { messages, context, apiKey, model, modelMode = 'auto', presetId, jobDescription } = params
+
+  // モデル選択
+  let modelId: string
+  if (modelMode === 'auto') {
+    const lastUserMsg = messages[messages.length - 1]
+    const complexity = assessComplexity({
+      userMessage: lastUserMsg?.content || '',
+      presetId,
+      messageCount: messages.filter((m) => m.role === 'user').length - 1,
+      hasJobDescription: !!jobDescription,
+      contextLength: context.length,
+    })
+    modelId = selectModel(complexity)
+  } else {
+    modelId = model || 'gpt-5-nano'
+  }
+
   const provider = getProviderForModel(modelId)
 
   // システムプロンプト + 経歴書コンテキスト
@@ -61,6 +88,15 @@ export async function callAdvisor(params: CallAdvisorParams): Promise<string> {
     throw new Error(e.error || `AI API error: ${res.status}`)
   }
 
+  // コスト記録
+  const costRecord = recordCost(modelId)
+  const costInfo = MODEL_COSTS[modelId] || { costYen: 0.10, label: modelId, tier: 'nano' }
+
   const d = await res.json()
-  return d.text || ''
+  return {
+    text: d.text || '',
+    modelUsed: modelId,
+    modelLabel: costInfo.label,
+    costYen: costInfo.costYen,
+  }
 }
