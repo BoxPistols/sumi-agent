@@ -4868,7 +4868,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
   const urlHelpTriggerRef = useRef(null)
   const urlHelpCloseRef = useRef(null)
   const activePreset=MASK_PRESETS.findIndex(p=>Object.entries(p.mask).every(([k,v])=>mask[k]===v));
-  const aiOn=isLite?false:settings?.aiDetect!==false;
+  const aiOn=settings?.aiDetect!==false;
   const STAGES=["ファイル読み込み","テキスト抽出",aiOn?"AI OCR (画像ページ)":"--",aiOn?"AI テキスト再構成":"--","正規表現マッチ","日本人名辞書照合",aiOn?"AI PII検出":"--","完了"];
   const lc=[null,T.green,T.amber,T.red];
   const closeUrlHelp = useCallback(() => {
@@ -4909,6 +4909,13 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
     let originalRaw=rawText||text;
     const runModels = aiOn ? getModelsForRun(settings) : null
 
+    // Warn if image-heavy PDF but no API key for OCR
+    if(!settings?.apiKey&&format==="PDF"&&sparsePages&&sparsePages.length>0&&pageCount>0){
+      const sparseRatio=sparsePages.length/pageCount;
+      if(sparseRatio>=0.5){
+        setAiStatus(`⚠ ${sparsePages.length}/${pageCount}ページがテキスト未検出（画像PDF）。設定でAPIキーを登録するとAI OCRで抽出できます`);
+      }
+    }
     // OCR fallback for image-heavy PDF pages
     if(aiOn&&format==="PDF"&&sparsePages&&sparsePages.length>0){
       setStage(2);
@@ -7246,6 +7253,13 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       </>}
                   </div>
               </div>
+              {/* 画像PDF警告（APIキー未設定でOCRスキップ時） */}
+              {data.sparsePageCount>0&&data.page_count>0&&data.sparsePageCount/data.page_count>=0.5&&!settings?.apiKey&&(
+              <div style={{padding:"8px 14px",background:"#78350f18",borderBottom:`1px solid #92400e40`,display:"flex",alignItems:"center",gap:8,fontSize:12,color:T.amber||"#f59e0b"}}>
+                <span style={{fontSize:16}}>&#9888;</span>
+                <span>{data.sparsePageCount}/{data.page_count}ページがテキスト未検出（画像PDF）。設定でAPIキーを登録するとAI OCRで画像からテキストを抽出できます。</span>
+              </div>
+              )}
               {/* カテゴリ別クイックトグル */}
               {(viewMode==='original')&&!editMode&&allCats.length>0&&(
               <div data-intro="category-filter" style={{
@@ -8420,7 +8434,7 @@ export default function App(){
                                 : `${data.detections.filter((d) => d.enabled).length} 件`}
                           </Badge>
                       )}
-                      {!isLite && settings.aiDetect && (
+                      {settings.aiDetect && (
                           <Badge color={C.purple} bg={C.purpleDim}>
                               AI
                           </Badge>
