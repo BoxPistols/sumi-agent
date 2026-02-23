@@ -1755,54 +1755,54 @@ function generateExport(rawContent,format,baseName){
   switch(format){
     case"txt":return{data:bom+content,mime:"text/plain;charset=utf-8",name:baseName+".txt"};
     case"md":return{data:bom+`# ${baseName}\n\n> Exported: ${ts}\n\n---\n\n${content}`,mime:"text/markdown;charset=utf-8",name:baseName+".md"};
-    case"csv":{
-      const csvRows=["項目,内容"];
-      for(const line of content.split("\n")){
-        const t=line.trim();if(!t)continue;
-        const kv=t.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||t.match(/^(.+?)\s*[：:]\s+(.+)$/);
-        if(kv&&kv[1].length<=30){csvRows.push(`"${kv[1].replace(/^[-・]\s*/,"").replace(/"/g,'""')}","${kv[2].replace(/"/g,'""')}"`);}
-        else if(t.includes(" | ")){const ps=t.split(" | ");csvRows.push(ps.map(p=>`"${p.trim().replace(/"/g,'""')}"`).join(","));}
-        else if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(t)){csvRows.push(`"${t.replace(/"/g,'""')}",""`);}
-        else{csvRows.push(`"","${t.replace(/"/g,'""')}"`);}
-      }
-      return{data:bom+csvRows.join("\n"),mime:"text/csv;charset=utf-8",name:baseName+".csv"};
-    }
+    case"csv":
     case"xlsx":{
-      // テキストを「項目 | 内容」の2カラム構造に変換
-      const xlRows=[["項目","内容"]];
-      let currentSection="";
-      for(const line of content.split("\n")){
-        const trimmed=line.trim();
-        if(!trimmed)continue;
-        // セクション見出し検出: (1) 基本情報、## 見出し、【見出し】等
-        if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(trimmed)){
-          xlRows.push([trimmed,""]);
-          currentSection=trimmed;
-          continue;
+      // コンテンツ構造を自動判定: パイプ区切りテーブル vs KVテキスト
+      const allLines=content.split("\n").map(l=>l.trim()).filter(l=>l);
+      const pipeLines=allLines.filter(l=>l.includes(" | "));
+      const isTabular=pipeLines.length>=2&&pipeLines.length/allLines.length>=0.3;
+
+      let aoa; // Array of Arrays
+      if(isTabular){
+        // テーブルモード: パイプ区切りの1行目をヘッダー、残りをデータ
+        aoa=[];
+        let headerSet=false;
+        for(const line of allLines){
+          if(line.includes(" | ")){
+            const cells=line.split(" | ").map(c=>c.trim());
+            if(!headerSet){aoa.push(cells);headerSet=true;}
+            else{aoa.push(cells);}
+          }else{
+            // パイプなし行（セクション見出し等）: 全カラム結合相当で1列目に
+            const colCount=aoa.length>0?aoa[0].length:2;
+            const row=Array(colCount).fill("");
+            row[0]=line;
+            aoa.push(row);
+          }
         }
-        // Key:Value / Key：Value パターン
-        const kvMatch=trimmed.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||trimmed.match(/^(.+?)\s*[：:]\s+(.+)$/);
-        if(kvMatch&&kvMatch[1].length<=30){
-          xlRows.push([kvMatch[1].replace(/^[-・]\s*/,""),kvMatch[2]]);
-          continue;
+      }else{
+        // KVモード: 見出し/キー:値/リスト を2カラムに
+        aoa=[["項目","内容"]];
+        for(const line of allLines){
+          if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(line)){aoa.push([line,""]);continue;}
+          const kv=line.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||line.match(/^(.+?)\s*[：:]\s+(.+)$/);
+          if(kv&&kv[1].length<=30){aoa.push([kv[1].replace(/^[-・]\s*/,""),kv[2]]);continue;}
+          if(line.includes(" | ")){aoa.push(line.split(" | ").map(p=>p.trim()));continue;}
+          if(/^[-・]/.test(line)){aoa.push(["",line.replace(/^[-・]\s*/,"")]);continue;}
+          aoa.push(["",line]);
         }
-        // パイプ区切り（テーブル行）
-        if(trimmed.includes(" | ")){
-          const parts=trimmed.split(" | ").map(p=>p.trim());
-          if(parts.length>=2){xlRows.push(parts);continue;}
-        }
-        // リスト項目
-        if(/^[-・]/.test(trimmed)){
-          xlRows.push(["",trimmed.replace(/^[-・]\s*/,"")]);
-          continue;
-        }
-        // その他: 内容カラムに
-        xlRows.push(["",trimmed]);
       }
-      const ws=XLSX.utils.aoa_to_sheet(xlRows);
-      ws["!cols"]=[{wch:24},{wch:80}];
-      // ヘッダー行のスタイル用にフリーズ
-      ws["!freeze"]={xSplit:0,ySplit:1};
+
+      if(format==="csv"){
+        const csvOut=aoa.map(row=>row.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
+        return{data:bom+csvOut,mime:"text/csv;charset=utf-8",name:baseName+".csv"};
+      }
+      // xlsx
+      const ws=XLSX.utils.aoa_to_sheet(aoa);
+      const colCount=aoa.length>0?Math.max(...aoa.map(r=>r.length)):2;
+      ws["!cols"]=isTabular
+        ?Array.from({length:colCount},()=>({wch:18}))
+        :[{wch:24},{wch:80}];
       const wb=XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb,ws,"マスキング済み");
       const out=XLSX.write(wb,{type:"base64",bookType:"xlsx"});
@@ -4127,18 +4127,43 @@ tr:nth-child(even){background:#f9fafb}
 </style></head><body>${table}</body></html>`;
     }
     if(fmt==="xlsx"){
-      // テキストをKV構造テーブルに変換
-      let table="<table><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody>";
-      for(const line of displayContent.split("\n")){
-        const t=line.trim();if(!t)continue;
-        const isSection=/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(t);
-        if(isSection){table+=`<tr class='sec'><td colspan='2'>${esc(t)}</td></tr>`;continue;}
-        const kv=t.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||t.match(/^(.+?)\s*[：:]\s+(.+)$/);
-        if(kv&&kv[1].length<=30){table+=`<tr><td class='k'>${esc(kv[1].replace(/^[-・]\s*/,""))}</td><td>${esc(kv[2])}</td></tr>`;continue;}
-        if(t.includes(" | ")){const ps=t.split(" | ");table+=`<tr>${ps.map(p=>`<td>${esc(p.trim())}</td>`).join("")}</tr>`;continue;}
-        table+=`<tr><td></td><td>${esc(t)}</td></tr>`;
+      // コンテンツ構造を自動判定: パイプ区切りテーブル vs KVテキスト
+      const xlLines=displayContent.split("\n").map(l=>l.trim()).filter(l=>l);
+      const xlPipeLines=xlLines.filter(l=>l.includes(" | "));
+      const xlIsTabular=xlPipeLines.length>=2&&xlPipeLines.length/xlLines.length>=0.3;
+      let table="";
+      if(xlIsTabular){
+        // テーブルモード: パイプ区切りの1行目をヘッダーに
+        let headerSet=false;
+        for(const line of xlLines){
+          if(line.includes(" | ")){
+            const cells=line.split(" | ").map(c=>c.trim());
+            if(!headerSet){
+              table+=`<table><thead><tr>${cells.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>`;
+              headerSet=true;
+            }else{
+              table+=`<tr>${cells.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`;
+            }
+          }else{
+            // 非パイプ行はフル幅で表示
+            if(!headerSet){table+=`<table><tbody>`;headerSet=true;}
+            const colCount=xlPipeLines.length>0?xlPipeLines[0].split(" | ").length:2;
+            table+=`<tr class='sec'><td colspan='${colCount}'>${esc(line)}</td></tr>`;
+          }
+        }
+        table+="</tbody></table>";
+      }else{
+        // KVモード
+        table="<table><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody>";
+        for(const t of xlLines){
+          if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(t)){table+=`<tr class='sec'><td colspan='2'>${esc(t)}</td></tr>`;continue;}
+          const kv=t.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||t.match(/^(.+?)\s*[：:]\s+(.+)$/);
+          if(kv&&kv[1].length<=30){table+=`<tr><td class='k'>${esc(kv[1].replace(/^[-・]\s*/,""))}</td><td>${esc(kv[2])}</td></tr>`;continue;}
+          if(t.includes(" | ")){table+=`<tr>${t.split(" | ").map(p=>`<td>${esc(p.trim())}</td>`).join("")}</tr>`;continue;}
+          table+=`<tr><td></td><td>${esc(t)}</td></tr>`;
+        }
+        table+="</tbody></table>";
       }
-      table+="</tbody></table>";
       return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
 body{font-family:'Calibri','Noto Sans JP',sans-serif;font-size:10pt;margin:0;padding:0;background:#fff}
 table{border-collapse:collapse;width:100%;font-size:10pt}
