@@ -15,11 +15,3 @@ export interface AdvisorPreset {
   desc: string
 }
 
-export interface AdvisorContext {
-  originalText: string
-  redactedText: string
-  detectionSummary: string
-  fileName: string
-  format: string
-  pageCount?: number
-}

@@ -1748,7 +1748,7 @@ async function processFileEntry(file,maskConfig,settings,callbacks,customKeyword
 function simpleMarkdown(text){
   if(!text)return '';
   return text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
     .replace(/^### (.+)$/gm,'<h4 style="margin:8px 0 4px;font-size:13px;font-weight:700">$1</h4>')
     .replace(/^## (.+)$/gm,'<h3 style="margin:10px 0 4px;font-size:14px;font-weight:700">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
@@ -6973,15 +6973,13 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const baseName=data.file_name.replace(/\.[^.]+$/,"")+"_redacted_"+fileTimestamp();
 
   // ── アドバイザーチャット ──
-  const advisorPresetsRef=useRef(null);
-  if(!advisorPresetsRef.current){
-    try{const{ADVISOR_PRESETS}=require('@/lib/advisor/prompts');advisorPresetsRef.current=ADVISOR_PRESETS;}catch(e){advisorPresetsRef.current=[];}
-  }
-  const advisorPresets=advisorPresetsRef.current;
+  const[advisorPresets]=useState(()=>{
+    try{const{ADVISOR_PRESETS}=require('@/lib/advisor/prompts');return ADVISOR_PRESETS;}catch(e){return[];}
+  });
 
-  const buildCtx=useCallback(()=>{
+  const buildCtx=useCallback(async()=>{
     try{
-      const{buildAdvisorContext}=require('@/lib/advisor/context');
+      const{buildAdvisorContext}=await import('@/lib/advisor/context');
       return buildAdvisorContext({originalText:data.fullText||data.text_preview,redactedText:redacted,detections,fileName:data.file_name,format:data.format||'text',pageCount:data.page_count});
     }catch(e){return `【経歴書テキスト】\n${(data.fullText||data.text_preview).slice(0,6000)}`;}
   },[data,detections,redacted]);
@@ -6995,13 +6993,16 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     setAdvisorLoading(true);
     try{
       const{callAdvisor}=await import('@/lib/advisor/call');
-      const allMsgs=[...advisorMessages,userMsg];
-      const reply=await callAdvisor({messages:allMsgs,context:buildCtx(),apiKey,model,jobDescription:jobDescription.trim()||undefined});
+      const ctx=await buildCtx();
+      // prev経由で最新の会話履歴を取得（stale closure回避）
+      let allMsgs;
+      setAdvisorMessages(prev=>{allMsgs=[...prev];return prev;});
+      const reply=await callAdvisor({messages:allMsgs,context:ctx,apiKey,model,jobDescription:jobDescription.trim()||undefined});
       setAdvisorMessages(prev=>[...prev,{role:'assistant',content:reply,timestamp:Date.now()}]);
     }catch(e){
       setAdvisorMessages(prev=>[...prev,{role:'assistant',content:`エラー: ${e.message||'AI呼び出しに失敗しました'}`,timestamp:Date.now()}]);
     }finally{setAdvisorLoading(false);}
-  },[advisorInput,advisorLoading,advisorMessages,buildCtx,apiKey,model,jobDescription]);
+  },[advisorInput,advisorLoading,buildCtx,apiKey,model,jobDescription]);
 
   const handleAdvisorPreset=useCallback((preset)=>{
     let prompt=preset.prompt;
