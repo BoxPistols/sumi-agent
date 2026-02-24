@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { __test__ } from '../RedactPro'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Seg = Record<string, any>
+
+const _ba = __test__.buildAnnotations
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ann = (...args: Parameters<typeof _ba>): Seg[] => _ba(...args) as any
+
 describe('AI preview formatting (mdToHTML)', () => {
   it('renders a plain section title as h2', () => {
     const html = __test__.mdToHTML('資格', { stripRedactions: false })
@@ -79,12 +86,12 @@ describe('buildAnnotations', () => {
   })
 
   it('returns single text segment when no detections', () => {
-    const result = __test__.buildAnnotations('テスト文章です', [], {})
+    const result = ann('テスト文章です', [], {})
     expect(result).toEqual([{ type: 'text', text: 'テスト文章です' }])
   })
 
   it('returns single text segment for empty detections array', () => {
-    const result = __test__.buildAnnotations('テスト', [], {})
+    const result = ann('テスト', [], {})
     expect(result).toHaveLength(1)
     expect(result[0].type).toBe('text')
   })
@@ -92,7 +99,7 @@ describe('buildAnnotations', () => {
   it('splits text around a single detection', () => {
     const dets = [makeDet('1', 'example@test.com', 'email', 'contact')]
     const text = '連絡先: example@test.com まで'
-    const result = __test__.buildAnnotations(text, dets, {})
+    const result = ann(text, dets, {})
     expect(result).toHaveLength(3)
     expect(result[0]).toEqual({ type: 'text', text: '連絡先: ' })
     expect(result[1].type).toBe('det')
@@ -107,8 +114,8 @@ describe('buildAnnotations', () => {
       makeDet('2', '090-1234-5678', 'phone', 'contact'),
     ]
     const text = '氏名: 田中太郎\n電話: 090-1234-5678'
-    const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter((s) => s.type === 'det')
+    const result = ann(text, dets, {})
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(2)
     expect(detSegs[0].text).toBe('田中太郎')
     expect(detSegs[1].text).toBe('090-1234-5678')
@@ -120,8 +127,8 @@ describe('buildAnnotations', () => {
       makeDet('2', '東京都', 'address', 'address'),
     ]
     const text = '住所: 東京都港区六本木'
-    const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter((s) => s.type === 'det')
+    const result = ann(text, dets, {})
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     // 長い方（東京都港区）が優先される
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].text).toBe('東京都港区')
@@ -131,8 +138,8 @@ describe('buildAnnotations', () => {
   it('returns masked text when showRedacted is true', () => {
     const dets = [makeDet('1', 'test@mail.com', 'email', 'contact', true)]
     const text = '連絡先: test@mail.com'
-    const result = __test__.buildAnnotations(text, dets, { showRedacted: true })
-    const detSegs = result.filter((s) => s.type === 'det')
+    const result = ann(text, dets, { showRedacted: true })
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].masked).toBe(true)
     expect(detSegs[0].text).toBe('[メール非公開]')
@@ -141,7 +148,7 @@ describe('buildAnnotations', () => {
   it('handles text with no matches gracefully', () => {
     const dets = [makeDet('1', 'notfound', 'email', 'contact')]
     const text = 'この文章にはマッチしません'
-    const result = __test__.buildAnnotations(text, dets, {})
+    const result = ann(text, dets, {})
     expect(result).toHaveLength(1)
     expect(result[0].type).toBe('text')
     expect(result[0].text).toBe(text)
@@ -150,8 +157,8 @@ describe('buildAnnotations', () => {
   it('handles repeated occurrences of the same value', () => {
     const dets = [makeDet('1', 'foo', 'email', 'contact')]
     const text = 'foo bar foo baz foo'
-    const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter((s) => s.type === 'det')
+    const result = ann(text, dets, {})
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(3)
     detSegs.forEach((s) => expect(s.text).toBe('foo'))
   })
@@ -159,7 +166,7 @@ describe('buildAnnotations', () => {
   it('filters out short detection values (length < 2)', () => {
     const dets = [makeDet('1', 'x', 'email', 'contact')]
     const text = 'x marks the spot'
-    const result = __test__.buildAnnotations(text, dets, {})
+    const result = ann(text, dets, {})
     expect(result).toHaveLength(1)
     expect(result[0].type).toBe('text')
   })
@@ -171,8 +178,8 @@ describe('buildAnnotations', () => {
       makeDet('1', '東京都港区', 'address', 'address'),
     ]
     const text = '住所: 東京都港区六本木'
-    const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const result = ann(text, dets, {})
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].text).toBe('東京都港区')
     expect(detSegs[0].det.id).toBe('1')
@@ -181,8 +188,8 @@ describe('buildAnnotations', () => {
   it('marks enabled:false detections with disabledDet flag', () => {
     const dets = [makeDet('1', '田中太郎', 'name_dict', 'name', false)]
     const text = '氏名: 田中太郎'
-    const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const result = ann(text, dets, {})
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].masked).toBe(false)
     expect(detSegs[0].disabledDet).toBe(true)
@@ -192,8 +199,8 @@ describe('buildAnnotations', () => {
   it('enabled:false detection is not masked even with showRedacted', () => {
     const dets = [makeDet('1', 'test@mail.com', 'email', 'contact', false)]
     const text = '連絡先: test@mail.com'
-    const result = __test__.buildAnnotations(text, dets, { showRedacted: true })
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const result = ann(text, dets, { showRedacted: true })
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].masked).toBe(false)
     expect(detSegs[0].disabledDet).toBe(true)
@@ -203,11 +210,11 @@ describe('buildAnnotations', () => {
   it('keepPrefecture preserves prefecture in address mask', () => {
     const dets = [makeDet('1', '東京都港区六本木1-2-3', 'address', 'address')]
     const text = '住所: 東京都港区六本木1-2-3'
-    const result = __test__.buildAnnotations(text, dets, {
+    const result = ann(text, dets, {
       showRedacted: true,
       keepPrefecture: true,
     })
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].masked).toBe(true)
     expect(detSegs[0].text).toBe('東京都[住所詳細非公開]')
@@ -216,11 +223,11 @@ describe('buildAnnotations', () => {
   it('keepPrefecture falls back for non-prefecture address', () => {
     const dets = [makeDet('1', '六本木1-2-3', 'address', 'address')]
     const text = '住所: 六本木1-2-3'
-    const result = __test__.buildAnnotations(text, dets, {
+    const result = ann(text, dets, {
       showRedacted: true,
       keepPrefecture: true,
     })
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].text).toBe('[住所非公開]')
   })
@@ -228,8 +235,8 @@ describe('buildAnnotations', () => {
   it('nameInitial generates initials for katakana name', () => {
     const dets = [makeDet('1', 'タナカ タロウ', 'name_dict', 'name')]
     const text = '氏名: タナカ タロウ です'
-    const result = __test__.buildAnnotations(text, dets, { showRedacted: true, nameInitial: true })
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const result = ann(text, dets, { showRedacted: true, nameInitial: true })
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].masked).toBe(true)
     // Should be initials like "T.T." (not placeholder)
@@ -239,8 +246,8 @@ describe('buildAnnotations', () => {
   it('nameInitial falls back to placeholder for non-name category', () => {
     const dets = [makeDet('1', 'test@mail.com', 'email', 'contact')]
     const text = '連絡先: test@mail.com'
-    const result = __test__.buildAnnotations(text, dets, { showRedacted: true, nameInitial: true })
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const result = ann(text, dets, { showRedacted: true, nameInitial: true })
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].text).toBe('[メール非公開]')
   })
@@ -248,8 +255,8 @@ describe('buildAnnotations', () => {
   it('multiple detections with length >= 2 all matched', () => {
     const dets = [makeDet('1', 'AB', 'email', 'contact'), makeDet('2', 'CD', 'phone', 'contact')]
     const text = 'AB and CD end'
-    const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const result = ann(text, dets, {})
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(2)
     expect(detSegs[0].text).toBe('AB')
     expect(detSegs[1].text).toBe('CD')
@@ -261,8 +268,8 @@ describe('buildAnnotations', () => {
       makeDet('2', '090-1234-5678', 'phone', 'contact', false),
     ]
     const text = '氏名: 田中太郎\n電話: 090-1234-5678'
-    const result = __test__.buildAnnotations(text, dets, { showRedacted: true })
-    const detSegs = result.filter((s: { type: string }) => s.type === 'det')
+    const result = ann(text, dets, { showRedacted: true })
+    const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(2)
     // 有効な検出はマスク
     expect(detSegs[0].masked).toBe(true)
