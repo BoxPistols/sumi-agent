@@ -83,6 +83,17 @@ interface AIRequestBody {
 
 const AI_REQUEST_TIMEOUT_MS = 90_000
 
+/** ローカルAIエンドポイントのSSRF防止: localhost/127.0.0.1のみ許可 */
+function isAllowedLocalEndpoint(endpoint: string): boolean {
+  try {
+    const url = new URL(endpoint)
+    const host = url.hostname.toLowerCase()
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '0.0.0.0'
+  } catch {
+    return false
+  }
+}
+
 interface OpenAIOutputPart {
   type?: string
   text?: string
@@ -174,22 +185,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const ip = getClientIP(request)
-  const rl = checkRateLimit(ip)
-  const rlHeaders = {
-    'X-RateLimit-Limit': String(rl.limit),
-    'X-RateLimit-Remaining': String(rl.remaining),
-  }
-  if (!rl.allowed) {
-    return NextResponse.json(
-      {
-        error:
-          '本日のAI利用回数上限（30回）に達しました。自身のAPIキーを設定すると無制限に利用できます。',
-      },
-      { status: 429, headers: rlHeaders },
-    )
-  }
-
   let body: AIRequestBody
   try {
     body = await request.json()
@@ -203,6 +198,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: 'Missing required fields: provider, model, messages' },
       { status: 400 },
+    )
+  }
+
+  // ユーザーが自身のAPIキーを使う場合はレートリミットをスキップ
+  const ip = getClientIP(request)
+  const hasUserKey = !!userKey
+  const rl = hasUserKey ? null : checkRateLimit(ip)
+  if (rl && !rl.allowed) {
+    return NextResponse.json(
+      {
+        error:
+          '本日のAI利用回数上限（30回）に達しました。自身のAPIキーを設定すると無制限に利用できます。',
+      },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': String(rl.limit),
+          'X-RateLimit-Remaining': String(rl.remaining),
+        },
+      },
     )
   }
 
@@ -267,9 +282,9 @@ export async function POST(request: NextRequest) {
       const text = extractOpenAIText(d)
       return NextResponse.json({
         text,
-        remaining: userKey ? undefined : rl.remaining,
-        limit: userKey ? undefined : rl.limit,
-        resetAt: userKey ? undefined : rl.resetAt,
+        remaining: rl?.remaining,
+        limit: rl?.limit,
+        resetAt: rl?.resetAt,
       })
     }
 
@@ -323,9 +338,9 @@ export async function POST(request: NextRequest) {
         ''
       return NextResponse.json({
         text,
-        remaining: userKey ? undefined : rl.remaining,
-        limit: userKey ? undefined : rl.limit,
-        resetAt: userKey ? undefined : rl.resetAt,
+        remaining: rl?.remaining,
+        limit: rl?.limit,
+        resetAt: rl?.resetAt,
       })
     }
 
@@ -368,9 +383,9 @@ export async function POST(request: NextRequest) {
           .join('') || ''
       return NextResponse.json({
         text,
-        remaining: userKey ? undefined : rl.remaining,
-        limit: userKey ? undefined : rl.limit,
-        resetAt: userKey ? undefined : rl.resetAt,
+        remaining: rl?.remaining,
+        limit: rl?.limit,
+        resetAt: rl?.resetAt,
       })
     }
 
@@ -378,6 +393,12 @@ export async function POST(request: NextRequest) {
       // Ollama / LM Studio 等 — OpenAI互換API
       const endpoint =
         body.localEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434/v1'
+      if (!isAllowedLocalEndpoint(endpoint)) {
+        return NextResponse.json(
+          { error: 'ローカルAIエンドポイントはlocalhost/127.0.0.1のみ許可されています' },
+          { status: 400 },
+        )
+      }
       const localModel = model === 'local-auto' ? undefined : model
 
       const msgs: Array<{ role: string; content: unknown }> = []
