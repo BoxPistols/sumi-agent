@@ -5569,7 +5569,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
               style={{
                   textAlign: 'center',
                   marginBottom: isLite ? 36 : 28,
-                  maxWidth: isLite ? 600 : 900,
+                  maxWidth: isLite ? 820 : 1200,
                   margin: isLite ? '0 auto 36px' : '0 auto 28px',
               }}
           >
@@ -5616,7 +5616,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   flexDirection: isLite ? 'column' : undefined,
                   gridTemplateColumns: isLite ? undefined : '1fr 1fr',
                   gap: 24,
-                  maxWidth: isLite ? 560 : 1200,
+                  maxWidth: isLite ? 720 : 1200,
                   margin: '0 auto',
                   alignItems: isLite ? 'stretch' : 'start',
               }}
