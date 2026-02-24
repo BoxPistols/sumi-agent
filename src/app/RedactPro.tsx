@@ -652,7 +652,7 @@ ${truncated}`
 function detectCustomKeywords(text,keywords){
   const r=[];const seen=new Set();
   for(const kw of keywords){
-    if(!kw||kw.length<1)continue;
+    if(!kw||kw.length<2)continue;
     let idx=0;
     while(true){const p=text.indexOf(kw,idx);if(p===-1)break;const k=`custom:${kw}`;if(!seen.has(k)){seen.add(k);r.push({id:`ck_${p}`,type:"custom_keyword",label:"カスタム指定",category:"custom",value:kw,source:"regex",confidence:1.0,enabled:true});}idx=p+kw.length;}
   }
@@ -688,7 +688,7 @@ function applyRedaction(text,dets,opts){
   let r=text;
   const s=[...dets].filter(d=>d.enabled).sort((a,b)=>(b.value?.length||0)-(a.value?.length||0));
   for(const d of s){
-    if(!d.value)continue;
+    if(!d.value||d.value.length<2)continue;
     const isNameType=d.category==="name";
     const isAddrType=d.type==="address";
     let replacement;
@@ -1548,7 +1548,7 @@ async function scrapeURL(url,onProgress,customProxy){
   return{text,format:`Web (${domain})`,fileName:domain?`${domain}_scraped.html`:"web_scraped.html",pageCount:null};
 }
 
-async function parseXLSX(f){const ab=await readBuf(f);const wb=XLSX.read(ab,{type:"array",codepage:932,raw:false,cellDates:true});let t="";for(const sn of wb.SheetNames){const csv=XLSX.utils.sheet_to_csv(wb.Sheets[sn],{FS:" | ",blankrows:false});const cl=csv.split("\n").filter(l=>l.replace(/[\s|]/g,"").length>0).join("\n");if(cl)t+=`--- Sheet: ${sn} ---\n${cl}\n\n`;}return{text:t,pageCount:wb.SheetNames.length,format:"Excel"};}
+async function parseXLSX(f){const ab=await readBuf(f);const wb=XLSX.read(ab,{type:"array",codepage:932,raw:false,cellDates:true});let t="";const xlMeta=[];for(const sn of wb.SheetNames){const aoa=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,blankrows:false});if(!aoa||aoa.length===0)continue;const lines=aoa.map(row=>Array.isArray(row)?row.map(c=>String(c??"").trim()).join(" | "):"").filter(l=>l.replace(/[\s|]/g,"").length>0);if(lines.length>0){t+=`--- Sheet: ${sn} ---\n${lines.join("\n")}\n\n`;xlMeta.push({sheetName:sn,aoa:aoa.map(row=>Array.isArray(row)?row.map(c=>String(c??"").trim()):[])}); }}return{text:t,pageCount:wb.SheetNames.length,format:"Excel",xlMeta};}
 async function parseCSV(f){const ab=await readBuf(f);const{text,encoding}=decodeText(ab);const p=Papa.parse(text,{header:false,skipEmptyLines:true});return{text:p.data.filter(r=>r.some(c=>c.trim())).map(r=>r.join(" | ")).join("\n"),pageCount:null,format:`CSV (${encoding})`};}
 async function parseTXT(f){const ab=await readBuf(f);const{text,encoding}=decodeText(ab);return{text,pageCount:null,format:`Text (${encoding})`};}
 async function parseMD(f){const ab=await readBuf(f);const{text,encoding}=decodeText(ab);return{text,pageCount:null,format:`Markdown (${encoding})`};}
@@ -1776,7 +1776,7 @@ function arrayBufferToBase64(buf){
 }
 
 // ═══ Export generators ═══
-function generateExport(rawContent,format,baseName){
+function generateExport(rawContent,format,baseName,meta){
   const bom="\uFEFF",ts=new Date().toLocaleString("ja-JP");
   // Strip page/sheet markers from export output
   const content=rawContent.replace(/^-{2,}\s*(?:Page\s+\d+|Sheet:\s*.+)\s*-{2,}\s*\n?/gm,"").replace(/^\n+/,"");
@@ -1785,39 +1785,49 @@ function generateExport(rawContent,format,baseName){
     case"md":return{data:bom+`# ${baseName}\n\n> Exported: ${ts}\n\n---\n\n${content}`,mime:"text/markdown;charset=utf-8",name:baseName+".md"};
     case"csv":
     case"xlsx":{
-      // コンテンツ構造を自動判定: パイプ区切りテーブル vs KVテキスト
-      const allLines=content.split("\n").map(l=>l.trim()).filter(l=>l);
-      const pipeLines=allLines.filter(l=>l.includes(" | "));
-      const isTabular=pipeLines.length>=2&&pipeLines.length/allLines.length>=0.3;
-
-      let aoa; // Array of Arrays
-      if(isTabular){
-        // テーブルモード: パイプ区切りの1行目をヘッダー、残りをデータ
+      let aoa;
+      let isTabular=false;
+      const xlm=meta?.xlMeta;
+      if(xlm&&xlm.length>0&&format==="xlsx"){
+        // セル構造保持モード: xlMetaから直接aoa構築
         aoa=[];
-        let headerSet=false;
-        for(const line of allLines){
-          if(line.includes(" | ")){
-            const cells=line.split(" | ").map(c=>c.trim());
-            if(!headerSet){aoa.push(cells);headerSet=true;}
-            else{aoa.push(cells);}
-          }else{
-            // パイプなし行（セクション見出し等）: 全カラム結合相当で1列目に
-            const colCount=aoa.length>0?aoa[0].length:2;
-            const row=Array(colCount).fill("");
-            row[0]=line;
-            aoa.push(row);
+        for(const sheet of xlm){
+          for(const row of sheet.aoa){
+            aoa.push(row.map(c=>String(c??"")));
           }
         }
+        isTabular=true;
       }else{
-        // KVモード: 見出し/キー:値/リスト を2カラムに
-        aoa=[["項目","内容"]];
-        for(const line of allLines){
-          if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(line)){aoa.push([line,""]);continue;}
-          const kv=line.match(/^[-・]\s*(.+?)\s*[：:]\s*(.+)$/)||line.match(/^(.+?)\s*[：:]\s*(.+)$/);
-          if(kv&&kv[1].length<=30){aoa.push([kv[1].replace(/^[-・]\s*/,""),kv[2]]);continue;}
-          if(line.includes(" | ")){aoa.push(line.split(" | ").map(p=>p.trim()));continue;}
-          if(/^[-・]/.test(line)){aoa.push(["",line.replace(/^[-・]\s*/,"")]);continue;}
-          aoa.push(["",line]);
+        // フォールバック: パイプ区切りテキストから再構成
+        const allLines=content.split("\n").map(l=>l.trim()).filter(l=>l);
+        const pipeLines=allLines.filter(l=>l.includes(" | "));
+        isTabular=pipeLines.length>=2&&pipeLines.length/allLines.length>=0.3;
+
+        if(isTabular){
+          aoa=[];
+          let headerSet=false;
+          for(const line of allLines){
+            if(line.includes(" | ")){
+              const cells=line.split(" | ").map(c=>c.trim());
+              if(!headerSet){aoa.push(cells);headerSet=true;}
+              else{aoa.push(cells);}
+            }else{
+              const colCount=aoa.length>0?aoa[0].length:2;
+              const row=Array(colCount).fill("");
+              row[0]=line;
+              aoa.push(row);
+            }
+          }
+        }else{
+          aoa=[["項目","内容"]];
+          for(const line of allLines){
+            if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(line)){aoa.push([line,""]);continue;}
+            const kv=line.match(/^[-・]\s*(.+?)\s*[：:]\s*(.+)$/)||line.match(/^(.+?)\s*[：:]\s*(.+)$/);
+            if(kv&&kv[1].length<=30){aoa.push([kv[1].replace(/^[-・]\s*/,""),kv[2]]);continue;}
+            if(line.includes(" | ")){aoa.push(line.split(" | ").map(p=>p.trim()));continue;}
+            if(/^[-・]/.test(line)){aoa.push(["",line.replace(/^[-・]\s*/,"")]);continue;}
+            aoa.push(["",line]);
+          }
         }
       }
 
@@ -4204,7 +4214,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable,m
 
   const displayContent=view==='edit'?editedContent:content;
   const handleCopy=()=>{navigator.clipboard.writeText(displayContent).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});};
-  const handleDownload=()=>{const ex=generateExport(displayContent,fmt,baseName);if(ex.isPrintPdf){triggerDownload(ex);}else triggerDownload(ex);};
+  const handleDownload=()=>{const ex=generateExport(displayContent,fmt,baseName,meta);if(ex.isPrintPdf){triggerDownload(ex);}else triggerDownload(ex);};
   const lines=displayContent.split("\n").length;const chars=displayContent.length;
   const curFmt=EXPORT_FORMATS.find(f=>f.id===fmt);
 
@@ -4257,42 +4267,54 @@ tr:nth-child(even){background:#f9fafb}
 </style></head><body>${table}</body></html>`;
     }
     if(fmt==="xlsx"){
-      // コンテンツ構造を自動判定: パイプ区切りテーブル vs KVテキスト
-      const xlLines=displayContent.split("\n").map(l=>l.trim()).filter(l=>l);
-      const xlPipeLines=xlLines.filter(l=>l.includes(" | "));
-      const xlIsTabular=xlPipeLines.length>=2&&xlPipeLines.length/xlLines.length>=0.3;
       let table="";
-      if(xlIsTabular){
-        // テーブルモード: パイプ区切りの1行目をヘッダーに
-        let headerSet=false;
-        for(const line of xlLines){
-          if(line.includes(" | ")){
-            const cells=line.split(" | ").map(c=>c.trim());
-            if(!headerSet){
-              table+=`<table><thead><tr>${cells.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>`;
-              headerSet=true;
-            }else{
-              table+=`<tr>${cells.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`;
-            }
-          }else{
-            // 非パイプ行はフル幅で表示
-            if(!headerSet){table+=`<table><tbody>`;headerSet=true;}
-            const colCount=xlPipeLines.length>0?xlPipeLines[0].split(" | ").length:2;
-            table+=`<tr class='sec'><td colspan='${colCount}'>${esc(line)}</td></tr>`;
+      const xlm=meta?.xlMeta;
+      if(xlm&&xlm.length>0){
+        // セル構造保持モード: xlMetaから直接テーブル生成
+        for(const sheet of xlm){
+          if(sheet.aoa.length===0)continue;
+          if(xlm.length>1)table+=`<div style="padding:6px 10px;background:#d0d5dd;font-weight:700;font-size:9pt">${esc(sheet.sheetName)}</div>`;
+          table+=`<table><thead><tr>${sheet.aoa[0].map(c=>`<th>${esc(String(c??""))}</th>`).join("")}</tr></thead><tbody>`;
+          for(let i=1;i<sheet.aoa.length;i++){
+            const row=sheet.aoa[i];
+            table+=`<tr>${row.map(c=>`<td>${esc(String(c??""))}</td>`).join("")}</tr>`;
           }
+          table+="</tbody></table>";
         }
-        table+="</tbody></table>";
       }else{
-        // KVモード
-        table="<table><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody>";
-        for(const t of xlLines){
-          if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(t)){table+=`<tr class='sec'><td colspan='2'>${esc(t)}</td></tr>`;continue;}
-          const kv=t.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||t.match(/^(.+?)\s*[：:]\s+(.+)$/);
-          if(kv&&kv[1].length<=30){table+=`<tr><td class='k'>${esc(kv[1].replace(/^[-・]\s*/,""))}</td><td>${esc(kv[2])}</td></tr>`;continue;}
-          if(t.includes(" | ")){table+=`<tr>${t.split(" | ").map(p=>`<td>${esc(p.trim())}</td>`).join("")}</tr>`;continue;}
-          table+=`<tr><td></td><td>${esc(t)}</td></tr>`;
+        // フォールバック: パイプ区切りテキストからテーブル再構成
+        const xlLines=displayContent.split("\n").map(l=>l.trim()).filter(l=>l);
+        const xlPipeLines=xlLines.filter(l=>l.includes(" | "));
+        const xlIsTabular=xlPipeLines.length>=2&&xlPipeLines.length/xlLines.length>=0.3;
+        if(xlIsTabular){
+          let headerSet=false;
+          for(const line of xlLines){
+            if(line.includes(" | ")){
+              const cells=line.split(" | ").map(c=>c.trim());
+              if(!headerSet){
+                table+=`<table><thead><tr>${cells.map(c=>`<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>`;
+                headerSet=true;
+              }else{
+                table+=`<tr>${cells.map(c=>`<td>${esc(c)}</td>`).join("")}</tr>`;
+              }
+            }else{
+              if(!headerSet){table+=`<table><tbody>`;headerSet=true;}
+              const colCount=xlPipeLines.length>0?xlPipeLines[0].split(" | ").length:2;
+              table+=`<tr class='sec'><td colspan='${colCount}'>${esc(line)}</td></tr>`;
+            }
+          }
+          table+="</tbody></table>";
+        }else{
+          table="<table><thead><tr><th>項目</th><th>内容</th></tr></thead><tbody>";
+          for(const t of xlLines){
+            if(/^(?:\(\d+\)\s*|#{1,3}\s+|【.+】)/.test(t)){table+=`<tr class='sec'><td colspan='2'>${esc(t)}</td></tr>`;continue;}
+            const kv=t.match(/^[-・]\s*(.+?)\s*[：:]\s+(.+)$/)||t.match(/^(.+?)\s*[：:]\s+(.+)$/);
+            if(kv&&kv[1].length<=30){table+=`<tr><td class='k'>${esc(kv[1].replace(/^[-・]\s*/,""))}</td><td>${esc(kv[2])}</td></tr>`;continue;}
+            if(t.includes(" | ")){table+=`<tr>${t.split(" | ").map(p=>`<td>${esc(p.trim())}</td>`).join("")}</tr>`;continue;}
+            table+=`<tr><td></td><td>${esc(t)}</td></tr>`;
+          }
+          table+="</tbody></table>";
         }
-        table+="</tbody></table>";
       }
       return`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><style>
 body{font-family:'Calibri','Noto Sans JP',sans-serif;font-size:10pt;margin:0;padding:0;background:#fff}
@@ -5133,7 +5155,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
   useEffect(()=>{(async()=>{try{const v=await safeGet("rp_custom_keywords");if(v){const parsed=JSON.parse(v);if(Array.isArray(parsed))setCustomKeywords(parsed);}}catch(e){}finally{kwLoadedRef.current=true;}})();},[]);
   useEffect(()=>{if(kwLoadedRef.current)storage.set("rp_custom_keywords",JSON.stringify(customKeywords));},[customKeywords]);
 
-  const processText=useCallback(async(text,name,format,pageCount,fileSize,rawText,sparsePages,pdfData)=>{
+  const processText=useCallback(async(text,name,format,pageCount,fileSize,rawText,sparsePages,pdfData,xlMeta)=>{
     let workText=text;
     let originalRaw=rawText||text;
     const runModels = aiOn ? getModelsForRun(settings) : null
@@ -5260,11 +5282,11 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
     setStage(aiOn?7:4);
     setTimeout(()=>{
       const analysisMs=startAtRef.current?Date.now()-startAtRef.current:0;
-      onAnalyze({file_name:name,file_format:format,page_count:pageCount,text_preview:workText.slice(0,8000),fullText:workText,rawText:originalRaw,sparsePageCount:sparsePages?.length||0,detections:wm,stats:{total:wm.length,regex:wm.filter(d=>d.source==="regex").length,dict:wm.filter(d=>d.source==="dict").length,ai:wm.filter(d=>d.source==="ai").length,heuristic:wm.filter(d=>d.source==="heuristic").length},fileSize,isDemo:fileSize==="DEMO",analysis_ms:analysisMs,maskOpts:{keepPrefecture:!!mask.keepPrefecture,nameInitial:!!mask.nameInitial}});
+      onAnalyze({file_name:name,file_format:format,page_count:pageCount,text_preview:workText.slice(0,8000),fullText:workText,rawText:originalRaw,sparsePageCount:sparsePages?.length||0,detections:wm,stats:{total:wm.length,regex:wm.filter(d=>d.source==="regex").length,dict:wm.filter(d=>d.source==="dict").length,ai:wm.filter(d=>d.source==="ai").length,heuristic:wm.filter(d=>d.source==="heuristic").length},fileSize,isDemo:fileSize==="DEMO",analysis_ms:analysisMs,maskOpts:{keepPrefecture:!!mask.keepPrefecture,nameInitial:!!mask.nameInitial},xlMeta:xlMeta||null});
     },200);
   },[onAnalyze,mask,settings,aiOn,customKeywords]);
 
-  const handleFile=useCallback(async(file)=>{if(!file)return;startAtRef.current=Date.now();setElapsedMs(0);setAiStatus("");setLoading(true);setError(null);setFileName(file.name);setStage(0);try{setStage(1);const p=await parseFile(file,(msg)=>setAiStatus(msg));await processText(p.text,file.name,p.format,p.pageCount,`${(file.size/1024).toFixed(1)} KB`,p.text,p.sparsePages,p.pdfData);}catch(e){setError(e.message);setLoading(false);}},[processText]);
+  const handleFile=useCallback(async(file)=>{if(!file)return;startAtRef.current=Date.now();setElapsedMs(0);setAiStatus("");setLoading(true);setError(null);setFileName(file.name);setStage(0);try{setStage(1);const p=await parseFile(file,(msg)=>setAiStatus(msg));await processText(p.text,file.name,p.format,p.pageCount,`${(file.size/1024).toFixed(1)} KB`,p.text,p.sparsePages,p.pdfData,p.xlMeta);}catch(e){setError(e.message);setLoading(false);}},[processText]);
   const handleDemo=useCallback(async(type)=>{const s=SAMPLES[type];if(!s)return;startAtRef.current=Date.now();setElapsedMs(0);setAiStatus("");setError(null);setLoading(true);setFileName(s.name);setStage(0);setTimeout(async()=>{setStage(1);setTimeout(async()=>{await processText(s.text,s.name,s.format,s.pageCount,"DEMO");},80);},80);},[processText]);
   const[inputMode,setInputMode]=useState("file"); // "file"|"url"|"paste"
   const[urlValue,setUrlValue]=useState("");const[pasteValue,setPasteValue]=useState("");const[urlFetching,setUrlFetching]=useState(false);
@@ -8403,7 +8425,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   content: buildTxt(),
                                   baseName,
                                   editable: true,
-                                  meta: { fileName: data.file_name, maskCount: enabledCount },
+                                  meta: { fileName: data.file_name, maskCount: enabledCount, xlMeta: data.xlMeta },
                                   onContentChange: (newContent) => {
                                       setPreview(prev => prev ? {...prev, content: newContent} : null)
                                   },

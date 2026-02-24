@@ -48,7 +48,7 @@ export function applyRedaction(text: string, dets: Detection[], opts?: Redaction
     .sort((a, b) => (b.value?.length || 0) - (a.value?.length || 0))
 
   for (const d of s) {
-    if (!d.value) continue
+    if (!d.value || d.value.length < 2) continue
     const isNameType = d.category === 'name'
     const isAddrType = d.type === 'address'
     let replacement: string

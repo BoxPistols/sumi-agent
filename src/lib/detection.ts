@@ -1193,7 +1193,7 @@ export function detectJapaneseNames(text: string): Detection[] {
       if (!matched) {
         const before30 = text.slice(Math.max(0, p - 30), p)
         const hasLabel =
-          /(?:氏名|名前|担当|著者|記入者|申請者|連絡先|責任者|作成者|報告者|代表者|上司|部長|課長|主任|対応者)[：:・\s\u3000/|]*$/.test(
+          /(?:氏名|名前|担当|著者|記入者|申請者|連絡先|責任者|作成者|報告者|代表者|上司|部長|課長|主任|対応者)[：:・\s\u3000/]*$/.test(
             before30,
           )
         if (hasLabel) {
@@ -1226,7 +1226,7 @@ export function detectJapaneseNames(text: string): Detection[] {
 
   // 2. Label-based context detection
   const lre =
-    /(?:氏名|名前|担当者?|著者|記入者|申請者|連絡先|責任者|作成者|報告者|代表者|上司|所属長|管理者|承認者)\s*[：:・\s\u3000/|｜\t]\s*/g
+    /(?:氏名|名前|担当者?|著者|記入者|申請者|連絡先|責任者|作成者|報告者|代表者|上司|所属長|管理者|承認者)\s*[：:・\s\u3000/\t]\s*/g
   let lm: RegExpExecArray | null
   while ((lm = lre.exec(text)) !== null) {
     const afterLabel = text.slice(lm.index + lm[0].length, lm.index + lm[0].length + 16)
