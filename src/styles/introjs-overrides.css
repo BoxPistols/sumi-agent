@@ -133,63 +133,63 @@
 
 /* === ライトモード（data-theme="light" のみ） === */
 
-[data-theme="light"] .introjs-tooltip {
+[data-theme='light'] .introjs-tooltip {
   background: #fff !important;
   color: #334155 !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
 }
 
-[data-theme="light"] .introjs-tooltiptext {
+[data-theme='light'] .introjs-tooltiptext {
   color: #475569 !important;
 }
 
-[data-theme="light"] .introjs-tooltip-title {
+[data-theme='light'] .introjs-tooltip-title {
   color: #0f172a !important;
 }
 
-[data-theme="light"] .introjs-tooltipbuttons {
+[data-theme='light'] .introjs-tooltipbuttons {
   border-top-color: #e2e8f0 !important;
 }
 
-[data-theme="light"] .introjs-button {
+[data-theme='light'] .introjs-button {
   border-color: #d1d5db !important;
   color: #475569 !important;
 }
 
-[data-theme="light"] .introjs-button:hover {
+[data-theme='light'] .introjs-button:hover {
   background: #f1f5f9 !important;
   color: #0f172a !important;
 }
 
-[data-theme="light"] .introjs-skipbutton {
+[data-theme='light'] .introjs-skipbutton {
   color: #94a3b8 !important;
 }
 
-[data-theme="light"] .introjs-skipbutton:hover {
+[data-theme='light'] .introjs-skipbutton:hover {
   color: #475569 !important;
 }
 
-[data-theme="light"] .introjs-progress {
+[data-theme='light'] .introjs-progress {
   background: #e2e8f0 !important;
 }
 
-[data-theme="light"] .introjs-helperLayer {
+[data-theme='light'] .introjs-helperLayer {
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4) !important;
 }
 
-[data-theme="light"] .introjs-arrow.top {
+[data-theme='light'] .introjs-arrow.top {
   border-bottom-color: #fff !important;
 }
 
-[data-theme="light"] .introjs-arrow.bottom {
+[data-theme='light'] .introjs-arrow.bottom {
   border-top-color: #fff !important;
 }
 
-[data-theme="light"] .introjs-arrow.left {
+[data-theme='light'] .introjs-arrow.left {
   border-right-color: #fff !important;
 }
 
-[data-theme="light"] .introjs-arrow.right {
+[data-theme='light'] .introjs-arrow.right {
   border-left-color: #fff !important;
 }

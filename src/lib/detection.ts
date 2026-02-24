@@ -104,7 +104,8 @@ export const REGEX_PATTERNS: RegexPattern[] = [
     id: 'sns_github',
     label: 'GitHubアカウント',
     category: 'contact',
-    regex: /(?:GitHub|Github|github|ギットハブ)\s*[：:・\s]\s*@?([a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38})/gi,
+    regex:
+      /(?:GitHub|Github|github|ギットハブ)\s*[：:・\s]\s*@?([a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38})/gi,
     group: 1,
   },
   {
@@ -118,7 +119,8 @@ export const REGEX_PATTERNS: RegexPattern[] = [
     id: 'sns_instagram',
     label: 'Instagramアカウント',
     category: 'contact',
-    regex: /(?:Instagram|instagram|インスタグラム)\s*[：:・\s]\s*@([a-zA-Z0-9_](?:[a-zA-Z0-9_.]{0,28}[a-zA-Z0-9_])?)/gi,
+    regex:
+      /(?:Instagram|instagram|インスタグラム)\s*[：:・\s]\s*@([a-zA-Z0-9_](?:[a-zA-Z0-9_.]{0,28}[a-zA-Z0-9_])?)/gi,
     group: 1,
   },
   {
@@ -442,8 +444,7 @@ export function detectRegex(text: string): Detection[] {
         const mEnd = m.index + m[0].length
         const before = text.slice(Math.max(0, mStart - 20), mStart)
         // Skip if part of email address
-        if (/[a-zA-Z0-9._%+\-]@/.test(before) && /\.\w+/.test(text.slice(mEnd, mEnd + 10)))
-          continue
+        if (/[a-zA-Z0-9._%+\-]@/.test(before) && /\.\w+/.test(text.slice(mEnd, mEnd + 10))) continue
         // Skip if part of URL (already detected by url pattern)
         if (/https?:\/\/\S*$/.test(before)) continue
       }

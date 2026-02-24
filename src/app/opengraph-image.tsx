@@ -45,19 +45,69 @@ export default async function OGImage() {
             gap: 10,
           }}
         >
-          <div style={{ width: '100%', height: 10, background: '#1E293B', borderRadius: 3, opacity: 0.85, display: 'flex' }} />
-          <div style={{ width: '75%', height: 7, background: '#CBD5E1', borderRadius: 3, display: 'flex' }} />
-          <div style={{ width: '100%', height: 10, background: '#1E293B', borderRadius: 3, opacity: 0.85, display: 'flex' }} />
-          <div style={{ width: '60%', height: 7, background: '#CBD5E1', borderRadius: 3, display: 'flex' }} />
+          <div
+            style={{
+              width: '100%',
+              height: 10,
+              background: '#1E293B',
+              borderRadius: 3,
+              opacity: 0.85,
+              display: 'flex',
+            }}
+          />
+          <div
+            style={{
+              width: '75%',
+              height: 7,
+              background: '#CBD5E1',
+              borderRadius: 3,
+              display: 'flex',
+            }}
+          />
+          <div
+            style={{
+              width: '100%',
+              height: 10,
+              background: '#1E293B',
+              borderRadius: 3,
+              opacity: 0.85,
+              display: 'flex',
+            }}
+          />
+          <div
+            style={{
+              width: '60%',
+              height: 7,
+              background: '#CBD5E1',
+              borderRadius: 3,
+              display: 'flex',
+            }}
+          />
         </div>
       </div>
 
       {/* Right: Text */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ fontSize: 64, fontWeight: 800, color: '#F8FAFC', lineHeight: 1.1, display: 'flex' }}>
+        <div
+          style={{
+            fontSize: 64,
+            fontWeight: 800,
+            color: '#F8FAFC',
+            lineHeight: 1.1,
+            display: 'flex',
+          }}
+        >
           RedactPro
         </div>
-        <div style={{ fontSize: 28, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, display: 'flex' }}>
+        <div
+          style={{
+            fontSize: 28,
+            fontWeight: 700,
+            color: '#94A3B8',
+            lineHeight: 1.4,
+            display: 'flex',
+          }}
+        >
           AI個人情報マスキングツール
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
@@ -83,7 +133,9 @@ export default async function OGImage() {
     </div>,
     {
       ...size,
-      fonts: [{ name: FONT_FAMILY, data: fontData, style: 'normal' as const, weight: 700 as const }],
+      fonts: [
+        { name: FONT_FAMILY, data: fontData, style: 'normal' as const, weight: 700 as const },
+      ],
     },
   )
 }

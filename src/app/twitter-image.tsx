@@ -44,20 +44,60 @@ export default async function TwitterImage() {
             gap: 8,
           }}
         >
-          <div style={{ width: '100%', height: 8, background: '#1E293B', borderRadius: 2, opacity: 0.85, display: 'flex' }} />
-          <div style={{ width: '75%', height: 6, background: '#CBD5E1', borderRadius: 2, display: 'flex' }} />
-          <div style={{ width: '100%', height: 8, background: '#1E293B', borderRadius: 2, opacity: 0.85, display: 'flex' }} />
-          <div style={{ width: '60%', height: 6, background: '#CBD5E1', borderRadius: 2, display: 'flex' }} />
+          <div
+            style={{
+              width: '100%',
+              height: 8,
+              background: '#1E293B',
+              borderRadius: 2,
+              opacity: 0.85,
+              display: 'flex',
+            }}
+          />
+          <div
+            style={{
+              width: '75%',
+              height: 6,
+              background: '#CBD5E1',
+              borderRadius: 2,
+              display: 'flex',
+            }}
+          />
+          <div
+            style={{
+              width: '100%',
+              height: 8,
+              background: '#1E293B',
+              borderRadius: 2,
+              opacity: 0.85,
+              display: 'flex',
+            }}
+          />
+          <div
+            style={{
+              width: '60%',
+              height: 6,
+              background: '#CBD5E1',
+              borderRadius: 2,
+              display: 'flex',
+            }}
+          />
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ fontSize: 52, fontWeight: 800, color: '#F8FAFC', display: 'flex' }}>RedactPro</div>
-        <div style={{ fontSize: 24, fontWeight: 700, color: '#94A3B8', display: 'flex' }}>AI個人情報マスキングツール</div>
+        <div style={{ fontSize: 52, fontWeight: 800, color: '#F8FAFC', display: 'flex' }}>
+          RedactPro
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: '#94A3B8', display: 'flex' }}>
+          AI個人情報マスキングツール
+        </div>
       </div>
     </div>,
     {
       ...size,
-      fonts: [{ name: FONT_FAMILY, data: fontData, style: 'normal' as const, weight: 700 as const }],
+      fonts: [
+        { name: FONT_FAMILY, data: fontData, style: 'normal' as const, weight: 700 as const },
+      ],
     },
   )
 }

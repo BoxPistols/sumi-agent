@@ -24,15 +24,12 @@ const RATE_WINDOW = 24 * 60 * 60_000
 if (typeof globalThis !== 'undefined') {
   const existing = (globalThis as Record<string, unknown>).__pdfRateLimitCleanup
   if (!existing) {
-    ;(globalThis as Record<string, unknown>).__pdfRateLimitCleanup = setInterval(
-      () => {
-        const now = Date.now()
-        for (const [key, entry] of rateMap) {
-          if (now > entry.resetAt) rateMap.delete(key)
-        }
-      },
-      5 * 60_000,
-    )
+    ;(globalThis as Record<string, unknown>).__pdfRateLimitCleanup = setInterval(() => {
+      const now = Date.now()
+      for (const [key, entry] of rateMap) {
+        if (now > entry.resetAt) rateMap.delete(key)
+      }
+    }, 5 * 60_000)
   }
 }
 

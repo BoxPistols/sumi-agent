@@ -68,7 +68,14 @@ describe('generatePDFHTML', () => {
 
 describe('buildAnnotations', () => {
   const makeDet = (id: string, value: string, type: string, category: string, enabled = true) => ({
-    id, value, type, category, source: 'regex', enabled, confidence: 0.9, label: type,
+    id,
+    value,
+    type,
+    category,
+    source: 'regex',
+    enabled,
+    confidence: 0.9,
+    label: type,
   })
 
   it('returns single text segment when no detections', () => {
@@ -101,7 +108,7 @@ describe('buildAnnotations', () => {
     ]
     const text = '氏名: 田中太郎\n電話: 090-1234-5678'
     const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter(s => s.type === 'det')
+    const detSegs = result.filter((s) => s.type === 'det')
     expect(detSegs).toHaveLength(2)
     expect(detSegs[0].text).toBe('田中太郎')
     expect(detSegs[1].text).toBe('090-1234-5678')
@@ -114,7 +121,7 @@ describe('buildAnnotations', () => {
     ]
     const text = '住所: 東京都港区六本木'
     const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter(s => s.type === 'det')
+    const detSegs = result.filter((s) => s.type === 'det')
     // 長い方（東京都港区）が優先される
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].text).toBe('東京都港区')
@@ -125,7 +132,7 @@ describe('buildAnnotations', () => {
     const dets = [makeDet('1', 'test@mail.com', 'email', 'contact', true)]
     const text = '連絡先: test@mail.com'
     const result = __test__.buildAnnotations(text, dets, { showRedacted: true })
-    const detSegs = result.filter(s => s.type === 'det')
+    const detSegs = result.filter((s) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].masked).toBe(true)
     expect(detSegs[0].text).toBe('[メール非公開]')
@@ -144,9 +151,9 @@ describe('buildAnnotations', () => {
     const dets = [makeDet('1', 'foo', 'email', 'contact')]
     const text = 'foo bar foo baz foo'
     const result = __test__.buildAnnotations(text, dets, {})
-    const detSegs = result.filter(s => s.type === 'det')
+    const detSegs = result.filter((s) => s.type === 'det')
     expect(detSegs).toHaveLength(3)
-    detSegs.forEach(s => expect(s.text).toBe('foo'))
+    detSegs.forEach((s) => expect(s.text).toBe('foo'))
   })
 
   it('filters out short detection values (length < 2)', () => {
@@ -196,7 +203,10 @@ describe('buildAnnotations', () => {
   it('keepPrefecture preserves prefecture in address mask', () => {
     const dets = [makeDet('1', '東京都港区六本木1-2-3', 'address', 'address')]
     const text = '住所: 東京都港区六本木1-2-3'
-    const result = __test__.buildAnnotations(text, dets, { showRedacted: true, keepPrefecture: true })
+    const result = __test__.buildAnnotations(text, dets, {
+      showRedacted: true,
+      keepPrefecture: true,
+    })
     const detSegs = result.filter((s: { type: string }) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].masked).toBe(true)
@@ -206,7 +216,10 @@ describe('buildAnnotations', () => {
   it('keepPrefecture falls back for non-prefecture address', () => {
     const dets = [makeDet('1', '六本木1-2-3', 'address', 'address')]
     const text = '住所: 六本木1-2-3'
-    const result = __test__.buildAnnotations(text, dets, { showRedacted: true, keepPrefecture: true })
+    const result = __test__.buildAnnotations(text, dets, {
+      showRedacted: true,
+      keepPrefecture: true,
+    })
     const detSegs = result.filter((s: { type: string }) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].text).toBe('[住所非公開]')
@@ -233,10 +246,7 @@ describe('buildAnnotations', () => {
   })
 
   it('multiple detections with length >= 2 all matched', () => {
-    const dets = [
-      makeDet('1', 'AB', 'email', 'contact'),
-      makeDet('2', 'CD', 'phone', 'contact'),
-    ]
+    const dets = [makeDet('1', 'AB', 'email', 'contact'), makeDet('2', 'CD', 'phone', 'contact')]
     const text = 'AB and CD end'
     const result = __test__.buildAnnotations(text, dets, {})
     const detSegs = result.filter((s: { type: string }) => s.type === 'det')

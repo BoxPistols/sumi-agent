@@ -34,13 +34,13 @@ Claude Code は Anthropic が提供する **CLI ベースの AI コーディン�
 
 ### VS Code / Cursor との違い
 
-| | Claude Code (CLI) | Cursor / Copilot (IDE) |
-|---|---|---|
-| **動作環境** | ターミナル | エディタ内 |
-| **操作単位** | プロジェクト全体 | 開いているファイル中心 |
-| **自律性** | 複数ファイル横断で自律作業 | 補完・部分修正が中心 |
-| **Git操作** | commit/push/PR作成まで一貫 | 別途ターミナルが必要 |
-| **設定方式** | CLAUDE.md + settings.json | .cursorrules 等 |
+|              | Claude Code (CLI)          | Cursor / Copilot (IDE) |
+| ------------ | -------------------------- | ---------------------- |
+| **動作環境** | ターミナル                 | エディタ内             |
+| **操作単位** | プロジェクト全体           | 開いているファイル中心 |
+| **自律性**   | 複数ファイル横断で自律作業 | 補完・部分修正が中心   |
+| **Git操作**  | commit/push/PR作成まで一貫 | 別途ターミナルが必要   |
+| **設定方式** | CLAUDE.md + settings.json  | .cursorrules 等        |
 
 ### 基本的な使い方
 
@@ -120,11 +120,11 @@ Claude Code の設定は **3 層の階層** で管理される。下位が上位
 
 ### 配置場所と読み込み順
 
-| 場所 | 用途 | git管理 |
-|------|------|---------|
-| `~/.claude/CLAUDE.md` | 全プロジェクト共通ルール | No |
-| `<repo>/CLAUDE.md` | プロジェクト固有ルール | Yes |
-| `<repo>/docs/*.md` | CLAUDE.md から `@docs/FILE.md` で参照 | Yes |
+| 場所                  | 用途                                  | git管理 |
+| --------------------- | ------------------------------------- | ------- |
+| `~/.claude/CLAUDE.md` | 全プロジェクト共通ルール              | No      |
+| `<repo>/CLAUDE.md`    | プロジェクト固有ルール                | Yes     |
+| `<repo>/docs/*.md`    | CLAUDE.md から `@docs/FILE.md` で参照 | Yes     |
 
 ### 効果的な CLAUDE.md の書き方
 
@@ -132,14 +132,17 @@ Claude Code の設定は **3 層の階層** で管理される。下位が上位
 
 ```markdown
 ## 重要ルール
-- マージ・デプロイは必ず承認を得てから実行する    ← 具体的な禁止事項
-- 「push」と言ったら commit→push を一連で完了     ← 期待する動作を明示
+
+- マージ・デプロイは必ず承認を得てから実行する ← 具体的な禁止事項
+- 「push」と言ったら commit→push を一連で完了 ← 期待する動作を明示
 
 ## コマンド
-| `pnpm test` | テスト実行 |                         ← よく使うコマンドを表にする
+
+| `pnpm test` | テスト実行 | ← よく使うコマンドを表にする
 
 ## デバッグ指針
-- 2回失敗したら別アプローチを検討                   ← 判断基準を数値で示す
+
+- 2回失敗したら別アプローチを検討 ← 判断基準を数値で示す
 ```
 
 #### 避けるべきこと
@@ -171,10 +174,10 @@ CLAUDE.md
 
 ### ファイルの種類
 
-| ファイル | 場所 | 用途 |
-|----------|------|------|
-| `~/.claude/settings.json` | グローバル | プラグイン有効化 |
-| `~/.claude/settings.local.json` | グローバル | MCP設定等 |
+| ファイル                             | 場所         | 用途               |
+| ------------------------------------ | ------------ | ------------------ |
+| `~/.claude/settings.json`            | グローバル   | プラグイン有効化   |
+| `~/.claude/settings.local.json`      | グローバル   | MCP設定等          |
 | `<repo>/.claude/settings.local.json` | プロジェクト | コマンド許可リスト |
 
 ### 権限設定の例（本プロジェクト）
@@ -184,17 +187,17 @@ CLAUDE.md
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm build:*)",     // ビルド実行を許可
-      "Bash(pnpm test:*)",      // テスト実行を許可
-      "Bash(git add:*)",        // git add を許可
-      "Bash(git commit:*)",     // git commit を許可
-      "Bash(git push:*)",       // git push を許可
-      "Bash(gh pr create:*)",   // PR作成を許可
-      "Bash(gh pr diff:*)",     // PR差分取得を許可
-      "Bash(python3:*)",        // Python実行を許可
-      "WebFetch(domain:example.com)"  // 特定ドメインのfetch許可
-    ]
-  }
+      "Bash(pnpm build:*)", // ビルド実行を許可
+      "Bash(pnpm test:*)", // テスト実行を許可
+      "Bash(git add:*)", // git add を許可
+      "Bash(git commit:*)", // git commit を許可
+      "Bash(git push:*)", // git push を許可
+      "Bash(gh pr create:*)", // PR作成を許可
+      "Bash(gh pr diff:*)", // PR差分取得を許可
+      "Bash(python3:*)", // Python実行を許可
+      "WebFetch(domain:example.com)", // 特定ドメインのfetch許可
+    ],
+  },
 }
 ```
 
@@ -214,8 +217,8 @@ CLAUDE.md
 // ~/.claude/settings.json
 {
   "enabledPlugins": {
-    "coderabbit@claude-plugins-official": true  // CodeRabbit プラグイン有効
-  }
+    "coderabbit@claude-plugins-official": true, // CodeRabbit プラグイン有効
+  },
 }
 ```
 
@@ -244,6 +247,7 @@ Skills は `/command` で呼び出せるカスタムプロンプト。繰り返�
 Claude はこのプロンプトに従って動作する。
 
 ## 手順
+
 1. `git status` で状態確認
 2. 変更をステージング
 3. コミットメッセージを生成
@@ -295,25 +299,25 @@ Hooks はツール実行の前後に自動でシェルコマンドを走らせ�
     "postToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "npx tsc --noEmit --pretty 2>&1 | head -20"
-      }
+        "command": "npx tsc --noEmit --pretty 2>&1 | head -20",
+      },
     ],
     // コミット前にlint実行
     "preToolUse": [
       {
         "matcher": "Bash(git commit:*)",
-        "command": "pnpm lint --quiet"
-      }
-    ]
-  }
+        "command": "pnpm lint --quiet",
+      },
+    ],
+  },
 }
 ```
 
 ### 利用可能なフック
 
-| フック | タイミング | 用途例 |
-|--------|-----------|--------|
-| `preToolUse` | ツール実行前 | lint, 型チェック |
+| フック        | タイミング   | 用途例               |
+| ------------- | ------------ | -------------------- |
+| `preToolUse`  | ツール実行前 | lint, 型チェック     |
 | `postToolUse` | ツール実行後 | テスト, フォーマット |
 
 ### Insights レポートからの推奨
@@ -336,32 +340,32 @@ MCP (Model Context Protocol) は Claude が外部ツール・APIと連携する�
   "mcpServers": {
     "figma": {
       "type": "url",
-      "url": "https://figma.com/mcp"
+      "url": "https://figma.com/mcp",
     },
     "github": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"]
-    }
-  }
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+    },
+  },
 }
 ```
 
 ### 利用可能な主要MCPサーバー
 
-| サーバー | 用途 |
-|----------|------|
-| **Figma** | デザインからコード生成、スクリーンショット取得 |
-| **GitHub** | Issue/PR操作の拡張 |
-| **Playwright** | ブラウザ自動テスト |
-| **Supabase** | データベース操作 |
-| **MUI** | MUIコンポーネントのドキュメント参照 |
+| サーバー       | 用途                                           |
+| -------------- | ---------------------------------------------- |
+| **Figma**      | デザインからコード生成、スクリーンショット取得 |
+| **GitHub**     | Issue/PR操作の拡張                             |
+| **Playwright** | ブラウザ自動テスト                             |
+| **Supabase**   | データベース操作                               |
+| **MUI**        | MUIコンポーネントのドキュメント参照            |
 
 ### 本プロジェクトの状態
 
 ```jsonc
 // ~/.claude/settings.local.json
 {
-  "enableAllProjectMcpServers": false  // MCPサーバーは手動有効化
+  "enableAllProjectMcpServers": false, // MCPサーバーは手動有効化
 }
 ```
 
@@ -398,14 +402,17 @@ Memory は Claude がセッションを跨いで情報を保持する仕組み�
 
 ```markdown
 ## ユーザーの作業スタイル
+
 - タスク指向で高速。commit→push を一連で期待
 - 間違ったアプローチへの許容度が低い
 
 ## 過去の摩擦パターン
+
 - wrong_approach が最多: 表面的修正の繰り返しが最悪パターン
 - 無断マージ・デプロイ: 絶対にやらない
 
 ## プロジェクト固有メモ
+
 - RedactPro.tsx は @ts-nocheck モノリス（7000行超）
 - pnpm を使用（npm/yarn ではない）
 ```
@@ -464,12 +471,12 @@ Claude Code は **安全性を重視した権限モデル** を採用してい�
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm test:*)"    // pnpm test は常に許可
+      "Bash(pnpm test:*)", // pnpm test は常に許可
     ],
     "deny": [
-      "Bash(rm -rf:*)"       // rm -rf は常に拒否
-    ]
-  }
+      "Bash(rm -rf:*)", // rm -rf は常に拒否
+    ],
+  },
 }
 ```
 
@@ -492,11 +499,11 @@ Claude Code は **安全性を重視した権限モデル** を採用してい�
 
 ### ファイル一覧
 
-| ファイル | 役割 |
-|----------|------|
-| `CLAUDE.md` | プロジェクトルール（チーム共有、git管理） |
-| `.claude/settings.local.json` | コマンド許可リスト（ローカル専用） |
-| `docs/REFACTOR_PLAN.md` | CLAUDE.md から `@docs/REFACTOR_PLAN.md` で参照 |
+| ファイル                      | 役割                                           |
+| ----------------------------- | ---------------------------------------------- |
+| `CLAUDE.md`                   | プロジェクトルール（チーム共有、git管理）      |
+| `.claude/settings.local.json` | コマンド許可リスト（ローカル専用）             |
+| `docs/REFACTOR_PLAN.md`       | CLAUDE.md から `@docs/REFACTOR_PLAN.md` で参照 |
 
 ### 許可済みコマンド
 
@@ -532,6 +539,7 @@ docs/pdf-export-architecture.md → PDF出力の設計
 **問題**: 正しい原因を特定する前に表面的な修正を繰り返す
 
 **対策（CLAUDE.md に反映済み）**:
+
 ```markdown
 - 2回試しても直らない場合、別のアプローチを検討するか、原因分析を報告する
 - UI/スタイル修正は正しいコンポーネントとCSSセレクタを特定してから修正する
@@ -542,6 +550,7 @@ docs/pdf-export-architecture.md → PDF出力の設計
 **問題**: Claude が確認なしにマージ・プッシュ・デプロイを実行
 
 **対策（CLAUDE.md に反映済み）**:
+
 ```markdown
 - マージ・プッシュ・デプロイは必ずユーザーの明示的な承認を得てから実行する
 ```
@@ -551,6 +560,7 @@ docs/pdf-export-architecture.md → PDF出力の設計
 **問題**: 「push」と言ったのにファイル編集だけで完了報告
 
 **対策（CLAUDE.md に反映済み）**:
+
 ```markdown
 - ユーザーが「push」と言った場合: commit → push →（PRがあれば説明更新）を一連で完了する
 ```
@@ -566,10 +576,10 @@ docs/pdf-export-architecture.md → PDF出力の設計
     "postToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "pnpm type-check 2>&1 | head -20"
-      }
-    ]
-  }
+        "command": "pnpm type-check 2>&1 | head -20",
+      },
+    ],
+  },
 }
 ```
 
@@ -583,6 +593,7 @@ docs/pdf-export-architecture.md → PDF出力の設計
 #### 3. 制約付きプロンプトテンプレート
 
 効率的な指示の出し方:
+
 ```
 [バグ名] を修正。制約:
 1. ローカルで検証してからプッシュ
@@ -609,14 +620,14 @@ claude /insights                # 使用状況レポート
 
 ### セッション内コマンド
 
-| コマンド | 機能 |
-|----------|------|
-| `/help` | ヘルプ表示 |
-| `/compact` | 会話履歴を要約して圧縮 |
-| `/clear` | 会話履歴をクリア |
-| `/review` | PRレビューを実行 |
-| `/commit` | 変更をコミット |
-| `/insights` | 使用状況レポート生成 |
+| コマンド         | 機能                     |
+| ---------------- | ------------------------ |
+| `/help`          | ヘルプ表示               |
+| `/compact`       | 会話履歴を要約して圧縮   |
+| `/clear`         | 会話履歴をクリア         |
+| `/review`        | PRレビューを実行         |
+| `/commit`        | 変更をコミット           |
+| `/insights`      | 使用状況レポート生成     |
 | `/ui-ux-pro-max` | UIデザインスキル呼び出し |
 
 ---

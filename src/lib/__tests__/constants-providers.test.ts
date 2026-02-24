@@ -4,7 +4,6 @@ import {
   AI_MODELS,
   getProviderForModel,
   CATEGORIES,
-  DEFAULT_MASK,
   MASK_PRESETS,
   EXPORT_FORMATS,
 } from '../constants'
@@ -117,7 +116,16 @@ describe('CATEGORIES', () => {
     }
   })
 
-  const expectedCats = ['name', 'contact', 'address', 'personal', 'web', 'organization', 'custom', 'photo']
+  const expectedCats = [
+    'name',
+    'contact',
+    'address',
+    'personal',
+    'web',
+    'organization',
+    'custom',
+    'photo',
+  ]
   for (const cat of expectedCats) {
     it(`カテゴリ「${cat}」が存在する`, () => {
       expect(CATEGORIES[cat]).toBeDefined()

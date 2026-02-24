@@ -14,4 +14,3 @@ export interface AdvisorPreset {
   prompt: string
   desc: string
 }
-

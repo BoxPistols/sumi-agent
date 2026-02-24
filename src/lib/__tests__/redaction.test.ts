@@ -121,7 +121,9 @@ describe('applyRedaction with nameInitial', () => {
 describe('applyRedaction with custom keywords', () => {
   it('replaces custom keyword with placeholder', () => {
     const text = '所属：株式会社テスト商事 開発部'
-    const dets = [makeDet({ type: 'custom_keyword', category: 'custom', value: '株式会社テスト商事' })]
+    const dets = [
+      makeDet({ type: 'custom_keyword', category: 'custom', value: '株式会社テスト商事' }),
+    ]
     const result = applyRedaction(text, dets)
     expect(result).toBe('所属：[指定語非公開] 開発部')
   })
@@ -155,7 +157,14 @@ describe('applyRedaction with custom keywords', () => {
 
   it('skips disabled custom keyword', () => {
     const text = '秘密のキーワード'
-    const dets = [makeDet({ type: 'custom_keyword', category: 'custom', value: '秘密のキーワード', enabled: false })]
+    const dets = [
+      makeDet({
+        type: 'custom_keyword',
+        category: 'custom',
+        value: '秘密のキーワード',
+        enabled: false,
+      }),
+    ]
     const result = applyRedaction(text, dets)
     expect(result).toBe('秘密のキーワード')
   })

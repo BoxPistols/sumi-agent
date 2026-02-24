@@ -16,8 +16,12 @@ beforeEach(() => {
   Object.keys(store).forEach((k) => delete store[k])
   vi.stubGlobal('localStorage', {
     getItem: (k: string) => store[k] ?? null,
-    setItem: (k: string, v: string) => { store[k] = v },
-    removeItem: (k: string) => { delete store[k] },
+    setItem: (k: string, v: string) => {
+      store[k] = v
+    },
+    removeItem: (k: string) => {
+      delete store[k]
+    },
   })
 })
 
@@ -25,7 +29,7 @@ beforeEach(() => {
 
 describe('MODEL_COSTS', () => {
   it('全モデルにcostYen, label, tierが定義されている', () => {
-    for (const [id, info] of Object.entries(MODEL_COSTS)) {
+    for (const [, info] of Object.entries(MODEL_COSTS)) {
       expect(info.costYen).toBeGreaterThan(0)
       expect(info.label).toBeTruthy()
       expect(['nano', 'mini']).toContain(info.tier)
@@ -157,7 +161,7 @@ describe('recordCost', () => {
 
   it('未知モデルはデフォルト0.10円', () => {
     const rec = recordCost('unknown-model')
-    expect(rec.dailyTotal).toBeCloseTo(0.10)
+    expect(rec.dailyTotal).toBeCloseTo(0.1)
   })
 })
 
@@ -191,7 +195,9 @@ describe('checkCostAlert', () => {
   })
 
   it('セッション >= 80% perTaskCycle → session-warn', () => {
-    expect(checkCostAlert({ ...base, sessionTotal: BUDGET.perTaskCycle * 0.8 })).toBe('session-warn')
+    expect(checkCostAlert({ ...base, sessionTotal: BUDGET.perTaskCycle * 0.8 })).toBe(
+      'session-warn',
+    )
   })
 
   it('日次アラートはセッションアラートより優先', () => {

@@ -91,9 +91,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     icon: 'L',
     color: '#8B5CF6',
     needsKey: false,
-    models: [
-      { id: 'local-auto', label: '自動検出', desc: 'ローカルサーバーに接続', tier: 1 },
-    ],
+    models: [{ id: 'local-auto', label: '自動検出', desc: 'ローカルサーバーに接続', tier: 1 }],
     defaultModel: 'local-auto',
   },
 ]

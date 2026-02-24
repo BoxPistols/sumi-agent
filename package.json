@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
-    "fix": "pnpm lint:fix && pnpm format:write"
+    "fix": "pnpm lint:fix && pnpm format:write",
+    "prepare": "husky"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.427",
@@ -40,6 +41,8 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.2.0",
     "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "portless": "^0.4.0",
     "prettier": "^3.8.1",
     "typescript": "^5.7.0",
@@ -55,5 +58,14 @@
   "author": "BoxPistols",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,md,css,html}": [
+      "prettier --write"
+    ]
   }
 }

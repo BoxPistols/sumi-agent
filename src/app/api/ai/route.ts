@@ -38,11 +38,22 @@ function checkRateLimit(ip: string): RateLimitResult {
   const entry = rateMap.get(ip)
   if (!entry || now > entry.resetAt) {
     rateMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
-    return { allowed: true, remaining: RATE_LIMIT - 1, limit: RATE_LIMIT, resetAt: now + RATE_WINDOW }
+    return {
+      allowed: true,
+      remaining: RATE_LIMIT - 1,
+      limit: RATE_LIMIT,
+      resetAt: now + RATE_WINDOW,
+    }
   }
-  if (entry.count >= RATE_LIMIT) return { allowed: false, remaining: 0, limit: RATE_LIMIT, resetAt: entry.resetAt }
+  if (entry.count >= RATE_LIMIT)
+    return { allowed: false, remaining: 0, limit: RATE_LIMIT, resetAt: entry.resetAt }
   entry.count++
-  return { allowed: true, remaining: RATE_LIMIT - entry.count, limit: RATE_LIMIT, resetAt: entry.resetAt }
+  return {
+    allowed: true,
+    remaining: RATE_LIMIT - entry.count,
+    limit: RATE_LIMIT,
+    resetAt: entry.resetAt,
+  }
 }
 
 function getClientIP(request: NextRequest): string {
@@ -100,10 +111,7 @@ function extractOpenAIText(body: OpenAIResponseBody): string {
   if (Array.isArray(msg.content)) {
     // Check for refusal parts in content array
     for (const part of msg.content) {
-      if (
-        part.type === 'refusal' ||
-        (typeof part.refusal === 'string' && part.refusal.trim())
-      ) {
+      if (part.type === 'refusal' || (typeof part.refusal === 'string' && part.refusal.trim())) {
         return part.refusal || ''
       }
     }
@@ -174,7 +182,10 @@ export async function POST(request: NextRequest) {
   }
   if (!rl.allowed) {
     return NextResponse.json(
-      { error: '本日のAI利用回数上限（30回）に達しました。自身のAPIキーを設定すると無制限に利用できます。' },
+      {
+        error:
+          '本日のAI利用回数上限（30回）に達しました。自身のAPIキーを設定すると無制限に利用できます。',
+      },
       { status: 429, headers: rlHeaders },
     )
   }
@@ -254,7 +265,12 @@ export async function POST(request: NextRequest) {
 
       const d = (await res.json()) as OpenAIResponseBody
       const text = extractOpenAIText(d)
-      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit, resetAt: userKey ? undefined : rl.resetAt })
+      return NextResponse.json({
+        text,
+        remaining: userKey ? undefined : rl.remaining,
+        limit: userKey ? undefined : rl.limit,
+        resetAt: userKey ? undefined : rl.resetAt,
+      })
     }
 
     if (provider === 'google') {
@@ -305,7 +321,12 @@ export async function POST(request: NextRequest) {
       const text =
         d.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') ||
         ''
-      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit, resetAt: userKey ? undefined : rl.resetAt })
+      return NextResponse.json({
+        text,
+        remaining: userKey ? undefined : rl.remaining,
+        limit: userKey ? undefined : rl.limit,
+        resetAt: userKey ? undefined : rl.resetAt,
+      })
     }
 
     if (provider === 'anthropic') {
@@ -345,12 +366,18 @@ export async function POST(request: NextRequest) {
         d.content
           ?.map((c: { type: string; text?: string }) => (c.type === 'text' ? c.text : ''))
           .join('') || ''
-      return NextResponse.json({ text, remaining: userKey ? undefined : rl.remaining, limit: userKey ? undefined : rl.limit, resetAt: userKey ? undefined : rl.resetAt })
+      return NextResponse.json({
+        text,
+        remaining: userKey ? undefined : rl.remaining,
+        limit: userKey ? undefined : rl.limit,
+        resetAt: userKey ? undefined : rl.resetAt,
+      })
     }
 
     if (provider === 'local') {
       // Ollama / LM Studio 等 — OpenAI互換API
-      const endpoint = body.localEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434/v1'
+      const endpoint =
+        body.localEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434/v1'
       const localModel = model === 'local-auto' ? undefined : model
 
       const msgs: Array<{ role: string; content: unknown }> = []
@@ -359,7 +386,10 @@ export async function POST(request: NextRequest) {
         if (typeof m.content === 'string') {
           msgs.push(m)
         } else {
-          const text = m.content.filter((c: ContentBlock) => c.type === 'text').map((c: ContentBlock) => c.text).join('\n')
+          const text = m.content
+            .filter((c: ContentBlock) => c.type === 'text')
+            .map((c: ContentBlock) => c.text)
+            .join('\n')
           msgs.push({ role: m.role, content: text })
         }
       }

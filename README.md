@@ -302,15 +302,15 @@ pnpm test:watch
 
 ## コマンド一覧
 
-| コマンド          | 説明                          |
-| ----------------- | ----------------------------- |
+| コマンド          | 説明                             |
+| ----------------- | -------------------------------- |
 | `pnpm dev`        | 開発サーバー起動（portless経由） |
-| `pnpm build`      | プロダクションビルド          |
-| `pnpm start`      | プロダクションサーバー起動    |
-| `pnpm test`       | テスト実行                    |
-| `pnpm test:watch` | テスト（ウォッチモード）      |
-| `pnpm lint`       | ESLint 実行                   |
-| `pnpm type-check` | TypeScript 型チェック         |
+| `pnpm build`      | プロダクションビルド             |
+| `pnpm start`      | プロダクションサーバー起動       |
+| `pnpm test`       | テスト実行                       |
+| `pnpm test:watch` | テスト（ウォッチモード）         |
+| `pnpm lint`       | ESLint 実行                      |
+| `pnpm type-check` | TypeScript 型チェック            |
 
 ---
 

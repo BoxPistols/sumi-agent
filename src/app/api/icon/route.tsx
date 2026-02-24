@@ -34,10 +34,44 @@ function IconContent({ s }: { s: number }) {
           gap,
         }}
       >
-        <div style={{ width: '100%', height: barH, background: '#1E293B', borderRadius: s * 0.015, opacity: 0.85, display: 'flex' }} />
-        <div style={{ width: '75%', height: lineH, background: '#CBD5E1', borderRadius: s * 0.015, display: 'flex' }} />
-        <div style={{ width: '100%', height: barH, background: '#1E293B', borderRadius: s * 0.015, opacity: 0.85, display: 'flex' }} />
-        <div style={{ width: '60%', height: lineH, background: '#CBD5E1', borderRadius: s * 0.015, display: 'flex' }} />
+        <div
+          style={{
+            width: '100%',
+            height: barH,
+            background: '#1E293B',
+            borderRadius: s * 0.015,
+            opacity: 0.85,
+            display: 'flex',
+          }}
+        />
+        <div
+          style={{
+            width: '75%',
+            height: lineH,
+            background: '#CBD5E1',
+            borderRadius: s * 0.015,
+            display: 'flex',
+          }}
+        />
+        <div
+          style={{
+            width: '100%',
+            height: barH,
+            background: '#1E293B',
+            borderRadius: s * 0.015,
+            opacity: 0.85,
+            display: 'flex',
+          }}
+        />
+        <div
+          style={{
+            width: '60%',
+            height: lineH,
+            background: '#CBD5E1',
+            borderRadius: s * 0.015,
+            display: 'flex',
+          }}
+        />
       </div>
     </div>
   )

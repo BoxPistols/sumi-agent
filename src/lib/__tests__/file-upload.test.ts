@@ -80,7 +80,10 @@ describe('CSVファイル読み込み', () => {
     const text = readFile('15_社員名簿.csv').toString('utf-8')
     const result = Papa.parse(text, { header: false, skipEmptyLines: true })
     const rows = result.data as string[][]
-    const joined = rows.filter(r => r.some(c => c.trim())).map(r => r.join(' | ')).join('\n')
+    const joined = rows
+      .filter((r) => r.some((c) => c.trim()))
+      .map((r) => r.join(' | '))
+      .join('\n')
     // 10名分のデータ
     expect(joined).toContain('高橋翔太')
     expect(joined).toContain('井上')
@@ -104,7 +107,10 @@ describe('XLSXファイル読み込み', () => {
     let text = ''
     for (const sn of wb.SheetNames) {
       const csv = XLSX.utils.sheet_to_csv(wb.Sheets[sn], { FS: ' | ', blankrows: false })
-      const cl = csv.split('\n').filter(l => l.replace(/[\s|]/g, '').length > 0).join('\n')
+      const cl = csv
+        .split('\n')
+        .filter((l) => l.replace(/[\s|]/g, '').length > 0)
+        .join('\n')
       if (cl) text += `--- Sheet: ${sn} ---\n${cl}\n\n`
     }
     expect(text).toContain('高橋翔太')
@@ -175,8 +181,16 @@ describe('JSONファイル読み込み', () => {
 
     function extract(o: unknown, p = ''): string {
       if (typeof o === 'string') return `${p}: ${o}`
-      if (Array.isArray(o)) return o.map((v, i) => extract(v, `${p}[${i}]`)).filter(Boolean).join('\n')
-      if (o && typeof o === 'object') return Object.entries(o).map(([k, v]) => extract(v, p ? `${p}.${k}` : k)).filter(Boolean).join('\n')
+      if (Array.isArray(o))
+        return o
+          .map((v, i) => extract(v, `${p}[${i}]`))
+          .filter(Boolean)
+          .join('\n')
+      if (o && typeof o === 'object')
+        return Object.entries(o)
+          .map(([k, v]) => extract(v, p ? `${p}.${k}` : k))
+          .filter(Boolean)
+          .join('\n')
       if (o !== null && o !== undefined) return `${p}: ${String(o)}`
       return ''
     }
@@ -227,7 +241,7 @@ describe('DOCXファイル読み込み', () => {
     const buf = readFile('05_職務経歴書_看護師.docx')
     // ZIPマジックナンバー (PK)
     expect(buf[0]).toBe(0x50) // 'P'
-    expect(buf[1]).toBe(0x4B) // 'K'
+    expect(buf[1]).toBe(0x4b) // 'K'
   })
 
   it('DOCXからmammothでテキスト抽出できる', async () => {
@@ -264,7 +278,7 @@ describe('クロスフォーマット一致テスト', () => {
     // CSV
     const csvText = readFile('15_社員名簿.csv').toString('utf-8')
     const csvResult = Papa.parse(csvText, { header: false, skipEmptyLines: true })
-    const csvJoined = (csvResult.data as string[][]).map(r => r.join(',')).join('\n')
+    const csvJoined = (csvResult.data as string[][]).map((r) => r.join(',')).join('\n')
 
     // XLSX
     const xlsBuf = readFile('15_社員名簿.xlsx')
@@ -334,15 +348,17 @@ describe('全形式ファイル存在確認', () => {
 
 // ═══ 検出パイプライン統合: 各形式から抽出→検出 ═══
 describe('形式別検出パイプライン', () => {
-
   it('CSV形式から個人情報を検出できる', () => {
     const text = readFile('15_社員名簿.csv').toString('utf-8')
     const csvResult = Papa.parse(text, { header: false, skipEmptyLines: true })
     const rows = csvResult.data as string[][]
-    const joined = rows.filter(r => r.some(c => c.trim())).map(r => r.join(' | ')).join('\n')
+    const joined = rows
+      .filter((r) => r.some((c) => c.trim()))
+      .map((r) => r.join(' | '))
+      .join('\n')
     const dets = detectAll(joined)
-    expect(dets.filter(d => d.type === 'email').length).toBeGreaterThanOrEqual(5)
-    expect(dets.filter(d => d.type === 'phone').length).toBeGreaterThanOrEqual(5)
+    expect(dets.filter((d) => d.type === 'email').length).toBeGreaterThanOrEqual(5)
+    expect(dets.filter((d) => d.type === 'phone').length).toBeGreaterThanOrEqual(5)
   })
 
   it('XLSX形式から個人情報を検出できる', () => {
@@ -354,7 +370,7 @@ describe('形式別検出パイプライン', () => {
       text += csv + '\n'
     }
     const dets = detectAll(text)
-    expect(dets.filter(d => d.type === 'email').length).toBeGreaterThanOrEqual(5)
+    expect(dets.filter((d) => d.type === 'email').length).toBeGreaterThanOrEqual(5)
   })
 
   it('JSON形式から個人情報を検出できる', () => {
@@ -362,15 +378,23 @@ describe('形式別検出パイプライン', () => {
     const obj = JSON.parse(raw)
     function extract(o: unknown, p = ''): string {
       if (typeof o === 'string') return `${p}: ${o}`
-      if (Array.isArray(o)) return o.map((v, i) => extract(v, `${p}[${i}]`)).filter(Boolean).join('\n')
-      if (o && typeof o === 'object') return Object.entries(o).map(([k, v]) => extract(v, p ? `${p}.${k}` : k)).filter(Boolean).join('\n')
+      if (Array.isArray(o))
+        return o
+          .map((v, i) => extract(v, `${p}[${i}]`))
+          .filter(Boolean)
+          .join('\n')
+      if (o && typeof o === 'object')
+        return Object.entries(o)
+          .map(([k, v]) => extract(v, p ? `${p}.${k}` : k))
+          .filter(Boolean)
+          .join('\n')
       if (o !== null && o !== undefined) return `${p}: ${String(o)}`
       return ''
     }
     const text = extract(obj)
     const dets = detectAll(text)
-    expect(dets.filter(d => d.type === 'email').length).toBeGreaterThanOrEqual(2)
-    expect(dets.filter(d => d.type === 'phone').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.type === 'email').length).toBeGreaterThanOrEqual(2)
+    expect(dets.filter((d) => d.type === 'phone').length).toBeGreaterThanOrEqual(1)
   })
 
   it('RTF形式から個人情報を検出できる', () => {
@@ -382,8 +406,8 @@ describe('形式別検出パイプライン', () => {
     result = result.replace(/\\[a-z]+[-]?\d*\s?/g, '')
     result = result.replace(/[{}]/g, '').trim()
     const dets = detectAll(result)
-    expect(dets.filter(d => d.type === 'email').length).toBeGreaterThanOrEqual(1)
-    expect(dets.filter(d => d.type === 'phone').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.type === 'email').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.type === 'phone').length).toBeGreaterThanOrEqual(1)
   })
 
   it('HTML形式から個人情報を検出できる', () => {
@@ -398,16 +422,16 @@ describe('形式別検出パイプライン', () => {
       .replace(/&amp;/g, '&')
       .trim()
     const dets = detectAll(text)
-    expect(dets.filter(d => d.type === 'email').length).toBeGreaterThanOrEqual(1)
-    expect(dets.filter(d => d.category === 'name').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.type === 'email').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.category === 'name').length).toBeGreaterThanOrEqual(1)
   })
 
   it('Markdown形式から個人情報を検出できる', () => {
     const text = readFile('03_職務経歴書_デザイナー.md').toString('utf-8')
     const dets = detectAll(text)
-    expect(dets.filter(d => d.type === 'email').length).toBeGreaterThanOrEqual(1)
-    expect(dets.filter(d => d.type === 'phone').length).toBeGreaterThanOrEqual(1)
-    expect(dets.filter(d => d.category === 'name').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.type === 'email').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.type === 'phone').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.category === 'name').length).toBeGreaterThanOrEqual(1)
   })
 
   it('DOCX形式から個人情報を検出できる', async () => {
@@ -416,6 +440,6 @@ describe('形式別検出パイプライン', () => {
     const result = await mammoth.extractRawText({ path: filePath })
     const text = result.value || ''
     const dets = detectAll(text)
-    expect(dets.filter(d => d.category === 'name').length).toBeGreaterThanOrEqual(1)
+    expect(dets.filter((d) => d.category === 'name').length).toBeGreaterThanOrEqual(1)
   })
 })

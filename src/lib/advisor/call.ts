@@ -90,8 +90,8 @@ export async function callAdvisor(params: CallAdvisorParams): Promise<CallAdviso
   }
 
   // コスト記録
-  const costRecord = recordCost(modelId)
-  const costInfo = MODEL_COSTS[modelId] || { costYen: 0.10, label: modelId, tier: 'nano' }
+  recordCost(modelId)
+  const costInfo = MODEL_COSTS[modelId] || { costYen: 0.1, label: modelId, tier: 'nano' }
 
   const d = await res.json()
   return {
@@ -99,6 +99,9 @@ export async function callAdvisor(params: CallAdvisorParams): Promise<CallAdviso
     modelUsed: modelId,
     modelLabel: costInfo.label,
     costYen: costInfo.costYen,
-    rateLimit: typeof d.remaining === 'number' ? { remaining: d.remaining, limit: d.limit, resetAt: d.resetAt } : undefined,
+    rateLimit:
+      typeof d.remaining === 'number'
+        ? { remaining: d.remaining, limit: d.limit, resetAt: d.resetAt }
+        : undefined,
   }
 }

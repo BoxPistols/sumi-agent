@@ -36,7 +36,7 @@ function generateXLSX() {
     if (line.trim() === '') break
     lines.push(line)
   }
-  const data = lines.map(l => l.split(','))
+  const data = lines.map((l) => l.split(','))
   const ws = XLSX.utils.aoa_to_sheet(data)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, '社員名簿')
@@ -48,13 +48,16 @@ function generateXLSX() {
 // ─── HTML ──
 function generateHTML() {
   const text = readMock('01_職務経歴書_ITエンジニア.txt')
-  const body = text.split('\n').map(line => {
-    if (line.startsWith('■ ')) return `<h2>${line.slice(2)}</h2>`
-    if (line.startsWith('【')) return `<h3>${line}</h3>`
-    if (line.startsWith('- ')) return `<li>${line.slice(2)}</li>`
-    if (line.trim() === '') return '<br>'
-    return `<p>${line}</p>`
-  }).join('\n')
+  const body = text
+    .split('\n')
+    .map((line) => {
+      if (line.startsWith('■ ')) return `<h2>${line.slice(2)}</h2>`
+      if (line.startsWith('【')) return `<h3>${line}</h3>`
+      if (line.startsWith('- ')) return `<li>${line.slice(2)}</li>`
+      if (line.trim() === '') return '<br>'
+      return `<p>${line}</p>`
+    })
+    .join('\n')
   const html = `<!DOCTYPE html>\n<html lang="ja">\n<head><meta charset="UTF-8"><title>職務経歴書</title></head>\n<body>\n${body}\n</body>\n</html>`
   const out = path.join(MOCK_DIR, '01_職務経歴書_ITエンジニア.html')
   fs.writeFileSync(out, html, 'utf-8')
@@ -64,12 +67,15 @@ function generateHTML() {
 // ─── Markdown ──
 function generateMarkdown() {
   const text = readMock('03_職務経歴書_デザイナー.txt')
-  const md = text.split('\n').map(line => {
-    if (line.startsWith('■ ')) return `## ${line.slice(2)}`
-    if (line.startsWith('◆ ')) return `### ${line.slice(2)}`
-    if (line.startsWith('━')) return '---'
-    return line
-  }).join('\n')
+  const md = text
+    .split('\n')
+    .map((line) => {
+      if (line.startsWith('■ ')) return `## ${line.slice(2)}`
+      if (line.startsWith('◆ ')) return `### ${line.slice(2)}`
+      if (line.startsWith('━')) return '---'
+      return line
+    })
+    .join('\n')
   const out = path.join(MOCK_DIR, '03_職務経歴書_デザイナー.md')
   fs.writeFileSync(out, md, 'utf-8')
   console.log(`  Markdown: ${out}`)
@@ -78,7 +84,11 @@ function generateMarkdown() {
 // ─── JSON ──
 function generateJSON() {
   const text = readMock('13_スキルシート_SES.txt')
-  const data = { documentType: 'スキルシート', rawText: text, metadata: { format: 'SES', source: 'mock-data' } }
+  const data = {
+    documentType: 'スキルシート',
+    rawText: text,
+    metadata: { format: 'SES', source: 'mock-data' },
+  }
   const out = path.join(MOCK_DIR, '13_スキルシート_SES.json')
   fs.writeFileSync(out, JSON.stringify(data, null, 2), 'utf-8')
   console.log(`  JSON: ${out}`)
@@ -104,10 +114,13 @@ function generateRTF() {
 // ─── DOCX (minimal valid structure) ──
 function generateDOCX() {
   const text = readMock('05_職務経歴書_看護師.txt')
-  const paras = text.split('\n').map(line => {
-    const esc = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    return `<w:p><w:r><w:t xml:space="preserve">${esc}</w:t></w:r></w:p>`
-  }).join('\n')
+  const paras = text
+    .split('\n')
+    .map((line) => {
+      const esc = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      return `<w:p><w:r><w:t xml:space="preserve">${esc}</w:t></w:r></w:p>`
+    })
+    .join('\n')
 
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`
   const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`

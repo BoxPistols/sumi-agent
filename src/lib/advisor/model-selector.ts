@@ -6,18 +6,21 @@
  */
 
 // ── コスト定義（円） ──
-export const MODEL_COSTS: Record<string, { costYen: number; label: string; tier: 'nano' | 'mini' }> = {
-  'gpt-5-nano':  { costYen: 0.10, label: 'GPT-5 Nano',  tier: 'nano' },
-  'gpt-5-mini':  { costYen: 0.51, label: 'GPT-5 Mini',  tier: 'mini' },
+export const MODEL_COSTS: Record<
+  string,
+  { costYen: number; label: string; tier: 'nano' | 'mini' }
+> = {
+  'gpt-5-nano': { costYen: 0.1, label: 'GPT-5 Nano', tier: 'nano' },
+  'gpt-5-mini': { costYen: 0.51, label: 'GPT-5 Mini', tier: 'mini' },
   'gpt-4.1-nano': { costYen: 0.11, label: 'GPT-4.1 Nano', tier: 'nano' },
   'gpt-4.1-mini': { costYen: 0.45, label: 'GPT-4.1 Mini', tier: 'mini' },
 }
 
 // ── 予算しきい値（円） ──
 export const BUDGET = {
-  perRoundTrip: 1.0,    // 1往復あたり上限
-  perTaskCycle: 5.0,    // 1タスクサイクル上限
-  perDayAlert: 30.0,    // 日次アラートライン
+  perRoundTrip: 1.0, // 1往復あたり上限
+  perTaskCycle: 5.0, // 1タスクサイクル上限
+  perDayAlert: 30.0, // 日次アラートライン
 } as const
 
 // ── 複雑度判定 ──
@@ -25,12 +28,12 @@ type Complexity = 'low' | 'high'
 
 /** プリセットIDごとの複雑度 */
 const PRESET_COMPLEXITY: Record<string, Complexity> = {
-  'review':    'high',   // 全体構成の分析 → 論理思考が必要
-  'strengths': 'high',   // 潜在的な強みの発見 → 推論力が必要
-  'rewrite':   'high',   // 記述改善 → 具体的な提案力が必要
-  'job-match': 'high',   // 求人票マッチング → 2文書の照合分析
-  'questions': 'low',    // 項目列挙 → 定量的タスク
-  'matching':  'high',   // 適性分析 → 推論力が必要
+  review: 'high', // 全体構成の分析 → 論理思考が必要
+  strengths: 'high', // 潜在的な強みの発見 → 推論力が必要
+  rewrite: 'high', // 記述改善 → 具体的な提案力が必要
+  'job-match': 'high', // 求人票マッチング → 2文書の照合分析
+  questions: 'low', // 項目列挙 → 定量的タスク
+  matching: 'high', // 適性分析 → 推論力が必要
 }
 
 /** ヒューリスティクスによる複雑度判定 */
@@ -41,7 +44,7 @@ export function assessComplexity(params: {
   hasJobDescription: boolean
   contextLength: number
 }): Complexity {
-  const { userMessage, presetId, messageCount, hasJobDescription, contextLength } = params
+  const { userMessage, presetId, messageCount, hasJobDescription } = params
 
   // プリセット指定がある場合はそれに従う
   if (presetId && PRESET_COMPLEXITY[presetId]) {
@@ -59,9 +62,27 @@ export function assessComplexity(params: {
 
   // 論理思考を要するキーワード
   const complexKeywords = [
-    '分析', '比較', '評価', '改善', '提案', '戦略', '長所', '短所',
-    '強み', '弱み', '課題', '理由', 'なぜ', 'どのように', '具体的',
-    'マッチ', '適性', 'ギャップ', 'アドバイス', '推薦', 'レビュー',
+    '分析',
+    '比較',
+    '評価',
+    '改善',
+    '提案',
+    '戦略',
+    '長所',
+    '短所',
+    '強み',
+    '弱み',
+    '課題',
+    '理由',
+    'なぜ',
+    'どのように',
+    '具体的',
+    'マッチ',
+    '適性',
+    'ギャップ',
+    'アドバイス',
+    '推薦',
+    'レビュー',
   ]
   if (complexKeywords.some((kw) => userMessage.includes(kw))) return 'high'
 
@@ -80,10 +101,10 @@ export function selectModel(complexity: Complexity): string {
 const LS_COST_KEY = 'rp_advisor_cost'
 
 interface CostRecord {
-  date: string        // YYYY-MM-DD
-  dailyTotal: number  // 日次累計（円）
+  date: string // YYYY-MM-DD
+  dailyTotal: number // 日次累計（円）
   sessionTotal: number // セッション累計（円）
-  callCount: number   // 呼び出し回数
+  callCount: number // 呼び出し回数
 }
 
 function today(): string {
@@ -108,14 +129,16 @@ export function getCostRecord(): CostRecord {
 
 /** コストを記録 */
 export function recordCost(modelId: string): CostRecord {
-  const cost = MODEL_COSTS[modelId]?.costYen || 0.10
+  const cost = MODEL_COSTS[modelId]?.costYen || 0.1
   const record = getCostRecord()
   record.dailyTotal += cost
   record.sessionTotal += cost
   record.callCount += 1
   try {
     localStorage.setItem(LS_COST_KEY, JSON.stringify(record))
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return record
 }
 
@@ -125,7 +148,9 @@ export function resetSessionCost(): void {
   record.sessionTotal = 0
   try {
     localStorage.setItem(LS_COST_KEY, JSON.stringify(record))
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export type CostAlert = 'none' | 'session-warn' | 'daily-alert' | 'daily-warn'

@@ -258,15 +258,15 @@ pnpm test:watch
 
 ## Commands
 
-| Command           | Description                  |
-| ----------------- | ---------------------------- |
+| Command           | Description                     |
+| ----------------- | ------------------------------- |
 | `pnpm dev`        | Start dev server (via portless) |
-| `pnpm build`      | Production build             |
-| `pnpm start`      | Start production server      |
-| `pnpm test`       | Run tests                    |
-| `pnpm test:watch` | Tests (watch mode)           |
-| `pnpm lint`       | Run ESLint                   |
-| `pnpm type-check` | TypeScript type check        |
+| `pnpm build`      | Production build                |
+| `pnpm start`      | Start production server         |
+| `pnpm test`       | Run tests                       |
+| `pnpm test:watch` | Tests (watch mode)              |
+| `pnpm lint`       | Run ESLint                      |
+| `pnpm type-check` | TypeScript type check           |
 
 ---
 
