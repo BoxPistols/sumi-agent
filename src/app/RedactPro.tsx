@@ -3,7 +3,7 @@
 "use client"
 
 /**
- * RedactPro v0.9 - Monolith (migrating to modular architecture)
+ * Sumi v1.0 - Monolith (migrating to modular architecture)
  * TODO: Decompose into modules (see docs/REFACTOR_PLAN.md)
  */
 
@@ -47,8 +47,8 @@ import * as XLSX from "xlsx";
 import { clearAllSiteData } from "../lib/storage";
 
 // ═══ Theme System (CSS Custom Properties) ═══
-const C={accent:"#4C85F6",accentDim:"rgba(76,133,246,0.12)",red:"#F05656",redDim:"rgba(240,86,86,0.1)",green:"#36C78A",greenDim:"rgba(54,199,138,0.1)",amber:"#DDA032",amberDim:"rgba(221,160,50,0.1)",purple:"#9B6DFF",purpleDim:"rgba(155,109,255,0.1)",cyan:"#22D3EE",cyanDim:"rgba(34,211,238,0.1)",font:"'Noto Sans JP','DM Sans',system-ui,sans-serif",mono:"'JetBrains Mono','Fira Code',monospace"};
-const T={...C,bg:"var(--rp-bg)",bg2:"var(--rp-bg2)",surface:"var(--rp-surface)",surfaceAlt:"var(--rp-surfaceAlt)",border:"var(--rp-border)",text:"var(--rp-text)",text2:"var(--rp-text2)",text3:"var(--rp-text3)",diffAdd:"var(--rp-diffAdd)",diffDel:"var(--rp-diffDel)",diffAddBorder:"var(--rp-diffAddBorder)",diffDelBorder:"var(--rp-diffDelBorder)"};
+const C={accent:"#1C1917",accentDim:"rgba(28,25,23,0.08)",red:"#DC2626",redDim:"rgba(220,38,38,0.1)",green:"#059669",greenDim:"rgba(5,150,105,0.1)",amber:"#D97706",amberDim:"rgba(217,119,6,0.1)",purple:"#9B6DFF",purpleDim:"rgba(155,109,255,0.1)",cyan:"#22D3EE",cyanDim:"rgba(34,211,238,0.1)",sumi:"#1C1917",washi:"#FAF9F6",stamp:"#DC2626",font:"'Noto Sans JP','DM Sans',system-ui,sans-serif",mono:"'JetBrains Mono','Fira Code',monospace"};
+const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(--rp-bg)",bg2:"var(--rp-bg2)",surface:"var(--rp-surface)",surfaceAlt:"var(--rp-surfaceAlt)",border:"var(--rp-border)",text:"var(--rp-text)",text2:"var(--rp-text2)",text3:"var(--rp-text3)",diffAdd:"var(--rp-diffAdd)",diffDel:"var(--rp-diffDel)",diffAddBorder:"var(--rp-diffAddBorder)",diffDelBorder:"var(--rp-diffDelBorder)"};
 
 // ═══ Multi-Provider AI Models ═══
 const AI_PROVIDERS=[
@@ -165,20 +165,20 @@ const EXPORT_FORMATS=[
 
 const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-[data-theme="dark"]{--rp-bg:#181A21;--rp-bg2:#1F222B;--rp-surface:#262A36;--rp-surfaceAlt:#2D3240;--rp-border:#3D4258;--rp-text:#D3D6E0;--rp-text2:#B0B4C3;--rp-text3:#8E92A4;--rp-diffAdd:#1B3326;--rp-diffDel:#331B1B;--rp-diffAddBorder:#2A5A3A;--rp-diffDelBorder:#5A2A2A;--rp-scrollThumb:#3D4258}
-[data-theme="light"]{--rp-bg:#F5F6FA;--rp-bg2:#FFFFFF;--rp-surface:#FFFFFF;--rp-surfaceAlt:#EDEEF4;--rp-border:#D5D8E0;--rp-text:#1C1E27;--rp-text2:#4A4F63;--rp-text3:#656A7E;--rp-diffAdd:#E8F5E9;--rp-diffDel:#FFEBEE;--rp-diffAddBorder:#A5D6A7;--rp-diffDelBorder:#EF9A9A;--rp-scrollThumb:#C4C7D0}
+[data-theme="dark"]{--rp-accent:#E7E5E4;--rp-accentDim:rgba(231,229,228,0.1);--rp-bg:#1C1917;--rp-bg2:#292524;--rp-surface:#292524;--rp-surfaceAlt:#44403C;--rp-border:#57534E;--rp-text:#E7E5E4;--rp-text2:#A8A29E;--rp-text3:#78716C;--rp-diffAdd:#1B3326;--rp-diffDel:#331B1B;--rp-diffAddBorder:#2A5A3A;--rp-diffDelBorder:#5A2A2A;--rp-scrollThumb:#57534E}
+[data-theme="light"]{--rp-accent:#1C1917;--rp-accentDim:rgba(28,25,23,0.06);--rp-bg:#FAF9F6;--rp-bg2:#FFFFFF;--rp-surface:#FFFFFF;--rp-surfaceAlt:#F5F5F4;--rp-border:#D6D3D1;--rp-text:#1C1917;--rp-text2:#57534E;--rp-text3:#78716C;--rp-diffAdd:#E8F5E9;--rp-diffDel:#FEE2E2;--rp-diffAddBorder:#A5D6A7;--rp-diffDelBorder:#FECACA;--rp-scrollThumb:#A8A29E}
 body{background:var(--rp-bg);font-size:14px}
-:focus-visible{outline:2px solid #4C85F6!important;outline-offset:2px;border-radius:4px}
-input:focus-visible,textarea:focus-visible{outline:2px solid #4C85F6!important;outline-offset:0}
-[role="button"]:focus-visible{outline:2px solid #4C85F6!important;outline-offset:2px;border-radius:4px}
+:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:2px;border-radius:4px}
+input:focus-visible,textarea:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:0}
+[role="button"]:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:2px;border-radius:4px}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--rp-scrollThumb);border-radius:3px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
-@keyframes detFlashA{0%{box-shadow:0 0 0 0 rgba(76,133,246,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(76,133,246,.45),0 0 0 10px rgba(76,133,246,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(76,133,246,.28),0 0 0 14px rgba(76,133,246,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(76,133,246,0);filter:saturate(1)}}
-@keyframes detFlashB{0%{box-shadow:0 0 0 0 rgba(76,133,246,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(76,133,246,.45),0 0 0 10px rgba(76,133,246,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(76,133,246,.28),0 0 0 14px rgba(76,133,246,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(76,133,246,0);filter:saturate(1)}}
+@keyframes detFlashA{0%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(120,113,108,.45),0 0 0 10px rgba(120,113,108,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(120,113,108,.28),0 0 0 14px rgba(120,113,108,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}}
+@keyframes detFlashB{0%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(120,113,108,.45),0 0 0 10px rgba(120,113,108,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(120,113,108,.28),0 0 0 14px rgba(120,113,108,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}}
 @media(max-width:768px){.rp-header-badges{display:none!important}.rp-editor-wrap{flex-direction:column!important}.rp-editor-left{border-right:none!important;border-bottom:1px solid var(--rp-border)!important;max-height:45vh!important}.rp-editor-right{max-width:none!important;min-width:0!important}.rp-upload-grid{grid-template-columns:1fr!important}.rp-upload-main{grid-template-columns:1fr!important}.rp-modal-inner{max-width:100%!important;max-height:100vh!important;border-radius:0!important}.rp-settings-models{grid-template-columns:1fr!important}.rp-view-tabs{flex-wrap:wrap!important}.rp-cat-grid{grid-template-columns:1fr!important}.rp-input-tabs button{font-size:12px!important;padding:10px 4px!important}.rp-design-controls{width:100%!important;max-height:40vh!important;border-right:none!important;border-bottom:1px solid var(--rp-border)!important}}
 @media(max-width:480px){.rp-header{padding:0 12px!important}.rp-header h1{font-size:14px!important}}`
 
@@ -2078,7 +2078,7 @@ const CHAT_FAQ=[
 
 function ChatWidget(){
   const[open,setOpen]=useState(false);
-  const[messages,setMessages]=useState([{type:'bot',text:'こんにちは！RedactProのサポートです。\n質問を選んでください。'}]);
+  const[messages,setMessages]=useState([{type:'bot',text:'こんにちは！Sumiのサポートです。\n質問を選んでください。'}]);
   const scrollRef=useRef(null);
   const[size,setSize]=useState({w:420,h:560});
 
@@ -2407,9 +2407,9 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
 
                   {/* フッター */}
                   <div style={{paddingTop:12,borderTop:`1px solid ${T.border}`,fontSize:12,color:T.text3,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                      <span>RedactPro v0.9</span>
+                      <span>Sumi v1.0</span>
                       <a
-                          href='https://github.com/BoxPistols/redact-pro'
+                          href='https://github.com/BoxPistols/sumi'
                           target='_blank'
                           rel='noopener noreferrer'
                           style={{color:C.accent,textDecoration:'none',fontSize:12}}
@@ -5552,7 +5552,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       lineHeight: 1.35,
                   }}
               >
-                  {isLite ? <>経歴書を、もっと<span style={{ color: T.accent }}>安全</span>に。</> : <>職務経歴書の<span style={{ color: T.accent }}>個人情報を自動マスキング</span></>}
+                  {isLite ? <>経歴書の個人情報を<span style={{ color: T.accent }}>自動マスキング</span></> : <>経歴書の個人情報を<span style={{ color: T.accent }}>自動検出・マスキング</span></>}
               </h1>
               <p
                   style={{
@@ -8915,28 +8915,29 @@ export default function App(){
                   >
                       <div
                           style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 7,
-                              background: `linear-gradient(135deg,${C.accent},#7C5CFF)`,
+                              width: 24,
+                              height: 24,
+                              borderRadius: 5,
+                              background: T.text,
                               display: 'flex',
-                              alignItems: 'center',
+                              flexDirection: 'column',
+                              alignItems: 'flex-start',
                               justifyContent: 'center',
-                              fontSize: 14,
-                              fontWeight: 800,
-                              color: '#fff',
+                              padding: '0 5px',
+                              gap: 3,
                           }}
                       >
-                          R
+                          <div style={{width:14,height:3,borderRadius:1,background:T.bg}} />
+                          <div style={{width:10,height:3,borderRadius:1,background:T.bg}} />
                       </div>
                       <span
                           style={{
-                              fontSize: 15,
+                              fontSize: 16,
                               fontWeight: 700,
-                              letterSpacing: -0.5,
+                              letterSpacing: 0.5,
                           }}
                       >
-                          Redact<span style={{ color: C.accent }}>Pro</span>
+                          Sumi
                       </span>
                   </a>
                   <div data-intro="header-edition-toggle" role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
@@ -9133,10 +9134,10 @@ export default function App(){
           {!isLite && <ChatWidget />}
           {showWelcome && <WelcomeVideoModalWrapper onClose={handleWelcomeClose} onStartTour={handleWelcomeStartTour} />}
           <footer style={{position:'fixed',bottom:0,left:0,right:0,display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'6px 16px',fontSize:11,color:T.text3,background:T.bg,borderTop:`1px solid ${T.border}`,zIndex:10}}>
-            <span>© {new Date().getFullYear()} RedactPro</span>
+            <span>© {new Date().getFullYear()} Sumi</span>
             <span style={{color:T.text3}}>|</span>
-            <span style={{cursor:'help'}} title="データはブラウザ内で処理され、サーバーやDBに保存されません。AI機能利用時のみAPIに送信されますが、各社のAPI利用規約によりトレーニングには使用されません。">プライバシー</span>
-            <a href="https://github.com/BoxPistols/redact-pro" target="_blank" rel="noopener noreferrer" style={{color:T.text3,textDecoration:'none',display:'flex',alignItems:'center',gap:4,transition:'color .15s'}} onMouseEnter={e=>e.currentTarget.style.color=T.text} onMouseLeave={e=>e.currentTarget.style.color=T.text3}>
+            <span style={{cursor:'help',display:'flex',alignItems:'center',gap:4}} title="個人情報はブラウザの外に出ません。サーバーやDBへの保存・送信は一切行いません。AI機能利用時のみAPIに送信されますが、各社のAPI利用規約によりトレーニングには使用されません。"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>個人情報はブラウザの外に出ません</span>
+            <a href="https://github.com/BoxPistols/sumi" target="_blank" rel="noopener noreferrer" style={{color:T.text3,textDecoration:'none',display:'flex',alignItems:'center',gap:4,transition:'color .15s'}} onMouseEnter={e=>e.currentTarget.style.color=T.text} onMouseLeave={e=>e.currentTarget.style.color=T.text3}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
               GitHub
             </a>

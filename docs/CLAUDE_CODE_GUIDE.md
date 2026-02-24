@@ -84,7 +84,7 @@ Claude Code の設定は **3 層の階層** で管理される。下位が上位
 │   ├── installed_plugins.json
 │   └── blocklist.json
 ├── projects/                           # プロジェクト別ランタイムデータ
-│   └── -Users-ai-dev-26Apps-redact-pro/
+│   └── -Users-ai-dev-26Apps-sumi/
 │       └── memory/
 │           └── MEMORY.md               # プロジェクト固有の記憶
 ├── plans/                              # 実装計画ファイル

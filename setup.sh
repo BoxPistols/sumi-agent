@@ -1,10 +1,10 @@
 #!/bin/bash
-# ═══ RedactPro Local Setup Script ═══
+# ═══ Sumi Local Setup Script ═══
 # Run: chmod +x setup.sh && ./setup.sh
 
 set -e
 
-echo "🔧 RedactPro — Local Development Setup"
+echo "🔧 Sumi — Local Development Setup"
 echo "========================================"
 echo ""
 
@@ -46,7 +46,7 @@ if [ ! -d .git ]; then
   echo "🔀 Initializing Git repository..."
   git init
   git add -A
-  git commit -m "feat: initial commit — RedactPro v0.9
+  git commit -m "feat: initial commit — Sumi v1.0
 
 - Monolith client component (RedactPro.tsx)
 - Next.js 15 + React 19 + TypeScript

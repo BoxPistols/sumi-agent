@@ -2,13 +2,11 @@ import { ImageResponse } from 'next/og'
 import { type NextRequest } from 'next/server'
 
 function IconContent({ s }: { s: number }) {
-  const r = s * 0.22
-  const docW = s * 0.5
-  const docH = s * 0.65
-  const pad = s * 0.12
-  const barH = s * 0.055
-  const lineH = s * 0.04
-  const gap = s * 0.05
+  const r = s * 0.19
+  const px = s * 0.19
+  const barH = s * 0.125
+  const gap = s * 0.08
+  const barR = s * 0.03
 
   return (
     <div
@@ -16,63 +14,33 @@ function IconContent({ s }: { s: number }) {
         width: s,
         height: s,
         display: 'flex',
-        alignItems: 'center',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #4C85F6, #7C5CFF)',
+        background: '#1C1917',
         borderRadius: r,
+        padding: `0 ${px}px`,
+        gap,
       }}
     >
       <div
         style={{
+          width: '100%',
+          height: barH,
+          background: '#FAF9F6',
+          borderRadius: barR,
           display: 'flex',
-          flexDirection: 'column',
-          width: docW,
-          height: docH,
-          background: 'rgba(255,255,255,0.95)',
-          borderRadius: s * 0.04,
-          padding: `${pad}px ${pad * 0.7}px ${pad * 0.6}px`,
-          gap,
         }}
-      >
-        <div
-          style={{
-            width: '100%',
-            height: barH,
-            background: '#1E293B',
-            borderRadius: s * 0.015,
-            opacity: 0.85,
-            display: 'flex',
-          }}
-        />
-        <div
-          style={{
-            width: '75%',
-            height: lineH,
-            background: '#CBD5E1',
-            borderRadius: s * 0.015,
-            display: 'flex',
-          }}
-        />
-        <div
-          style={{
-            width: '100%',
-            height: barH,
-            background: '#1E293B',
-            borderRadius: s * 0.015,
-            opacity: 0.85,
-            display: 'flex',
-          }}
-        />
-        <div
-          style={{
-            width: '60%',
-            height: lineH,
-            background: '#CBD5E1',
-            borderRadius: s * 0.015,
-            display: 'flex',
-          }}
-        />
-      </div>
+      />
+      <div
+        style={{
+          width: '70%',
+          height: barH,
+          background: '#FAF9F6',
+          borderRadius: barR,
+          display: 'flex',
+        }}
+      />
     </div>
   )
 }

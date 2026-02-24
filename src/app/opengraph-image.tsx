@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { loadNotoSansJP, FONT_FAMILY } from './og-font'
 
-export const alt = 'RedactPro - AI個人情報マスキングツール'
+export const alt = 'Sumi - 経歴書の個人情報 自動検出・マスキング'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -16,74 +16,32 @@ export default async function OGImage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+        background: '#1C1917',
         fontFamily: `"${FONT_FAMILY}", system-ui, sans-serif`,
       }}
     >
-      {/* Left: Icon */}
+      {/* Left: 幾何学ロゴマーク */}
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
           justifyContent: 'center',
-          width: 160,
-          height: 160,
-          background: 'linear-gradient(135deg, #4C85F6, #7C5CFF)',
-          borderRadius: 36,
+          width: 140,
+          height: 140,
+          background: '#E7E5E4',
+          borderRadius: 28,
+          padding: '0 28px',
+          gap: 16,
           marginRight: 48,
         }}
       >
         <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: 90,
-            height: 110,
-            background: 'rgba(255,255,255,0.95)',
-            borderRadius: 8,
-            padding: '24px 12px 12px',
-            gap: 10,
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              height: 10,
-              background: '#1E293B',
-              borderRadius: 3,
-              opacity: 0.85,
-              display: 'flex',
-            }}
-          />
-          <div
-            style={{
-              width: '75%',
-              height: 7,
-              background: '#CBD5E1',
-              borderRadius: 3,
-              display: 'flex',
-            }}
-          />
-          <div
-            style={{
-              width: '100%',
-              height: 10,
-              background: '#1E293B',
-              borderRadius: 3,
-              opacity: 0.85,
-              display: 'flex',
-            }}
-          />
-          <div
-            style={{
-              width: '60%',
-              height: 7,
-              background: '#CBD5E1',
-              borderRadius: 3,
-              display: 'flex',
-            }}
-          />
-        </div>
+          style={{ width: 84, height: 16, background: '#1C1917', borderRadius: 4, display: 'flex' }}
+        />
+        <div
+          style={{ width: 60, height: 16, background: '#1C1917', borderRadius: 4, display: 'flex' }}
+        />
       </div>
 
       {/* Right: Text */}
@@ -92,42 +50,34 @@ export default async function OGImage() {
           style={{
             fontSize: 64,
             fontWeight: 800,
-            color: '#F8FAFC',
+            color: '#E7E5E4',
             lineHeight: 1.1,
             display: 'flex',
           }}
         >
-          RedactPro
+          Sumi
         </div>
         <div
           style={{
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: 700,
-            color: '#94A3B8',
+            color: '#A8A29E',
             lineHeight: 1.4,
             display: 'flex',
           }}
         >
-          AI個人情報マスキングツール
+          経歴書の個人情報 自動検出・マスキング
         </div>
-        <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
-          {['PDF', 'Word', 'Excel', 'CSV', 'AI検出'].map((tag) => (
-            <div
-              key={tag}
-              style={{
-                padding: '6px 16px',
-                background: 'rgba(76,133,246,0.15)',
-                border: '1px solid rgba(76,133,246,0.3)',
-                borderRadius: 20,
-                color: '#93B5FC',
-                fontSize: 18,
-                fontWeight: 700,
-                display: 'flex',
-              }}
-            >
-              {tag}
-            </div>
-          ))}
+        <div
+          style={{
+            fontSize: 20,
+            fontWeight: 700,
+            color: '#78716C',
+            lineHeight: 1.4,
+            display: 'flex',
+          }}
+        >
+          個人情報はブラウザの外に出ない
         </div>
       </div>
     </div>,

@@ -1,28 +1,28 @@
 import type { Metadata, Viewport } from 'next'
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://redact-pro.vercel.app'),
-  title: 'RedactPro - AI個人情報マスキングツール',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://sumi-agent.vercel.app'),
+  title: 'Sumi - 経歴書の個人情報 自動検出・マスキング',
   description:
-    '日本語履歴書・職務経歴書の個人情報を自動検出・マスキング。PDF/Word/Excel/16形式対応。',
-  keywords: ['PII', 'マスキング', '個人情報', '履歴書', 'AI', '日本語'],
+    '個人情報はブラウザの外に出ない。履歴書・職務経歴書のPIIを自動検出・マスキング。PDF/Word/Excel対応。',
+  keywords: ['PII', 'マスキング', '個人情報', '履歴書', '経歴書', 'Sumi', '墨消し'],
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    title: 'RedactPro',
+    title: 'Sumi',
     statusBarStyle: 'black-translucent',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'RedactPro - AI個人情報マスキングツール',
-    description: '日本語履歴書・職務経歴書の個人情報を自動検出・マスキング。',
+    title: 'Sumi - 経歴書の個人情報 自動検出・マスキング',
+    description: '個人情報はブラウザの外に出ない。履歴書・職務経歴書のPIIを自動検出・マスキング。',
   },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#4C85F6',
+  themeColor: '#1C1917',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

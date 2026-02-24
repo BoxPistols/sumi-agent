@@ -1,11 +1,11 @@
 {
-  "name": "redact-pro",
-  "version": "0.9.0",
+  "name": "sumi",
+  "version": "1.0.0",
   "private": true,
-  "description": "RedactPro - AI-powered Japanese PII masking tool for resumes",
+  "description": "Sumi - 経歴書の個人情報 自動検出・マスキング",
   "scripts": {
     "predev": "rm -rf .next",
-    "dev": "portless redact-pro next dev --turbopack",
+    "dev": "portless sumi next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -52,9 +52,9 @@
   "packageManager": "pnpm@9.15.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/BoxPistols/redact-pro.git"
+    "url": "https://github.com/BoxPistols/sumi.git"
   },
-  "homepage": "https://redact-pro.vercel.app",
+  "homepage": "https://sumi-agent.vercel.app",
   "license": "MIT",
   "author": "BoxPistols",
   "engines": {

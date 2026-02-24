@@ -11,12 +11,12 @@
 
 セキュリティ上の脆弱性を発見した場合は、**公開 Issue を作成しないでください**。
 
-本プロジェクトは個人情報（PII）を扱うため、セキュリティ問題には特に注意を払っています。
+Sumi は個人情報（PII）を扱うため、セキュリティ問題には特に注意を払っています。
 
 以下のいずれかの方法で報告をお願いします:
 
 1. **GitHub Security Advisories**（推奨）
-   [Security Advisories](https://github.com/BoxPistols/redact-pro/security/advisories/new) から非公開で報告できます
+   [Security Advisories](https://github.com/BoxPistols/sumi/security/advisories/new) から非公開で報告できます
 
 2. **メールでの連絡**
    GitHub プロフィールに記載の連絡先にご連絡ください

@@ -1,4 +1,4 @@
-# RedactPro
+# Sumi
 
 A web application that automatically detects and masks personally identifiable information (PII) in Japanese resumes and career documents.
 
@@ -10,15 +10,15 @@ A web application that automatically detects and masks personally identifiable i
 
 In recruitment and staffing, personal information must be removed from candidate resumes before sharing externally. Manual masking is error-prone, and Japanese documents present unique challenges: names appear in kanji, katakana, and hiragana; addresses follow a prefecture-city-block structure; dates use both Western and Japanese era formats; and full-width/half-width variants are common.
 
-RedactPro addresses these challenges with three core design principles.
+Sumi addresses these challenges with three core design principles.
 
 ### Japanese-first detection
 
-Most PII detection tools are designed for English text. They lack support for Japanese-specific patterns such as full-width/half-width normalization, Japanese era dates (Showa/Heisei/Reiwa), furigana, and the prefecture-based address system. RedactPro implements detection logic specifically for Japanese document conventions.
+Most PII detection tools are designed for English text. They lack support for Japanese-specific patterns such as full-width/half-width normalization, Japanese era dates (Showa/Heisei/Reiwa), furigana, and the prefecture-based address system. Sumi implements detection logic specifically for Japanese document conventions.
 
 ### 4-layer hybrid detection
 
-No single technique achieves sufficient accuracy alone. RedactPro combines regex, dictionary lookup, heuristics, and AI into a four-layer pipeline where each layer compensates for the weaknesses of the others.
+No single technique achieves sufficient accuracy alone. Sumi combines regex, dictionary lookup, heuristics, and AI into a four-layer pipeline where each layer compensates for the weaknesses of the others.
 
 ### Browser-first privacy
 
@@ -115,7 +115,7 @@ interface Detection {
 
 ### False positive mitigation
 
-Japanese documents often contain numeric strings that match phone numbers, postal codes, and dates simultaneously. RedactPro implements:
+Japanese documents often contain numeric strings that match phone numbers, postal codes, and dates simultaneously. Sumi implements:
 
 - **Year-range context exclusion** -- Numeric strings within patterns like "2020/4 - 2023/3" are not misdetected as phone numbers or My Number
 - **Document date differentiation** -- When labels like "Created:", "Submitted:" precede a date, it is not classified as a date of birth
@@ -150,8 +150,8 @@ The `/api/scrape` endpoint implements multi-layer defense:
 ### Install
 
 ```bash
-git clone https://github.com/BoxPistols/redact-pro.git
-cd redact-pro
+git clone https://github.com/BoxPistols/sumi.git
+cd sumi
 pnpm install
 ```
 
@@ -182,7 +182,7 @@ SCRAPE_RATE_LIMIT=30
 pnpm dev
 ```
 
-Runs via [portless](https://github.com/BoxPistols/portless) at [http://redact-pro.localhost:1355](http://redact-pro.localhost:1355).
+Runs via [portless](https://github.com/BoxPistols/portless) at [http://sumi.localhost:1355](http://sumi.localhost:1355).
 This provides a stable URL and avoids port conflicts when developing multiple projects.
 
 > [!NOTE]
@@ -193,12 +193,12 @@ This provides a stable URL and avoids port conflicts when developing multiple pr
 ## Project structure
 
 ```
-redact-pro/
+sumi/
   src/
     app/
       page.tsx              -- Entry point
       layout.tsx            -- Root Layout (metadata, fonts)
-      RedactPro.tsx         -- Main application
+      Sumi.tsx         -- Main application
       api/
         ai/route.ts         -- AI proxy (OpenAI / Claude / Gemini)
         scrape/route.ts     -- URL scraping proxy

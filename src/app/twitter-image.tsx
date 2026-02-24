@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { loadNotoSansJP, FONT_FAMILY } from './og-font'
 
-export const alt = 'RedactPro - AI個人情報マスキングツール'
+export const alt = 'Sumi - 経歴書の個人情報 自動検出・マスキング'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -16,80 +16,37 @@ export default async function TwitterImage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+        background: '#1C1917',
         fontFamily: `"${FONT_FAMILY}", system-ui, sans-serif`,
       }}
     >
+      {/* 幾何学ロゴマーク */}
       <div
         style={{
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: 'column',
+          alignItems: 'flex-start',
           justifyContent: 'center',
-          width: 120,
-          height: 120,
-          background: 'linear-gradient(135deg, #4C85F6, #7C5CFF)',
-          borderRadius: 28,
+          width: 110,
+          height: 110,
+          background: '#E7E5E4',
+          borderRadius: 22,
+          padding: '0 22px',
+          gap: 12,
           marginRight: 40,
         }}
       >
         <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: 68,
-            height: 86,
-            background: 'rgba(255,255,255,0.95)',
-            borderRadius: 6,
-            padding: '18px 10px 10px',
-            gap: 8,
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              height: 8,
-              background: '#1E293B',
-              borderRadius: 2,
-              opacity: 0.85,
-              display: 'flex',
-            }}
-          />
-          <div
-            style={{
-              width: '75%',
-              height: 6,
-              background: '#CBD5E1',
-              borderRadius: 2,
-              display: 'flex',
-            }}
-          />
-          <div
-            style={{
-              width: '100%',
-              height: 8,
-              background: '#1E293B',
-              borderRadius: 2,
-              opacity: 0.85,
-              display: 'flex',
-            }}
-          />
-          <div
-            style={{
-              width: '60%',
-              height: 6,
-              background: '#CBD5E1',
-              borderRadius: 2,
-              display: 'flex',
-            }}
-          />
-        </div>
+          style={{ width: 66, height: 13, background: '#1C1917', borderRadius: 3, display: 'flex' }}
+        />
+        <div
+          style={{ width: 46, height: 13, background: '#1C1917', borderRadius: 3, display: 'flex' }}
+        />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ fontSize: 52, fontWeight: 800, color: '#F8FAFC', display: 'flex' }}>
-          RedactPro
-        </div>
-        <div style={{ fontSize: 24, fontWeight: 700, color: '#94A3B8', display: 'flex' }}>
-          AI個人情報マスキングツール
+        <div style={{ fontSize: 52, fontWeight: 800, color: '#E7E5E4', display: 'flex' }}>Sumi</div>
+        <div style={{ fontSize: 22, fontWeight: 700, color: '#78716C', display: 'flex' }}>
+          個人情報はブラウザの外に出ない
         </div>
       </div>
     </div>,

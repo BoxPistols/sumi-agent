@@ -1,14 +1,14 @@
 # コントリビューションガイド
 
-RedactPro へのコントリビューションを歓迎します。
+Sumi へのコントリビューションを歓迎します。
 
 ## 開発環境のセットアップ
 
 **Node.js 20 以上** と **pnpm** が必要です。
 
 ```bash
-git clone https://github.com/BoxPistols/redact-pro.git
-cd redact-pro
+git clone https://github.com/BoxPistols/sumi.git
+cd sumi
 pnpm install
 pnpm dev         # 開発サーバー起動
 pnpm build       # ビルド確認
@@ -43,7 +43,7 @@ docs: API設定手順を追記
 
 ## コードスタイル
 
-- **TypeScript strict モード** で記述する（`RedactPro.tsx` は例外として `@ts-nocheck`）
+- **TypeScript strict モード** で記述する（`Sumi.tsx` は例外として `@ts-nocheck`）
 - **ESLint** + **Prettier** でフォーマット統一（`pnpm fix` で自動修正可能）
 - パスエイリアス `@/*` は `src/*` に対応
 - named export を優先する（default export は Next.js の規約に従う場合のみ）

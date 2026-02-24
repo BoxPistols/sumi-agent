@@ -1,11 +1,11 @@
 {
-  "name": "RedactPro",
-  "short_name": "RedactPro",
-  "description": "AI個人情報マスキングツール",
+  "name": "Sumi",
+  "short_name": "Sumi",
+  "description": "経歴書の個人情報 自動検出・マスキング",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#181A21",
-  "theme_color": "#4C85F6",
+  "background_color": "#1C1917",
+  "theme_color": "#1C1917",
   "icons": [
     {
       "src": "/api/icon?size=192",

@@ -1,13 +1,13 @@
-# RedactPro
+# Sumi
 
-> レジュメの墨消しを、正確に、一瞬で。
+> 経歴書の個人情報を、自動検出・マスキング。ブラウザ完結。
 
 日本語の履歴書・職務経歴書に特化したPII自動検出・マスキングツール
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![CI](https://github.com/BoxPistols/redact-pro/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/BoxPistols/sumi/actions/workflows/ci.yml/badge.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)
-![Tests](https://img.shields.io/badge/tests-272%20passed-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-359%20passed-brightgreen.svg)
 
 [English version](docs/README_EN.md)
 
@@ -19,7 +19,7 @@
 
 しかし実態は、PDFを目視で確認しながら手作業で黒塗りしているケースがほとんどです。氏名・住所・電話番号・メールアドレス——項目は多く、見落としのリスクは常にあります。
 
-RedactProは、正規表現・辞書照合・ヒューリスティクス・AIの4層で個人情報を検出し、マスキングを自動化します。
+Sumiは、正規表現・辞書照合・ヒューリスティクス・AIの4層で個人情報を検出し、マスキングを自動化します。
 
 処理はすべてブラウザ内で完結するため、候補者の個人情報が外部サーバーに送信されることはありません。「個人情報を守るためのツール」が、新たなプライバシーリスクを生まないことを設計原則としています。
 
@@ -27,15 +27,15 @@ RedactProは、正規表現・辞書照合・ヒューリスティクス・AIの
 
 ## コンセプト
 
-RedactPro は以下の設計思想で構築されています。
+Sumi は以下の設計思想で構築されています。
 
 ### 日本語文書に特化した検出
 
-汎用的なPII検出ツールは英語圏向けに設計されたものが多く、日本語特有の表記揺れ（全角/半角、元号、フリガナ、住所体系）に十分対応できない。RedactPro は日本語文書のパターンを前提とした検出ロジックを独自に実装している。
+汎用的なPII検出ツールは英語圏向けに設計されたものが多く、日本語特有の表記揺れ（全角/半角、元号、フリガナ、住所体系）に十分対応できない。Sumi は日本語文書のパターンを前提とした検出ロジックを独自に実装している。
 
 ### 4層ハイブリッド検出
 
-単一の手法では検出精度に限界がある。RedactPro は正規表現・辞書照合・ヒューリスティクス・AI の4層を組み合わせ、それぞれの弱点を補完する設計としている。
+単一の手法では検出精度に限界がある。Sumi は正規表現・辞書照合・ヒューリスティクス・AI の4層を組み合わせ、それぞれの弱点を補完する設計としている。
 
 ### ブラウザ完結のプライバシー
 
@@ -134,7 +134,7 @@ interface Detection {
 
 ### 偽陽性対策
 
-日本語文書では数字列が電話番号・郵便番号・年月日のいずれにもマッチしうる。RedactPro は以下のフィルタを実装している。
+日本語文書では数字列が電話番号・郵便番号・年月日のいずれにもマッチしうる。Sumi は以下のフィルタを実装している。
 
 - **年号文脈の除外** -- 「2020年4月-2023年3月」のような期間表記に含まれる数字を電話番号やマイナンバーと誤検出しない
 - **文書日付の区別** -- 「作成日：2024年1月15日」のようなラベルが直前にある場合、生年月日と判定しない
@@ -169,8 +169,8 @@ AIプロバイダへのリクエストはサーバーサイドのAPI Route (`/ap
 ### インストール
 
 ```bash
-git clone https://github.com/BoxPistols/redact-pro.git
-cd redact-pro
+git clone https://github.com/BoxPistols/sumi.git
+cd sumi
 pnpm install
 ```
 
@@ -201,7 +201,7 @@ SCRAPE_RATE_LIMIT=30
 pnpm dev
 ```
 
-[portless](https://github.com/BoxPistols/portless) を使用して、[http://redact-pro.localhost:1355](http://redact-pro.localhost:1355) で起動します。
+[portless](https://github.com/BoxPistols/portless) を使用して、[http://sumi.localhost:1355](http://sumi.localhost:1355) で起動します。
 ポート番号を意識せずにアクセスでき、複数のプロジェクトを同時に開発する際の競合を避けられます。
 
 > [!NOTE]
@@ -212,7 +212,7 @@ pnpm dev
 ## プロジェクト構成
 
 ```
-redact-pro/
+sumi/
   src/
     app/
       page.tsx              -- エントリーポイント
