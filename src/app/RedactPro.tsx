@@ -8425,7 +8425,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   content: buildTxt(),
                                   baseName,
                                   editable: true,
-                                  meta: { fileName: data.file_name, maskCount: enabledCount, xlMeta: data.xlMeta },
+                                  meta: { fileName: data.file_name, maskCount: enabledCount, xlMeta: data.xlMeta?.map(s=>({sheetName:s.sheetName,aoa:s.aoa.map(r=>r.map(c=>applyRedaction(String(c??""),detections,data.maskOpts)))})) },
                                   onContentChange: (newContent) => {
                                       setPreview(prev => prev ? {...prev, content: newContent} : null)
                                   },
