@@ -4174,6 +4174,7 @@ function PreviewModal({title,content,baseName,onClose,onContentChange,editable,m
   const[editedContent,setEditedContent]=useState(content);
   const[hasChanges,setHasChanges]=useState(false);
   const[headingRule,setHeadingRule]=useState(()=>{try{return localStorage.getItem('rp_heading_rule')!=='off'}catch{return true}});
+  const[expanded,setExpanded]=useState(false);
 
   useEffect(()=>{setEditedContent(content);setHasChanges(false);},[content]);
   // プレビューモーダル初回ツアー
@@ -4375,8 +4376,8 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
               aria-label={title}
               style={{
                   width: '100%',
-                  maxWidth: 820,
-                  maxHeight: '92vh',
+                  maxWidth: expanded ? '96vw' : 820,
+                  maxHeight: expanded ? '96vh' : '92vh',
                   background: T.bg2,
                   borderRadius: 16,
                   border: `1px solid ${T.border}`,
@@ -4384,6 +4385,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                   flexDirection: 'column',
                   overflow: 'hidden',
                   animation: 'fadeUp .3s ease',
+                  transition: 'max-width .25s ease, max-height .25s ease',
               }}
           >
               <div
@@ -4463,7 +4465,8 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           >
                               テキスト
                           </button>
-                          {editable!==false&&onContentChange&&(
+                          {editable!==false&&onContentChange&&(<>
+                          <span style={{width:1,alignSelf:'stretch',background:T.border}} />
                           <button
                               onClick={() => setView('edit')}
                               title='テキストを編集'
@@ -4483,7 +4486,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           >
                               編集
                           </button>
-                          )}
+                          </>)}
                       </div>
                       {view==='layout'&&fmt!=='csv'&&fmt!=='xlsx'&&(
                         <button
@@ -4501,6 +4504,32 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           罫線
                         </button>
                       )}
+                      <button
+                          onClick={()=>setExpanded(v=>!v)}
+                          title={expanded?'縮小':'最大化'}
+                          aria-label={expanded?'縮小':'最大化'}
+                          style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 7,
+                              border: `1px solid ${T.border}`,
+                              background: 'transparent',
+                              color: T.text2,
+                              cursor: 'pointer',
+                              fontSize: 13,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                          }}
+                      >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            {expanded?(
+                              <>{/* 縮小アイコン */}<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></>
+                            ):(
+                              <>{/* 最大化アイコン */}<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></>
+                            )}
+                          </svg>
+                      </button>
                       <button
                           onClick={onClose}
                           title='閉じる'
