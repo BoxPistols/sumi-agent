@@ -8456,7 +8456,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               <div
                   data-intro="export-buttons"
                   style={{
-                      padding: '10px 16px 70px',
+                      padding: '10px 16px 16px',
                       borderTop: `1px solid ${T.border}`,
                       background: T.bg2,
                       display: 'flex',
@@ -8493,9 +8493,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       style={{
                           width: '100%',
                           borderRadius: 10,
-                          background: editMode ? T.accent : '#222',
+                          background: editMode ? T.accent : 'transparent',
                           fontSize: 13,
-                          color: '#fff',
+                          color: editMode ? undefined : T.accent,
+                          border: editMode ? 'none' : `1.5px solid ${T.accent}`,
                       }}
                   >
                       {editMode ? '編集完了 / プレビューを閉じる' : 'PDF プレビュー・編集'}
@@ -8745,16 +8746,17 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   <div ref={advisorEndRef}/>
               </div>
               {/* 入力欄 */}
-              <div style={{padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,display:'flex',gap:8,flexShrink:0}}>
-                  <input
-                      type="text"
+              <div style={{padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
+                  <textarea
+                      rows={2}
                       value={advisorInput}
                       onChange={e=>setAdvisorInput(e.target.value)}
                       onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();handleAdvisorSend();}}}
                       placeholder="質問を入力..."
                       disabled={advisorLoading}
                       style={{flex:1,padding:'8px 12px',fontSize:13,color:T.text,background:T.surface,
-                          border:`1px solid ${T.border}`,borderRadius:8,outline:'none',fontFamily:'inherit'}}
+                          border:`1px solid ${T.border}`,borderRadius:8,outline:'none',fontFamily:'inherit',
+                          resize:'vertical',minHeight:48,lineHeight:1.5}}
                   />
                   <button
                       onClick={handleAdvisorSend}
