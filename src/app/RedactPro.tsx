@@ -8698,29 +8698,47 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               <div style={{flexShrink:0,padding:'8px 14px',borderTop:`1px solid ${T.border}`,display:'flex',flexDirection:'column',gap:4}}>
                   <button
                       onClick={()=>setShowJobInput(p=>!p)}
-                      style={{width:'100%',padding:'6px 8px',fontSize:11,fontWeight:600,
-                          color:'#fff',background:T.accent,
-                          border:'none',borderRadius:6,cursor:'pointer',transition:'opacity .15s',
-                          opacity:advisorLoading?0.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                      style={{width:'100%',padding:'8px 10px',fontSize:12,fontWeight:600,
+                          color:T.bg,background:T.accent,
+                          border:'none',borderRadius:8,cursor:'pointer',transition:'opacity .15s',
+                          opacity:advisorLoading?0.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
                       disabled={advisorLoading}
                   >
-                      <span style={{fontSize:13}}>&#x21C4;</span> 求人票マッチング
+                      <span style={{fontSize:14}}>&#x21C4;</span> 求人票マッチング
                   </button>
                   <button
                       onClick={handleAdvisorRewriteFull}
                       disabled={advisorDraftLoading||advisorLoading}
                       title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
-                      style={{width:'100%',padding:'6px 8px',fontSize:11,fontWeight:600,
-                          color:'#fff',background:T.green||'#059669',
-                          border:'none',borderRadius:6,cursor:advisorDraftLoading?'wait':'pointer',
+                      style={{width:'100%',padding:'8px 10px',fontSize:12,fontWeight:600,
+                          color:'#fff',background:'#15803d',
+                          border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
                           transition:'opacity .15s',opacity:advisorDraftLoading?0.5:1,
-                          display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                          display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
                   >
                       <span style={{fontSize:13}}>&#x21BB;</span> {advisorDraftLoading?'生成中...':'改善テキストを生成'}
                   </button>
                   {advisorDraft&&<div style={{fontSize:10,color:T.green||'#22c55e',fontWeight:500,textAlign:'center'}}>差分プレビューを左パネルに表示中</div>}
               </div>
               </>)}
+              {/* チャット後もアクションボタンを表示 */}
+              {advisorMessages.length>0 && (
+              <div style={{flexShrink:0,padding:'6px 14px',borderTop:`1px solid ${T.border}`,display:'flex',gap:4}}>
+                  <button
+                      onClick={handleAdvisorRewriteFull}
+                      disabled={advisorDraftLoading||advisorLoading}
+                      title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
+                      style={{flex:1,padding:'8px 10px',fontSize:12,fontWeight:600,
+                          color:'#fff',background:'#15803d',
+                          border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
+                          transition:'opacity .15s',opacity:advisorDraftLoading||advisorLoading?0.5:1,
+                          display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
+                  >
+                      <span style={{fontSize:13}}>&#x21BB;</span> {advisorDraftLoading?'生成中...':'改善テキストを生成'}
+                  </button>
+                  {advisorDraft&&<div style={{fontSize:10,color:T.green||'#22c55e',fontWeight:500,alignSelf:'center'}}>差分プレビュー表示中</div>}
+              </div>
+              )}
               {/* チャット履歴 */}
               <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
                   {advisorMessages.map((msg,i)=>(
