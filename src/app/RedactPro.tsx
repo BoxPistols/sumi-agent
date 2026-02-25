@@ -2397,118 +2397,32 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   }
   return (
       <div
-          style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,.55)',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 100,
-              padding: 16,
-              animation: 'fadeIn .2s',
-          }}
+          className={s['modal-overlay']}
           onClick={(e) => {
               if (e.target === e.currentTarget) onClose()
           }}
       >
           <div
               ref={trapRef}
-              className='rp-modal-inner'
+              className={`rp-modal-inner ${s['settings-dialog']}`}
               role="dialog"
               aria-modal="true"
               aria-label="設定"
-              style={{
-                  width: '100%',
-                  maxWidth: 560,
-                  maxHeight: '92vh',
-                  overflow: 'auto',
-                  background: T.bg2,
-                  borderRadius: 16,
-                  border: `1px solid ${T.border}`,
-                  animation: 'fadeUp .3s ease',
-              }}
           >
-              <div
-                  style={{
-                      padding: '14px 20px',
-                      borderBottom: `1px solid ${T.border}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      position: 'sticky',
-                      top: 0,
-                      background: T.bg2,
-                      zIndex: 1,
-                  }}
-              >
-                  <span
-                      style={{ fontSize: 15, fontWeight: 700, color: T.text }}
-                  >
-                      設定
-                  </span>
-                  <button
-                      onClick={onClose}
-                      aria-label="閉じる"
-                      style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 7,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          color: T.text2,
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                      }}
-                  >
-                      ✕
-                  </button>
+              <div className={s['modal-header']}>
+                  <span className={s['modal-header-title']}>設定</span>
+                  <button onClick={onClose} aria-label="閉じる" className={s['modal-close-btn']}>✕</button>
               </div>
-              <div
-                  style={{
-                      padding: '18px 20px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 20,
-                  }}
-              >
+              <div className={s['settings-body']}>
                   {/* Theme */}
-                  <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 14px',
-                          borderRadius: 10,
-                          border: `1px solid ${T.border}`,
-                          background: T.surface,
-                      }}
-                  >
-                      <div
-                          style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                          }}
-                      >
+                  <div className={s['settings-row']}>
+                      <div className={s['settings-row-left']}>
                           <span style={{ fontSize: 16 }}>
                               {isDark ? '🌙' : '☀️'}
                           </span>
                           <div>
-                              <div
-                                  style={{
-                                      fontSize: 12,
-                                      fontWeight: 600,
-                                      color: T.text,
-                                  }}
-                              >
-                                  テーマ
-                              </div>
-                              <div style={{ fontSize: 12, color: T.text3 }}>
+                              <div className={s['settings-label']}>テーマ</div>
+                              <div className={s['settings-sublabel']}>
                                   {isDark ? 'ダークモード' : 'ライトモード（デフォルト）'}
                               </div>
                           </div>
@@ -2520,21 +2434,19 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                       />
                   </div>
                   {/* エディション切替 */}
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
+                  <div className={s['settings-row']}>
                       <div>
-                          <div style={{fontSize:12,fontWeight:600,color:T.text}}>エディション</div>
-                          <div style={{fontSize:12,color:T.text3,lineHeight:1.5}}>
+                          <div className={s['settings-label']}>エディション</div>
+                          <div className={s['settings-sublabel-lh']}>
                               {isLite ? 'Lite — 基本的なマスキング機能' : 'Pro — AI検出・アドバイザー・再フォーマット等を含む全機能'}
                           </div>
-                          <div style={{fontSize:11,color:T.accent,marginTop:2}}>Pro版は現在無料でご利用いただけます</div>
+                          <div className={s['settings-edition-pro-note']}>Pro版は現在無料でご利用いただけます</div>
                       </div>
-                      <div style={{display:'flex',gap:4}}>
+                      <div className={s['settings-edition-btns']}>
                           {['lite','pro'].map(ed=>(
                               <button key={ed} onClick={()=>switchEdition(ed)}
-                                  style={{padding:'5px 14px',fontSize:12,fontWeight:edition===ed?700:500,
-                                      borderRadius:6,border:`1.5px solid ${edition===ed?T.accent:T.border}`,
-                                      background:edition===ed?`${T.accent}18`:'transparent',
-                                      color:edition===ed?T.accent:T.text2,cursor:'pointer',transition:'all .15s',textTransform:'capitalize'}}>
+                                  className={s['settings-edition-btn']}
+                                  data-active={edition===ed}>
                                   {ed==='lite'?'Lite':'Pro'}
                               </button>
                           ))}
@@ -2542,80 +2454,34 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   </div>
                   {/* ─── Pro版設定（Liteではdisabledで表示） ─── */}
                   {isLite && (
-                  <div style={{fontSize:12,color:T.text3,padding:'6px 10px',borderRadius:8,background:`${T.accent}10`,border:`1px solid ${T.accent}30`}}>
+                  <div className={s['settings-lite-notice']} style={{background:`${T.accent}10`,border:`1px solid ${T.accent}30`}}>
                       以下のAI設定はPro版に切り替えると有効になります。
                   </div>
                   )}
-                  <fieldset disabled={isLite} style={{border:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:20,opacity:isLite?0.5:1}}>
+                  <fieldset disabled={isLite} className={s['settings-fieldset']} data-disabled={isLite}>
                   {/* Provider */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
-                          AIプロバイダー
-                      </div>
-                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.5}}>
+                      <div className={s['settings-section-title']}>AIプロバイダー</div>
+                      <div className={s['settings-section-desc']}>
                           AI機能（PII検出・再フォーマット・アドバイザー）で使用するAIサービスを選択します。
                       </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                      <div className={s['settings-provider-grid']}>
                           {AI_PROVIDERS.map((p) => (
                               <button
                                   key={p.id}
                                   onClick={() => switchProvider(p.id)}
-                                  style={{
-                                      flex: 1,
-                                      padding: '10px 8px',
-                                      borderRadius: 10,
-                                      border: `1.5px solid ${provider === p.id ? p.color : T.border}`,
-                                      background:
-                                          provider === p.id
-                                              ? `${p.color}15`
-                                              : 'transparent',
-                                      cursor: 'pointer',
-                                      textAlign: 'center',
-                                      transition: 'all .15s',
-                                  }}
+                                  className={s['settings-provider-btn']}
+                                  data-active={provider === p.id}
+                                  style={{'--provider-color': p.color}}
                               >
-                                  <div
-                                      style={{
-                                          fontSize: 14,
-                                          fontWeight: 700,
-                                          color:
-                                              provider === p.id
-                                                  ? p.color
-                                                  : T.text3,
-                                          marginBottom: 2,
-                                      }}
-                                  >
+                                  <div className={s['settings-provider-icon']} data-active={provider === p.id} style={provider === p.id ? {color: p.color} : undefined}>
                                       {p.icon}
                                   </div>
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          color:
-                                              provider === p.id
-                                                  ? p.color
-                                                  : T.text,
-                                      }}
-                                  >
+                                  <div className={s['settings-provider-name']} data-active={provider === p.id} style={provider === p.id ? {color: p.color} : undefined}>
                                       {p.label}
                                   </div>
                                   {p.needsKey && (
-                                      <div
-                                          style={{
-                                              fontSize: 12,
-                                              color: T.text3,
-                                              marginTop: 2,
-                                          }}
-                                      >
-                                          要APIキー
-                                      </div>
+                                      <div className={s['settings-provider-note']}>要APIキー</div>
                                   )}
                               </button>
                           ))}
@@ -2623,51 +2489,22 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   </div>
                   {/* Models */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
+                      <div className={s['settings-section-title']}>
                           モデル{' '}
                           <span style={{ fontWeight: 400, color: T.text3 }}>
                               — {curProv.label}
                           </span>
                       </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              marginBottom: 8,
-                              lineHeight: 1.6,
-                          }}
-                      >
-                          {aiProfile === 'balanced' && (
-                              <>
-                                  再フォーマット/再構成はこのモデル。PII検出は高速モデルを自動選択します。
-                              </>
-                          )}
-                          {aiProfile === 'speed' && (
-                              <>
-                                  全て高速モデル寄りで実行します（品質より速度優先）。
-                              </>
-                          )}
-                          {aiProfile === 'quality' && (
-                              <>
-                                  可能な限り高品質モデルで実行します（遅くなります）。
-                              </>
-                          )}
+                      <div className={s['settings-section-desc-lg']}>
+                          {aiProfile === 'balanced' && <>再フォーマット/再構成はこのモデル。PII検出は高速モデルを自動選択します。</>}
+                          {aiProfile === 'speed' && <>全て高速モデル寄りで実行します（品質より速度優先）。</>}
+                          {aiProfile === 'quality' && <>可能な限り高品質モデルで実行します（遅くなります）。</>}
                       </div>
                       <div
                           className='rp-settings-models'
                           style={{
                               display: 'grid',
-                              gridTemplateColumns:
-                                  curProv.models.length <= 2
-                                      ? '1fr 1fr'
-                                      : '1fr 1fr 1fr',
+                              gridTemplateColumns: curProv.models.length <= 2 ? '1fr 1fr' : '1fr 1fr 1fr',
                               gap: 6,
                           }}
                       >
@@ -2675,158 +2512,56 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               <button
                                   key={m.id}
                                   onClick={() => setModel(m.id)}
-                                  style={{
-                                      padding: '9px 12px',
-                                      borderRadius: 9,
-                                      border: `1.5px solid ${model === m.id ? curProv.color : T.border}`,
-                                      background:
-                                          model === m.id
-                                              ? `${curProv.color}15`
-                                              : 'transparent',
-                                      cursor: 'pointer',
-                                      textAlign: 'left',
-                                      transition: 'all .15s',
-                                  }}
+                                  className={s['settings-model-btn']}
+                                  data-active={model === m.id}
+                                  style={{'--provider-color': curProv.color}}
                               >
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          color:
-                                              model === m.id
-                                                  ? curProv.color
-                                                  : T.text,
-                                      }}
-                                  >
+                                  <div className={s['settings-model-label']} data-active={model === m.id} style={model === m.id ? {color: curProv.color} : undefined}>
                                       {m.label}
                                   </div>
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          color: T.text3,
-                                          marginTop: 1,
-                                      }}
-                                  >
-                                      {m.desc}
-                                  </div>
+                                  <div className={s['settings-model-desc']}>{m.desc}</div>
                               </button>
                           ))}
                       </div>
                   </div>
                   {/* AI profile */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
-                          AI品質プロファイル
-                      </div>
-                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.5}}>
+                      <div className={s['settings-section-title']}>AI品質プロファイル</div>
+                      <div className={s['settings-section-desc']}>
                           AI処理の速度と品質のバランスを選択します。コスト（API利用料）に影響します。
                       </div>
-                      <div
-                          style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1fr 1fr 1fr',
-                              gap: 6,
-                          }}
-                      >
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
                           {PROFILES.map((p) => (
                               <button
                                   key={p.id}
                                   onClick={() => {
                                       setAiProfile(p.id)
-                                      setModel(
-                                          pickFormatModelForProfile(
-                                              provider,
-                                              p.id,
-                                          ) || model,
-                                      )
+                                      setModel(pickFormatModelForProfile(provider, p.id) || model)
                                   }}
-                                  style={{
-                                      padding: '10px 12px',
-                                      borderRadius: 10,
-                                      border: `1.5px solid ${aiProfile === p.id ? curProv.color : T.border}`,
-                                      background:
-                                          aiProfile === p.id
-                                              ? `${curProv.color}15`
-                                              : 'transparent',
-                                      cursor: 'pointer',
-                                      textAlign: 'left',
-                                      transition: 'all .15s',
-                                  }}
+                                  className={s['settings-profile-btn']}
+                                  data-active={aiProfile === p.id}
+                                  style={{'--provider-color': curProv.color}}
                               >
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 700,
-                                          color:
-                                              aiProfile === p.id
-                                                  ? curProv.color
-                                                  : T.text,
-                                          marginBottom: 2,
-                                      }}
-                                  >
+                                  <div className={s['settings-profile-label']} data-active={aiProfile === p.id} style={aiProfile === p.id ? {color: curProv.color} : undefined}>
                                       {p.label}
                                   </div>
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          color: T.text3,
-                                          lineHeight: 1.4,
-                                      }}
-                                  >
-                                      {p.desc}
-                                  </div>
+                                  <div className={s['settings-profile-desc']}>{p.desc}</div>
                               </button>
                           ))}
                       </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              marginTop: 8,
-                              lineHeight: 1.6,
-                          }}
-                      >
+                      <div className={s['settings-profile-hint']}>
                           バランス推奨:{' '}
-                          <span style={{ fontFamily: T.mono }}>
-                              PII検出=高速
-                          </span>{' '}
+                          <span className={s['settings-mono']}>PII検出=高速</span>{' '}
                           /{' '}
-                          <span style={{ fontFamily: T.mono }}>
-                              再構成・再フォーマット=高品質
-                          </span>
+                          <span className={s['settings-mono']}>再構成・再フォーマット=高品質</span>
                           （例: OpenAIなら検出は GPT-5 Nano、整形は GPT-5 Mini）
                       </div>
                   </div>
                   {/* AI detect toggle */}
-                  <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 14px',
-                          borderRadius: 10,
-                          border: `1px solid ${T.border}`,
-                          background: T.surface,
-                      }}
-                  >
+                  <div className={s['settings-row']}>
                       <div>
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  color: T.text,
-                              }}
-                          >
-                              AI PII検出
-                          </div>
-                          <div style={{ fontSize: 12, color: T.text3, lineHeight: 1.5 }}>
+                          <div className={s['settings-label']}>AI PII検出</div>
+                          <div className={s['settings-sublabel-lh']}>
                               アップロード時にAIで人名を追加検出。正規表現では拾えない名前をカバーします。無効にすると正規表現＋辞書のみで検出します。
                           </div>
                       </div>
@@ -2838,24 +2573,8 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   </div>
                   {/* API Key */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 4,
-                          }}
-                      >
-                          API Key
-                      </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              marginBottom: 8,
-                              lineHeight: 1.5,
-                          }}
-                      >
+                      <div className={s['settings-section-title']} style={{marginBottom:4}}>API Key</div>
+                      <div className={s['settings-section-desc']}>
                           {provider === 'anthropic'
                               ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のキーを入力すると無制限に利用できます。'
                               : provider === 'openai'
@@ -2869,78 +2588,27 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               value={apiKey}
                               onChange={(e) => setApiKey(e.target.value)}
                               placeholder={keyPlaceholder}
-                              style={{
-                                  width: '100%',
-                                  padding: '10px 14px',
-                                  paddingRight: 52,
-                                  borderRadius: 10,
-                                  border: `1px solid ${T.border}`,
-                                  background: T.surface,
-                                  color: T.text,
-                                  fontSize: 12,
-                                  fontFamily: T.mono,
-                                  outline: 'none',
-                              }}
+                              className={s['settings-input-apikey']}
                           />
-                          <button
-                              onClick={() => setShowKey(!showKey)}
-                              style={{
-                                  position: 'absolute',
-                                  right: 8,
-                                  top: '50%',
-                                  transform: 'translateY(-50%)',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: T.text3,
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  fontFamily: T.font,
-                              }}
-                          >
+                          <button onClick={() => setShowKey(!showKey)} className={s['settings-show-key-btn']}>
                               {showKey ? '隠す' : '表示'}
                           </button>
                       </div>
                       {apiKey && !showKey && (
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  color: T.text3,
-                                  marginTop: 4,
-                                  fontFamily: T.mono,
-                              }}
-                          >
-                              {masked}
-                          </div>
+                          <div className={s['settings-masked-key']}>{masked}</div>
                       )}
-                      <div
-                          style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              marginTop: 8,
-                          }}
-                      >
+                      <div className={s['settings-key-actions']}>
                           <Btn
                               variant='ghost'
                               onClick={testApiConnection}
                               disabled={testingKey}
-                              style={{
-                                  padding: '6px 12px',
-                                  fontSize: 12,
-                                  borderRadius: 7,
-                              }}
+                              style={{ padding: '6px 12px', fontSize: 12, borderRadius: 7 }}
                           >
                               {testingKey ? '接続テスト中...' : 'API接続テスト'}
                           </Btn>
                           <span aria-live="polite" aria-atomic="true">
                           {keyTest && (
-                              <span
-                                  style={{
-                                      fontSize: 12,
-                                      color: keyTest.ok ? T.green : T.red,
-                                      lineHeight: 1.4,
-                                  }}
-                              >
+                              <span className={s['settings-key-result']} style={{ color: keyTest.ok ? T.green : T.red }}>
                                   {keyTest.msg}
                               </span>
                           )}
@@ -2949,41 +2617,19 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   </div>
                   {/* Proxy URL for URL scraping */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 4,
-                          }}
-                      >
+                      <div className={s['settings-section-title']} style={{marginBottom:4}}>
                           スクレイピング用プロキシURL{' '}
-                          <span
-                              style={{
-                                  fontSize: 12,
-                                  fontWeight: 400,
-                                  color: T.text3,
-                              }}
-                          >
-                              (任意)
-                          </span>
+                          <span style={{ fontWeight: 400, color: T.text3 }}>(任意)</span>
                       </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              marginBottom: 8,
-                              lineHeight: 1.6,
-                          }}
-                      >
+                      <div className={s['settings-section-desc-lg']}>
                           URLタブでWebページ本文を取るときに使う「中継サーバー」のURLです。
                           <br />
                           例:{' '}
-                          <span style={{ fontFamily: T.mono }}>
+                          <span className={s['settings-mono']}>
                               https://your-proxy.example.com/fetch?url={'{url}'}
                           </span>
                           （
-                          <span style={{ fontFamily: T.mono }}>{'{url}'}</span>{' '}
+                          <span className={s['settings-mono']}>{'{url}'}</span>{' '}
                           は取得対象URLに自動置換）
                           <br />
                           通常はサーバー経由で自動取得されるため、設定不要です。独自の中継サーバーがある場合のみ入力してください。
@@ -2993,40 +2639,15 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           value={proxyUrl}
                           onChange={(e) => setProxyUrl(e.target.value)}
                           placeholder='https://your-proxy.example.com/fetch?url={url}'
-                          style={{
-                              width: '100%',
-                              padding: '10px 14px',
-                              borderRadius: 10,
-                              border: `1px solid ${T.border}`,
-                              background: T.surface,
-                              color: T.text,
-                              fontSize: 12,
-                              fontFamily: T.mono,
-                              outline: 'none',
-                              boxSizing: 'border-box',
-                          }}
+                          className={s['settings-input']}
                       />
                       {!proxyUrl && (
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  color: T.text3,
-                                  marginTop: 6,
-                                  lineHeight: 1.5,
-                              }}
-                          >
+                          <div className={s['settings-sublabel-lh']} style={{marginTop:6}}>
                               未設定でOK — サーバー経由で自動取得します。
                           </div>
                       )}
                       {proxyUrl && !proxyUrl.includes('{url}') && (
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  color: T.red,
-                                  marginTop: 6,
-                                  lineHeight: 1.5,
-                              }}
-                          >
+                          <div style={{ fontSize: 12, color: T.red, marginTop: 6, lineHeight: 1.5 }}>
                               ⚠ プロキシURLに {'{url}'}{' '}
                               がありません。対象URLを渡せないため正しく動作しません。
                           </div>
@@ -3035,10 +2656,8 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   {/* ローカルAI設定 */}
                   {provider==='local' && (
                   <div>
-                      <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:4}}>
-                          ローカルAIエンドポイント
-                      </div>
-                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.6}}>
+                      <div className={s['settings-section-title']} style={{marginBottom:4}}>ローカルAIエンドポイント</div>
+                      <div className={s['settings-section-desc-lg']}>
                           Ollama、LM Studio、LocalAI等のOpenAI互換APIエンドポイントを指定します。
                           ローカルで動作するためデータが外部に送信されず、利用回数の制限もありません。
                       </div>
@@ -3047,58 +2666,52 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           value={localEndpoint}
                           onChange={(e) => setLocalEndpoint(e.target.value)}
                           placeholder='http://localhost:11434/v1'
-                          style={{width:'100%',padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontFamily:T.mono,outline:'none',boxSizing:'border-box'}}
+                          className={s['settings-input']}
                       />
-                      <div style={{fontSize:12,color:T.text3,marginTop:6,lineHeight:1.6}}>
-                          Ollama: <span style={{fontFamily:T.mono}}>http://localhost:11434/v1</span><br/>
-                          LM Studio: <span style={{fontFamily:T.mono}}>http://localhost:1234/v1</span><br/>
+                      <div className={s['settings-section-desc-lg']} style={{marginTop:6,marginBottom:0}}>
+                          Ollama: <span className={s['settings-mono']}>http://localhost:11434/v1</span><br/>
+                          LM Studio: <span className={s['settings-mono']}>http://localhost:1234/v1</span><br/>
                           モデル名はサーバー側で設定されたデフォルトが使用されます。
                       </div>
                   </div>
                   )}
                   </fieldset>
                   {/* 利用制限 */}
-                  <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
-                      <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>利用制限（サーバー共用キー）</div>
+                  <div className={s['settings-card']}>
+                      <div className={s['settings-card-title']}>利用制限（サーバー共用キー）</div>
                       {rateInfo && !apiKey ? (
                       <div style={{marginBottom:6}}>
-                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                              <div style={{flex:1,height:6,borderRadius:3,background:T.border,overflow:'hidden'}}>
+                          <div className={s['settings-rate-bar-wrap']}>
+                              <div className={s['settings-rate-bar']}>
                                   <div style={{width:`${Math.min(100,(rateInfo.used/rateInfo.limit)*100)}%`,height:'100%',borderRadius:3,background:rateInfo.used>=rateInfo.limit?T.red:rateInfo.used>=rateInfo.limit*0.8?'#f59e0b':T.accent,transition:'width .3s'}}/>
                               </div>
-                              <span style={{fontSize:12,fontWeight:600,color:rateInfo.used>=rateInfo.limit?T.red:T.text,whiteSpace:'nowrap'}}>
+                              <span className={s['settings-rate-count']} style={{color:rateInfo.used>=rateInfo.limit?T.red:T.text}}>
                                   {rateInfo.used} / {rateInfo.limit} 回使用
                               </span>
                           </div>
-                          <div style={{fontSize:12,color:T.text3,lineHeight:1.5}}>
+                          <div className={s['settings-sublabel-lh']}>
                               24時間あたり{rateInfo.limit}回まで（IP単位）。残り {rateInfo.remaining} 回
                           </div>
                       </div>
                       ) : apiKey ? (
-                      <div style={{fontSize:12,color:T.green,lineHeight:1.6}}>
+                      <div className={s['settings-card-text']} style={{color:T.green}}>
                           自分のAPIキーを使用中 — 利用回数の制限はありません。
                       </div>
                       ) : (
-                      <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
+                      <div className={s['settings-card-text']}>
                           APIキー未設定時: AI機能は24時間あたり50回まで（IP単位）。
                       </div>
                       )}
-                      {!apiKey && <div style={{fontSize:12,color:T.text3,marginTop:4,lineHeight:1.5}}>自分のAPIキーを設定すると無制限に利用できます。</div>}
+                      {!apiKey && <div className={s['settings-sublabel-lh']} style={{marginTop:4}}>自分のAPIキーを設定すると無制限に利用できます。</div>}
                   </div>
                   {/* プライバシー */}
-                  <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
-                      <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>プライバシー</div>
-                      <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
+                  <div className={s['settings-card']}>
+                      <div className={s['settings-card-title']}>プライバシー</div>
+                      <div className={s['settings-card-text']}>
                           ファイルの読み込み・PII検出・マスキングはすべてブラウザ内で処理されます。サーバーやデータベースにデータは保存されません。AI機能を有効にした場合のみ、テキストがAI APIに送信されます（各社APIは学習データとして使用しません）。
                       </div>
                   </div>
-                  <div
-                      style={{
-                          display: 'flex',
-                          gap: 8,
-                          justifyContent: 'flex-end',
-                      }}
-                  >
+                  <div className={s['settings-footer']}>
                       <Btn
                           variant='ghost'
                           onClick={() => {
@@ -3108,12 +2721,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               setAiProfile('balanced');setProxyUrl('');setLocalEndpoint('http://localhost:11434/v1');
                           }}
                           title="AIプロバイダー・モデル・APIキーなどの設定を初期値に戻します。ファイルデータには影響しません。"
-                          style={{
-                              padding: '8px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                              color: T.red,
-                          }}
+                          style={{ padding: '8px 16px', fontSize: 12, borderRadius: 8, color: T.red }}
                       >
                           設定リセット
                       </Btn>
@@ -3124,27 +2732,12 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               clearAllSiteData();
                           }}
                           title="ブラウザに保存されたすべてのデータ（設定・APIキー・キャッシュ等）を完全に消去してページをリロードします。"
-                          style={{
-                              padding: '8px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                              marginRight: 'auto',
-                              color: T.red,
-                              border: `1px solid ${T.red}44`,
-                          }}
+                          style={{ padding: '8px 16px', fontSize: 12, borderRadius: 8, marginRight: 'auto', color: T.red, border: `1px solid ${T.red}44` }}
                       >
                           全データ削除
                       </Btn>
                       {apiKey && (
-                          <Btn
-                              variant='ghost'
-                              onClick={() => setApiKey('')}
-                              style={{
-                                  padding: '8px 16px',
-                                  fontSize: 12,
-                                  borderRadius: 8,
-                              }}
-                          >
+                          <Btn variant='ghost' onClick={() => setApiKey('')} style={{ padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
                               消去
                           </Btn>
                       )}
@@ -3152,11 +2745,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           variant={saved ? 'success' : 'primary'}
                           onClick={handleSave}
                           aria-live="polite"
-                          style={{
-                              padding: '8px 20px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                          }}
+                          style={{ padding: '8px 20px', fontSize: 12, borderRadius: 8 }}
                       >
                           {saved ? '✓ 保存済' : '保存'}
                       </Btn>
