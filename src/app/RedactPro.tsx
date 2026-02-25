@@ -4119,142 +4119,43 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
 
   if (loading)
       return (
-          <div
-              style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: 'calc(100vh - 56px)',
-                  padding: 40,
-                  animation: 'fadeUp .4s',
-              }}
-          >
-              <div
-                  style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}
-              >
-                  <div
-                      style={{
-                          width: 56,
-                          height: 56,
-                          borderRadius: 28,
-                          border: `3px solid ${T.border}`,
-                          borderTopColor: T.accent,
-                          animation: 'spin .8s linear infinite',
-                          margin: '0 auto 24px',
-                      }}
-                  />
-                  <h2
-                      style={{
-                          fontSize: 18,
-                          fontWeight: 700,
-                          color: T.text,
-                          marginBottom: 6,
-                      }}
-                  >
-                      {fileName}
-                  </h2>
-                  <p style={{ fontSize: 13, color: T.text2, marginBottom: 20 }}>
-                      解析中...
-                  </p>
-                  <div style={{ padding: '0 20px', marginBottom: 14 }}>
-                      <div
-                          style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              marginBottom: 8,
-                          }}
-                      >
-                          <span style={{ fontSize: 11, color: T.text3 }}>
+          <div className={s['up-loading']}>
+              <div className={s['up-loading-inner']}>
+                  <div className={s['up-spinner']} />
+                  <h2 className={s['up-loading-name']}>{fileName}</h2>
+                  <p className={s['up-loading-sub']}>解析中...</p>
+                  <div className={s['up-progress-wrap']}>
+                      <div className={s['up-progress-header']}>
+                          <span className={s['up-progress-label']}>
                               進捗（{Math.min(stageIdx + 1, visibleStages.length)}/
                               {visibleStages.length}）
                           </span>
-                          <span
-                              style={{
-                                  fontSize: 12,
-                                  fontFamily: T.mono,
-                                  color: T.text2,
-                                  fontWeight: 700,
-                              }}
-                          >
+                          <span className={s['up-progress-pct']}>
                               {progressPct}%
                           </span>
                       </div>
-                      <div
-                          style={{
-                              height: 8,
-                              borderRadius: 999,
-                              background: T.surfaceAlt,
-                              overflow: 'hidden',
-                              border: `1px solid ${T.border}`,
-                          }}
-                      >
-                          <div
-                              style={{
-                                  height: '100%',
-                                  width: `${progressPct}%`,
-                                  background: T.accent,
-                                  transition: 'width .25s ease',
-                              }}
-                          />
+                      <div className={s['up-progress-bar-bg']}>
+                          <div className={s['up-progress-bar-fill']} style={{ width: `${progressPct}%` }} />
                       </div>
-                      <div
-                          style={{
-                              fontSize: 10,
-                              color: T.text3,
-                              marginTop: 8,
-                              textAlign: 'left',
-                              lineHeight: 1.4,
-                          }}
-                      >
+                      <div className={s['up-progress-stage']}>
                           現在: {visibleStages[stageIdx] || '処理中'}
                           {subPct != null ? `（${subPct}%）` : ''}
                       </div>
-                      <div
-                          style={{
-                              fontSize: 10,
-                              color: T.text3,
-                              marginTop: 4,
-                              textAlign: 'left',
-                              lineHeight: 1.4,
-                              fontFamily: T.mono,
-                          }}
-                      >
+                      <div className={s['up-progress-elapsed']}>
                           経過: {formatDuration(elapsedMs)}
                       </div>
                   </div>
                   {aiStatus && (
-                      <div
-                          style={{
-                              padding: '10px 16px',
-                              borderRadius: 10,
-                              background: T.accentDim,
-                              marginBottom: 20,
-                              fontSize: 12,
-                              color: T.accent,
-                              fontWeight: 500,
-                              fontFamily: T.mono,
-                              lineHeight: 1.6,
-                              minHeight: 36,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                          }}
-                      >
+                      <div className={s['up-ai-status']}>
                           {aiStatus}
                       </div>
                   )}
-                  <div style={{ textAlign: 'left', padding: '0 20px' }}>
-                      {visibleStages.map((s, i) => (
+                  <div className={s['up-stages-list']}>
+                      {visibleStages.map((st, i) => (
                           <div
                               key={i}
+                              className={s['up-stage-item']}
                               style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 10,
-                                  padding: '7px 0',
-                                  fontSize: 13,
                                   color:
                                       i < stage
                                           ? T.green
@@ -4264,15 +4165,8 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               }}
                           >
                               <div
+                                  className={s['up-stage-dot']}
                                   style={{
-                                      width: 20,
-                                      height: 20,
-                                      borderRadius: 10,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontSize: 12,
-                                      fontWeight: 700,
                                       background:
                                           i < stage
                                               ? T.greenDim
@@ -4293,7 +4187,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       fontWeight: i === stage ? 600 : 400,
                                   }}
                               >
-                                  {s}
+                                  {st}
                               </span>
                           </div>
                       ))}
@@ -4303,60 +4197,40 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
       )
 
   return (
-      <div
-          style={{
-              minHeight: 'calc(100vh - 56px)',
-              padding: '32px 40px',
-              animation: 'fadeUp .5s ease',
-          }}
-      >
+      <div className={s['up-root']}>
           <div
+              className={s['up-hero']}
               style={{
-                  textAlign: 'center',
-                  marginBottom: isLite ? 36 : 28,
                   maxWidth: isLite ? 820 : 1200,
                   margin: isLite ? '0 auto 36px' : '0 auto 28px',
               }}
           >
-              <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,marginBottom:4}}>
-                  <div style={{width:40,height:40,borderRadius:8,background:T.text,display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center',padding:'0 8px',gap:4,flexShrink:0}}>
-                      <div style={{width:22,height:4,borderRadius:2,background:T.bg}} />
-                      <div style={{width:16,height:4,borderRadius:2,background:T.bg}} />
+              <div className={s['up-logo']}>
+                  <div className={s['up-logo-icon']}>
+                      <div className={s['up-logo-bar1']} />
+                      <div className={s['up-logo-bar2']} />
                   </div>
-                  <span style={{fontSize:28,fontWeight:800,color:T.text,letterSpacing:1}}>Sumi</span>
+                  <span className={s['up-logo-text']}>Sumi</span>
               </div>
               <h1
-                  style={{
-                      fontSize: isLite ? 32 : 28,
-                      fontWeight: 700,
-                      color: T.text,
-                      lineHeight: 1.35,
-                  }}
+                  className={s['up-title']}
+                  style={{ fontSize: isLite ? 32 : 28 }}
               >
-                  {isLite ? <>経歴書の個人情報を<span style={{ color: T.accent }}>自動マスキング</span></> : <>経歴書の個人情報を<span style={{ color: T.accent }}>自動検出・マスキング</span></>}
+                  {isLite ? <>経歴書の個人情報を<span className={s['up-title-accent']}>自動マスキング</span></> : <>経歴書の個人情報を<span className={s['up-title-accent']}>自動検出・マスキング</span></>}
               </h1>
-              <p
-                  style={{
-                      fontSize: 13,
-                      color: T.text2,
-                      marginTop: 8,
-                      lineHeight: 1.7,
-                  }}
-              >
+              <p className={s['up-subtitle']}>
                   {isLite ? 'ファイルをアップロードするだけで個人情報を自動検出・マスキング' : '日本人名辞書 + 正規表現 + AI検出 + AIテキスト再構成で高精度'}
               </p>
               {/* セキュリティ根拠バッジ */}
-              <div style={{display:'flex',flexWrap:'wrap',gap:8,marginTop:12}}>
+              <div className={s['up-badges']}>
                   {[
                       {icon:'\u{1F512}',text:'ブラウザ内完結',tip:'ファイルはサーバーに送信されません。すべてブラウザ内で処理されます'},
                       {icon:'\u{1F6AB}',text:'DB保存なし',tip:'データベースは一切使用しません。処理結果はブラウザのメモリ上のみに存在します'},
                       {icon:'\u2699',text:'AI利用は任意',tip:'AI検出・AI整形はユーザーが有効にした場合のみ動作します（デフォルトOFF）'},
                       {icon:'\u2705',text:'AI API学習除外',tip:'OpenAI / Anthropic / Google のAPIはトレーニングデータに使用されません（オプトアウト済み）'},
                   ].map((b,i)=>(
-                      <span key={i} title={b.tip} style={{display:'inline-flex',alignItems:'center',gap:4,padding:'4px 10px',
-                          fontSize:11,color:T.text2,background:T.surface,border:`1px solid ${T.border}`,borderRadius:20,
-                          cursor:'help',lineHeight:1.4,whiteSpace:'nowrap'}}>
-                          <span style={{fontSize:13}}>{b.icon}</span>{b.text}
+                      <span key={i} title={b.tip} className={s['up-trust-badge']}>
+                          <span className={s['up-trust-badge-icon']}>{b.icon}</span>{b.text}
                       </span>
                   ))}
               </div>
@@ -4373,78 +4247,43 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   alignItems: isLite ? 'stretch' : 'start',
               }}
           >
-              <div
-                  style={{
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: 14,
-                      padding: '18px 20px',
-                  }}
-              >
-                  <div
-                      style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: T.text,
-                          marginBottom: 14,
-                      }}
-                  >
+              <div className={s['up-card']}>
+                  <div className={s['up-card-title']}>
                       マスキング設定{' '}
-                      {!isLite && <span
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 400,
-                              color: T.text3,
-                          }}
-                      >
+                      {!isLite && <span className={s['up-card-title-sub']}>
                           -- アップロード前に対象を選択
                       </span>}
                   </div>
-                  <div data-intro="mask-presets" style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <div data-intro="mask-presets" className={s['up-presets']}>
                       {MASK_PRESETS.map((p, i) => (
                           <button
                               key={p.id}
                               onClick={() => setMask({ ...p.mask })}
+                              className={s['up-preset-btn']}
                               style={{
-                                  flex: 1,
-                                  padding: '10px 12px',
-                                  borderRadius: 10,
                                   border: `1.5px solid ${activePreset === i ? T.accent : T.border}`,
                                   background:
                                       activePreset === i
                                           ? T.accentDim
                                           : 'transparent',
-                                  cursor: 'pointer',
-                                  textAlign: 'left',
-                                  transition: 'all .15s',
                               }}
                           >
                               <div
+                                  className={s['up-preset-name']}
                                   style={{
-                                      fontSize: 13,
-                                      fontWeight: 600,
                                       color:
                                           activePreset === i
                                               ? T.accent
                                               : T.text,
-                                      marginBottom: 2,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 6,
                                   }}
                               >
                                   <span
-                                      style={{
-                                          display: 'inline-block',
-                                          width: 8,
-                                          height: 8,
-                                          borderRadius: 4,
-                                          background: lc[p.level],
-                                      }}
+                                      className={s['up-preset-dot']}
+                                      style={{ background: lc[p.level] }}
                                   />
                                   {p.label}
                               </div>
-                              <div style={{ fontSize: 12, color: T.text3 }}>
+                              <div className={s['up-preset-desc']}>
                                   {p.desc}
                               </div>
                           </button>
@@ -4452,36 +4291,24 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   </div>
                   {!isLite && <div
                       data-intro="category-toggles"
-                      style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '6px 16px',
-                      }}
+                      className={s['up-cat-grid']}
                   >
                       {Object.entries(CATEGORIES)
                           .filter(([k]) => k !== 'photo')
                           .map(([key, meta]) => (
                               <div
                                   key={key}
+                                  className={s['up-cat-row']}
                                   style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      padding: '8px 12px',
-                                      borderRadius: 8,
                                       background: mask[key]
                                           ? `${meta.color}08`
                                           : 'transparent',
                                       border: `1px solid ${mask[key] ? `${meta.color}20` : 'transparent'}`,
-                                      transition: 'all .2s',
                                   }}
                               >
                                   <span
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 500,
-                                          color: mask[key] ? T.text : T.text3,
-                                      }}
+                                      className={s['up-cat-label']}
+                                      style={{ color: mask[key] ? T.text : T.text3 }}
                                   >
                                       {meta.label}
                                   </span>
@@ -4496,43 +4323,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   {/* Advanced options */}
                   {!isLite && <div
                       data-intro="detail-options"
-                      style={{
-                          marginTop: 12,
-                          padding: '10px 12px',
-                          borderRadius: 10,
-                          background: T.bg,
-                          border: `1px solid ${T.border}`,
-                      }}
+                      className={s['up-detail-section']}
                   >
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
+                      <div className={s['up-detail-title']}>
                           詳細オプション
                       </div>
-                      <div
-                          style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 8,
-                          }}
-                      >
-                          <div
-                              style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                              }}
-                          >
+                      <div className={s['up-detail-col']}>
+                          <div className={s['up-detail-row']}>
                               <div>
                                   <div
+                                      className={s['up-detail-name']}
                                       style={{
-                                          fontSize: 12,
-                                          fontWeight: 500,
                                           color: mask.address
                                               ? T.text
                                               : T.text3,
@@ -4540,7 +4341,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   >
                                       都道府県を残す
                                   </div>
-                                  <div style={{ fontSize: 12, color: T.text3 }}>
+                                  <div className={s['up-detail-desc']}>
                                       住所マスク時に在住エリアだけ公開
                                   </div>
                               </div>
@@ -4556,24 +4357,15 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   disabled={!mask.address}
                               />
                           </div>
-                          <div
-                              style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                              }}
-                          >
+                          <div className={s['up-detail-row']}>
                               <div>
                                   <div
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 500,
-                                          color: mask.name ? T.text : T.text3,
-                                      }}
+                                      className={s['up-detail-name']}
+                                      style={{ color: mask.name ? T.text : T.text3 }}
                                   >
                                       氏名イニシャル化
                                   </div>
-                                  <div style={{ fontSize: 12, color: T.text3 }}>
+                                  <div className={s['up-detail-desc']}>
                                       田中太郎 → T.T.（フリガナから変換）
                                   </div>
                               </div>
@@ -4592,10 +4384,10 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </div>
                   </div>}
                   {/* カスタムキーワード */}
-                  {!isLite && <div data-intro="custom-keywords" style={{marginTop:12,padding:'10px 12px',borderRadius:10,background:T.bg,border:`1px solid ${T.border}`}}>
-                    <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:8}}>カスタムキーワード</div>
-                    <div style={{fontSize:11,color:T.text3,marginBottom:8}}>任意の文字列を指定してマスキング対象に追加</div>
-                    <div style={{display:'flex',gap:6,marginBottom:8}}>
+                  {!isLite && <div data-intro="custom-keywords" className={s['up-kw-section']}>
+                    <div className={s['up-kw-title']}>カスタムキーワード</div>
+                    <div className={s['up-kw-desc']}>任意の文字列を指定してマスキング対象に追加</div>
+                    <div className={s['up-kw-input-row']}>
                       <input
                         type="text"
                         value={customInput}
@@ -4603,7 +4395,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                         onKeyDown={(e)=>{if(e.key==='Enter'&&customInput.trim()){e.preventDefault();const kw=customInput.trim();if(!customKeywords.includes(kw)){setCustomKeywords(p=>[...p,kw]);}setCustomInput("");}}}
                         placeholder="マスクしたい文字列を入力"
                         aria-label="カスタムキーワード入力"
-                        style={{flex:1,padding:'6px 10px',fontSize:12,borderRadius:6,border:`1px solid ${T.border}`,background:T.bg2||T.bg,color:T.text,outline:'none'}}
+                        className={s['up-kw-input']}
                       />
                       <button
                         type="button"
@@ -4613,7 +4405,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       >追加</button>
                     </div>
                     {customKeywords.length>0&&(
-                      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                      <div className={s['up-kw-tags']}>
                         {customKeywords.map((kw,i)=>(
                           <span key={i} style={{display:'inline-flex',alignItems:'center',gap:4,padding:'3px 8px',fontSize:11,borderRadius:12,background:CATEGORIES.custom.bg,color:CATEGORIES.custom.color,border:`1px solid ${CATEGORIES.custom.color}20`}}>
                             {kw}
@@ -4624,14 +4416,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </div>
                     )}
                   </div>}
-                  {!isLite && <div
-                      style={{
-                          marginTop: 10,
-                          display: 'flex',
-                          gap: 6,
-                          flexWrap: 'wrap',
-                      }}
-                  >
+                  {!isLite && <div className={s['up-badge-wrap']}>
                       {Object.entries(mask)
                           .filter(([, v]) => v)
                           .map(([k]) => {
@@ -4665,21 +4450,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       role="button" tabIndex={0}
                       onClick={()=>{if(onSwitchPro)onSwitchPro();}}
                       onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&onSwitchPro){e.preventDefault();onSwitchPro();}}}
+                      className={s['up-pro-cta']}
                       style={{
-                        marginTop:12,padding:'12px 16px',borderRadius:10,
                         background:`${C.accent}10`,
                         border:`1px solid ${C.accent}20`,
-                        cursor:'pointer',display:'flex',alignItems:'center',gap:10,
-                        transition:'all .2s',
                       }}
-                      onMouseEnter={e=>e.currentTarget.style.borderColor=`${C.accent}40`}
-                      onMouseLeave={e=>e.currentTarget.style.borderColor=`${C.accent}20`}
                     >
                       <div style={{flex:1}}>
-                        <div style={{fontSize:12,fontWeight:600,color:T.text}}>
+                        <div className={s['up-pro-cta-title']}>
                           Pro版に切替
                         </div>
-                        <div style={{fontSize:11,color:T.text3,marginTop:2}}>
+                        <div className={s['up-pro-cta-desc']}>
                           AI検出・URL取込・バッチ処理・カスタムキーワード等
                         </div>
                       </div>
@@ -4694,16 +4475,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   <div>
                       {!isLite && <div
                           data-intro="input-tabs"
-                          className='rp-input-tabs'
-                          style={{
-                              display: 'flex',
-                              gap: 0,
-                              marginBottom: 0,
-                              borderRadius: '12px 12px 0 0',
-                              overflow: 'hidden',
-                              border: `1px solid ${T.border}`,
-                              borderBottom: 'none',
-                          }}
+                          className={`rp-input-tabs ${s['up-input-tabs']}`}
                       >
                           {[
                               {
@@ -4725,45 +4497,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               <button
                                   key={tab.id}
                                   onClick={() => setInputMode(tab.id)}
-                                  style={{
-                                      flex: 1,
-                                      padding: '12px 8px',
-                                      border: 'none',
-                                      background:
-                                          inputMode === tab.id
-                                              ? T.surface
-                                              : T.bg2,
-                                      cursor: 'pointer',
-                                      fontSize: 12,
-                                      fontWeight:
-                                          inputMode === tab.id ? 700 : 500,
-                                      color:
-                                          inputMode === tab.id
-                                              ? T.accent
-                                              : T.text3,
-                                      borderBottom:
-                                          inputMode === tab.id
-                                              ? `2px solid ${T.accent}`
-                                              : `2px solid transparent`,
-                                      transition: 'all .15s',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: 6,
-                                  }}
+                                  className={s['up-input-tab']}
+                                  data-active={inputMode === tab.id}
                               >
                                   {tab.icon} {tab.label}
                               </button>
                           ))}
                       </div>}
                       <div
-                          style={{
-                              border: `1px solid ${T.border}`,
-                              borderTop: isLite ? undefined : 'none',
-                              borderRadius: isLite ? 14 : '0 0 12px 12px',
-                              background: T.bg2,
-                              overflow: 'hidden',
-                          }}
+                          className={s['up-input-body']}
+                          data-top={isLite ? 'none' : 'file'}
+                          style={isLite ? undefined : {borderTop:'none'}}
                       >
                           {(isLite || inputMode === 'file') && (
                               <div
@@ -4781,18 +4525,9 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       if(!isLite&&fl&&fl.length>1&&onSubmitBatch){onSubmitBatch(Array.from(fl),mask,customKeywords);return;}
                                       handleFile(fl?.[0]);
                                   }}
-                                  style={{
-                                      padding: isLite ? '56px 32px' : '44px 32px',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      alignItems: 'center',
-                                      gap: 14,
-                                      cursor: 'pointer',
-                                      transition: 'all .25s',
-                                      background: dragOver
-                                          ? T.accentDim
-                                          : T.bg2,
-                                  }}
+                                  className={s['up-zone']}
+                                  data-drag={dragOver}
+                                  style={{ padding: isLite ? '56px 32px' : '44px 32px' }}
                               >
                                   <input
                                       aria-label="ファイルを選択"
@@ -4822,22 +4557,10 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       <line x1='12' y1='3' x2='12' y2='15' />
                                   </svg>
                                   <div style={{ textAlign: 'center' }}>
-                                      <p
-                                          style={{
-                                              fontSize: 15,
-                                              fontWeight: 600,
-                                              color: T.text,
-                                          }}
-                                      >
+                                      <p className={s['up-zone-title']}>
                                           ファイルをドラッグ＆ドロップ
                                       </p>
-                                      <p
-                                          style={{
-                                              fontSize: 12,
-                                              color: T.text3,
-                                              marginTop: 4,
-                                          }}
-                                      >
+                                      <p className={s['up-zone-desc']}>
                                           PDF / Word / Excel / ODS / CSV /
                                           Markdown / HTML / RTF / JSON / ODT /
                                           TXT
@@ -4846,55 +4569,21 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               </div>
                           )}
                           {inputMode === 'url' && (
-                              <div style={{ padding: '24px 24px 28px' }}>
-                                  <div
-                                      style={{
-                                          fontSize: 13,
-                                          fontWeight: 600,
-                                          color: T.text,
-                                          marginBottom: 4,
-                                      }}
-                                  >
+                              <div className={s['up-section-pad']}>
+                                  <div className={s['up-section-title']}>
                                       URLからスクレイピング
                                   </div>
-                                  <p
-                                      style={{
-                                          fontSize: 12,
-                                          color: T.text3,
-                                          marginBottom: 10,
-                                          lineHeight: 1.6,
-                                      }}
-                                  >
+                                  <p className={s['up-section-desc']} style={{ marginBottom: 10 }}>
                                       Webページの職務経歴書・ポートフォリオをそのまま取得してマスキングします
                                   </p>
-                                  <div
-                                      style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 8,
-                                          marginBottom: 12,
-                                      }}
-                                  >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                                       <button
                                           ref={urlHelpTriggerRef}
                                           onClick={() => setShowUrlHelp(true)}
                                           aria-haspopup='dialog'
                                           aria-expanded={showUrlHelp}
                                           title='URL取得の注意とヒントを表示'
-                                          style={{
-                                              display: 'inline-flex',
-                                              alignItems: 'center',
-                                              gap: 6,
-                                              padding: '6px 10px',
-                                              borderRadius: 8,
-                                              border: `1px solid ${T.border}`,
-                                              background: T.surface,
-                                              color: T.text2,
-                                              fontSize: 12,
-                                              fontWeight: 600,
-                                              cursor: 'pointer',
-                                              transition: 'all .15s',
-                                          }}
+                                          className={s['up-guide-help-btn']}
                                       >
                                           <svg
                                               width='14'
@@ -4924,13 +4613,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                           補足ガイド
                                       </button>
                                   </div>
-                                  <div
-                                      style={{
-                                          display: 'flex',
-                                          gap: 8,
-                                          marginBottom: 12,
-                                      }}
-                                  >
+                                  <div className={s['up-url-row']} style={{ marginBottom: 12 }}>
                                       <input
                                           aria-label="URLを入力"
                                           value={urlValue}
@@ -4945,41 +4628,25 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                                   handleURL()
                                           }}
                                           placeholder='https://example.com/resume'
-                                          style={{
-                                              flex: 1,
-                                              padding: '10px 14px',
-                                              borderRadius: 10,
-                                              border: `1px solid ${T.border}`,
-                                              background: T.surface,
-                                              color: T.text,
-                                              fontSize: 13,
-                                              fontFamily: T.mono,
-                                              outline: 'none',
-                                          }}
+                                          className={s['up-url-input']}
                                       />
                                       <button
                                           onClick={handleURL}
                                           disabled={
                                               !urlValue.trim() || urlFetching
                                           }
+                                          className={s['up-url-submit']}
                                           style={{
-                                              padding: '10px 20px',
-                                              borderRadius: 10,
-                                              border: 'none',
                                               background: urlValue.trim()
                                                   ? T.accent
                                                   : T.border,
                                               color: urlValue.trim()
                                                   ? '#fff'
                                                   : T.text3,
-                                              fontSize: 13,
-                                              fontWeight: 600,
                                               cursor: urlValue.trim()
                                                   ? 'pointer'
                                                   : 'default',
                                               opacity: urlFetching ? 0.6 : 1,
-                                              transition: 'all .15s',
-                                              whiteSpace: 'nowrap',
                                           }}
                                       >
                                           {urlFetching
@@ -4989,18 +4656,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   </div>
                                   {showUrlHelp && (
                                       <div
-                                          style={{
-                                              position: 'fixed',
-                                              inset: 0,
-                                              background: 'rgba(0,0,0,.55)',
-                                              backdropFilter: 'blur(4px)',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              zIndex: 120,
-                                              padding: 16,
-                                              animation: 'fadeIn .2s',
-                                          }}
+                                          className={s['up-guide-overlay']}
                                           onClick={(e) => {
                                               if (e.target === e.currentTarget)
                                                   closeUrlHelp()
@@ -5010,109 +4666,35 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                               role='dialog'
                                               aria-modal='true'
                                               aria-label='URLスクレイピングのガイド'
-                                              style={{
-                                                  width: '100%',
-                                                  maxWidth: 520,
-                                                  maxHeight: '90vh',
-                                                  overflow: 'auto',
-                                                  background: T.bg2,
-                                                  borderRadius: 14,
-                                                  border: `1px solid ${T.border}`,
-                                                  animation: 'fadeUp .25s ease',
-                                              }}
+                                              className={s['up-guide-dialog']}
                                           >
-                                              <div
-                                                  style={{
-                                                      padding: '12px 16px',
-                                                      borderBottom: `1px solid ${T.border}`,
-                                                      display: 'flex',
-                                                      alignItems: 'center',
-                                                      justifyContent:
-                                                          'space-between',
-                                                      position: 'sticky',
-                                                      top: 0,
-                                                      background: T.bg2,
-                                                  }}
-                                              >
-                                                  <div
-                                                      style={{
-                                                          fontSize: 14,
-                                                          fontWeight: 700,
-                                                          color: T.text,
-                                                      }}
-                                                  >
+                                              <div className={s['up-guide-header']}>
+                                                  <div className={s['up-guide-title']}>
                                                       URLスクレイピング ガイド
                                                   </div>
                                                   <button
                                                       ref={urlHelpCloseRef}
                                                       onClick={closeUrlHelp}
                                                       aria-label='閉じる'
-                                                      style={{
-                                                          width: 28,
-                                                          height: 28,
-                                                          borderRadius: 7,
-                                                          border: `1px solid ${T.border}`,
-                                                          background:
-                                                              'transparent',
-                                                          color: T.text2,
-                                                          cursor: 'pointer',
-                                                          fontSize: 13,
-                                                          display: 'flex',
-                                                          alignItems: 'center',
-                                                          justifyContent:
-                                                              'center',
-                                                      }}
+                                                      className={s['modal-close-btn']}
                                                   >
                                                       ×
                                                   </button>
                                               </div>
-                                              <div
-                                                  style={{
-                                                      padding: '16px 18px',
-                                                      display: 'flex',
-                                                      flexDirection: 'column',
-                                                      gap: 14,
-                                                  }}
-                                              >
+                                              <div className={s['up-guide-body']}>
                                                   <div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              fontWeight: 700,
-                                                              color: T.text,
-                                                              marginBottom: 6,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-title']}>
                                                           対象外/非推奨
                                                       </div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.text2,
-                                                              lineHeight: 1.7,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-text']}>
                                                           SNS/テックブログ系のURLは情報が断片的で、マスク後に内容がほぼ残らないためURLスクレイピングは非推奨です。必要に応じて「テキスト/HTML貼付」やPDFでの取り込みをご利用ください。
                                                       </div>
                                                   </div>
                                                   <div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              fontWeight: 700,
-                                                              color: T.text,
-                                                              marginBottom: 6,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-title']}>
                                                           取得の安定化
                                                       </div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.text2,
-                                                              lineHeight: 1.7,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-text']}>
                                                           {settings?.proxyUrl ? (
                                                               <>
                                                                   自前プロキシ設定済。URL取得は安定して動作します。
@@ -5123,35 +4705,16 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                                               </>
                                                           )}
                                                       </div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.text3,
-                                                              marginTop: 6,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-tip']}>
                                                           Tip:
                                                           取得失敗時は「テキスト/HTML貼付」タブへ。Ctrl+U→ソースコピーで確実に取り込めます。
                                                       </div>
                                                   </div>
                                                   <div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              fontWeight: 700,
-                                                              color: T.text,
-                                                              marginBottom: 6,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-title']}>
                                                           非対応サイト
                                                       </div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.text2,
-                                                              lineHeight: 1.7,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-text']}>
                                                           Canva / Figma / Notion
                                                           / Google Docs
                                                           はSPAのため取得不可。PDF保存
@@ -5165,25 +4728,11 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               </div>
                           )}
                           {inputMode === 'paste' && (
-                              <div style={{ padding: '24px 24px 28px' }}>
-                                  <div
-                                      style={{
-                                          fontSize: 13,
-                                          fontWeight: 600,
-                                          color: T.text,
-                                          marginBottom: 4,
-                                      }}
-                                  >
+                              <div className={s['up-section-pad']}>
+                                  <div className={s['up-section-title']}>
                                       テキストまたはHTMLソースを貼付
                                   </div>
-                                  <p
-                                      style={{
-                                          fontSize: 12,
-                                          color: T.text3,
-                                          marginBottom: 14,
-                                          lineHeight: 1.6,
-                                      }}
-                                  >
+                                  <p className={s['up-section-desc']} style={{ marginBottom: 14 }}>
                                       職務経歴書のテキストをコピー＆ペースト、またはHTMLソースを貼り付けてください
                                   </p>
                                   <textarea
@@ -5195,36 +4744,10 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       placeholder={
                                           'ここにテキストまたはHTMLを貼り付け...\n\n例:\n・職務経歴書のテキスト全文\n・Ctrl+U でコピーしたHTMLソース\n・Wantedlyプロフィールのコピー'
                                       }
-                                      style={{
-                                          width: '100%',
-                                          minHeight: 160,
-                                          padding: '12px 14px',
-                                          borderRadius: 10,
-                                          border: `1px solid ${T.border}`,
-                                          background: T.surface,
-                                          color: T.text,
-                                          fontSize: 12,
-                                          fontFamily: T.mono,
-                                          lineHeight: 1.7,
-                                          resize: 'vertical',
-                                          outline: 'none',
-                                          boxSizing: 'border-box',
-                                      }}
+                                      className={s['up-paste-textarea']}
                                   />
-                                  <div
-                                      style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          marginTop: 10,
-                                      }}
-                                  >
-                                      <div
-                                          style={{
-                                              fontSize: 12,
-                                              color: T.text3,
-                                          }}
-                                      >
+                                  <div className={s['up-paste-footer']}>
+                                      <div className={s['up-paste-meta']}>
                                           {pasteValue.trim() ? (
                                               <>
                                                   {/<[a-z][\s\S]*>/i.test(
@@ -5260,22 +4783,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       <button
                                           onClick={handlePaste}
                                           disabled={!pasteValue.trim()}
+                                          className={s['up-paste-submit']}
                                           style={{
-                                              padding: '10px 24px',
-                                              borderRadius: 10,
-                                              border: 'none',
                                               background: pasteValue.trim()
                                                   ? T.accent
                                                   : T.border,
                                               color: pasteValue.trim()
                                                   ? '#fff'
                                                   : T.text3,
-                                              fontSize: 13,
-                                              fontWeight: 600,
                                               cursor: pasteValue.trim()
                                                   ? 'pointer'
                                                   : 'default',
-                                              transition: 'all .15s',
                                           }}
                                       >
                                           解析開始
@@ -5286,15 +4804,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </div>
                   </div>
                   {error && (
-                      <div
-                          style={{
-                              padding: '10px 16px',
-                              borderRadius: 10,
-                              background: T.redDim,
-                              color: T.red,
-                              fontSize: 13,
-                          }}
-                      >
+                      <div className={s['up-error']}>
                           ! {error}
                       </div>
                   )}
@@ -5326,30 +4836,13 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   )}
                   {!isLite && <div
                       data-intro="sample-files"
-                      style={{
-                          background: T.surface,
-                          border: `1px solid ${T.border}`,
-                          borderRadius: 14,
-                          padding: '16px 20px',
-                      }}
+                      className={s['up-samples-card']}
                   >
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 12,
-                          }}
-                      >
+                      <div className={s['up-samples-title']}>
                           テストサンプルで動作確認
                       </div>
                       <div
-                          className='rp-upload-grid'
-                          style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1fr 1fr',
-                              gap: 8,
-                          }}
+                          className={`rp-upload-grid ${s['up-samples-grid']}`}
                       >
                           {[
                               {
@@ -5376,58 +4869,25 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   desc: '詳細経歴書 3社分',
                                   color: C.purple,
                               },
-                          ].map((s) => (
+                          ].map((sm) => (
                               <button
-                                  key={s.type}
-                                  onClick={() => handleDemo(s.type)}
-                                  style={{
-                                      padding: '12px 14px',
-                                      borderRadius: 10,
-                                      border: `1px solid ${T.border}`,
-                                      background: T.bg2,
-                                      cursor: 'pointer',
-                                      textAlign: 'left',
-                                      transition: 'all .15s',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 10,
-                                  }}
+                                  key={sm.type}
+                                  onClick={() => handleDemo(sm.type)}
+                                  className={s['up-sample-btn']}
                               >
                                   <span
-                                      style={{
-                                          width: 8,
-                                          height: 8,
-                                          borderRadius: 4,
-                                          background: s.color,
-                                          flexShrink: 0,
-                                      }}
+                                      className={s['up-sample-dot']}
+                                      style={{ background: sm.color }}
                                   />
                                   <div>
-                                      <div
-                                          style={{
-                                              fontSize: 12,
-                                              fontWeight: 600,
-                                              color: T.text,
-                                          }}
-                                      >
-                                          {s.label}{' '}
-                                          <span
-                                              style={{
-                                                  fontSize: 12,
-                                                  color: T.text3,
-                                                  fontWeight: 400,
-                                              }}
-                                          >
+                                      <div className={s['up-sample-label']}>
+                                          {sm.label}{' '}
+                                          <span className={s['up-sample-sub']}>
                                               DEMO
                                           </span>
                                       </div>
-                                      <div
-                                          style={{
-                                              fontSize: 12,
-                                              color: T.text3,
-                                          }}
-                                      >
-                                          {s.desc}
+                                      <div className={s['up-sample-desc']}>
+                                          {sm.desc}
                                       </div>
                                   </div>
                               </button>
@@ -5438,20 +4898,12 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                           download="mock-resumes.zip"
                           title="モック履歴書一式をダウンロード（ZIP）"
                           aria-label="モック履歴書一式をダウンロード（ZIP）"
-                          style={{
-                              display:"flex",alignItems:"center",gap:8,
-                              marginTop:12,padding:"10px 14px",borderRadius:10,
-                              border:`1px solid ${T.border}`,background:T.bg2,
-                              cursor:"pointer",textDecoration:"none",
-                              transition:"all .15s",fontSize:12,color:T.text2,
-                          }}
-                          onMouseEnter={(e)=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
-                          onMouseLeave={(e)=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.text2;}}
+                          className={s['up-zip-link']}
                       >
                           <span style={{fontSize:16}}>&#x1F4E6;</span>
                           <div>
-                              <div style={{fontWeight:600,color:"inherit"}}>モック履歴書一式 (ZIP)</div>
-                              <div style={{fontSize:11,color:T.text3}}>18種 / TXT・CSV・XLSX・HTML・MD・JSON・RTF・DOCX</div>
+                              <div className={s['up-zip-title']}>モック履歴書一式 (ZIP)</div>
+                              <div className={s['up-zip-desc']}>18種 / TXT・CSV・XLSX・HTML・MD・JSON・RTF・DOCX</div>
                           </div>
                       </a>
                   </div>}
