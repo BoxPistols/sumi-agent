@@ -1871,6 +1871,7 @@ const LAYOUT_PRESETS=[
   {id:'text',  label:'テキスト重視',    cols:[{f:3},{f:1}]},
   {id:'balanced',label:'バランス',       cols:[{f:5},{f:3},{f:2}]},
   {id:'preview',label:'プレビュー重視', cols:[{f:2},{f:5},{f:2}]},
+  {id:'advisor',label:'アドバイザー重視',cols:[{f:2},{f:4}]},
   {id:'focus', label:'集中モード',      cols:[{f:1}]},
 ];
 function LayoutIcon({cols,active,color}){
@@ -2145,6 +2146,71 @@ function ChatWidget(){
   );
 }
 
+// ═══ Shortcuts Modal ═══
+function ShortcutsModal({onClose,hasEditorContext}){
+  const trapRef=useFocusTrap();
+  useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
+  const sections=[
+    {title:'全般',shortcuts:[
+      {key:'D',desc:'ダーク / ライト切替'},
+      {key:'?',desc:'ヘルプ'},
+      {key:'K',desc:'ショートカット一覧'},
+      {key:',',desc:'設定'},
+      {key:'E',desc:'Lite / Pro 切替'},
+      {key:'Esc',desc:'ダイアログを閉じる'},
+    ]},
+    {title:'ビュー切替',pro:true,editor:true,shortcuts:[
+      {key:'1',desc:'マスク'},
+      {key:'2',desc:'Diff'},
+      {key:'3',desc:'Raw'},
+      {key:'4',desc:'Raw Diff'},
+      {key:'5',desc:'AI整形'},
+      {key:'6',desc:'AI Diff'},
+    ]},
+    {title:'エディタ操作',pro:true,editor:true,shortcuts:[
+      {key:'M',desc:'マスク / 元文 切替'},
+      {key:'P',desc:'プレビュー切替'},
+      {key:'W',desc:'編集モード切替'},
+      {key:'I',desc:'PDF印刷'},
+      {key:'C',desc:'コピー'},
+      {key:'R',desc:'検出結果パネル'},
+      {key:'A',desc:'アドバイザーパネル'},
+    ]},
+  ];
+  return (
+    <div className={s['modal-overlay']} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+      <div ref={trapRef} className={`rp-modal-inner ${s['modal-dialog']}`} role="dialog" aria-modal="true" aria-label="キーボードショートカット" style={{maxWidth:720}}>
+        <div className={s['modal-header']}>
+          <span className={s['modal-header-title']}>キーボードショートカット</span>
+          <button onClick={onClose} aria-label="閉じる" className={s['modal-close-btn']}>✕</button>
+        </div>
+        <div className={s['modal-body']}>
+          <p className={s['help-note']} style={{marginTop:0,marginBottom:12}}>テキスト入力中・ダイアログ表示中は無効</p>
+          <div className={s['sc-cols']}>
+            {sections.map(sec=>(
+              <div key={sec.title} className={s['sc-section']}>
+                <div className={s['sc-section-title']}>
+                  {sec.title}
+                  {sec.pro&&<span className={s['help-badge']} style={{color:C.purple,background:C.purpleDim,marginLeft:6,fontSize:10}}>Pro</span>}
+                  {sec.editor&&!hasEditorContext&&<span className={s['help-badge']} style={{color:T.text3,background:T.surfaceAlt,marginLeft:4,fontSize:10}}>エディタ画面</span>}
+                </div>
+                <div className={s['sc-grid']}>
+                  {sec.shortcuts.map(sc=>(
+                    <div key={sc.key} className={s['sc-row']}>
+                      <kbd className={s['sc-key']}>{sc.key}</kbd>
+                      <span className={s['sc-desc']}>{sc.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══ Help Modal ═══
 function HelpModal({onClose,onStartTour,onShowVideo}){
   const trapRef=useFocusTrap();
@@ -2160,129 +2226,261 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
               role="dialog"
               aria-modal="true"
               aria-label="ヘルプ"
-              style={{maxWidth:640}}
+              style={{maxWidth:1100}}
           >
               <div className={s['modal-header']}>
                   <span className={s['modal-header-title']}>ヘルプ</span>
                   <button onClick={onClose} aria-label="閉じる" className={s['modal-close-btn']}>✕</button>
               </div>
-              <div className={s['modal-body']}>
-                  {/* ガイドツアー & 紹介動画 */}
-                  {(onStartTour||onShowVideo)&&<div className={s['help-actions']}>
-                    {onShowVideo&&<button onClick={()=>{onClose();onShowVideo();}} className={`${s['help-action-btn']} ${s['help-video-btn']}`}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                      紹介動画を見る
-                    </button>}
-                    {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} className={`${s['help-action-btn']} ${s['help-tour-btn']}`}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                      ガイドツアー
-                    </button>}
-                  </div>}
-                  {/* クイックスタート */}
-                  <div className={s['help-section']}>
-                      <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><polygon points='5 3 19 12 5 21 5 3'/></svg>
-                          クイックスタート
+              <div className={s['help-layout']}>
+                  {/* ===== 左カラム: 基本ヘルプ ===== */}
+                  <div className={s['help-col-left']}>
+                      <div className={s['help-col-title']}>基本</div>
+                      {/* ガイドツアー & 紹介動画 */}
+                      {(onStartTour||onShowVideo)&&<div className={s['help-actions']}>
+                        {onShowVideo&&<button onClick={()=>{onClose();onShowVideo();}} className={`${s['help-action-btn']} ${s['help-video-btn']}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                          紹介動画を見る
+                        </button>}
+                        {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} className={`${s['help-action-btn']} ${s['help-tour-btn']}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                          ガイドツアー
+                        </button>}
+                      </div>}
+                      {/* クイックスタート */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><polygon points='5 3 19 12 5 21 5 3'/></svg>
+                              クイックスタート
+                          </div>
+                          <div className={s['help-steps-wrap']}>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>1</span><span>ファイルをドラッグ＆ドロップ、またはテキストを貼り付け</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>2</span><span>自動で個人情報（PII）を検出・ハイライト表示</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>3</span><span>カテゴリ別にマスク設定を調整</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>4</span><span>マスク済みテキストをコピー or エクスポート</span></div>
+                          </div>
                       </div>
-                      <div className={s['help-steps-wrap']}>
-                          <div className={s['help-step']}><span className={s['help-step-num']}>1</span><span>ファイルをドラッグ＆ドロップ、またはテキストを貼り付け</span></div>
-                          <div className={s['help-step']}><span className={s['help-step-num']}>2</span><span>自動で個人情報（PII）を検出・ハイライト表示</span></div>
-                          <div className={s['help-step']}><span className={s['help-step-num']}>3</span><span>カテゴリ別にマスク設定を調整</span></div>
-                          <div className={s['help-step']}><span className={s['help-step-num']}>4</span><span>マスク済みテキストをコピー or エクスポート</span></div>
+
+                      {/* 対応ファイル形式 */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>
+                              対応ファイル形式
+                          </div>
+                          <div className={s['help-badges-wrap']}>
+                              {['PDF','Word (.docx)','Excel (.xlsx)','CSV','Markdown','HTML','RTF','JSON','ODT','テキスト'].map(f=>(
+                                  <span key={f} className={s['help-badge']} style={{color:T.text2,background:T.surfaceAlt}}>{f}</span>
+                              ))}
+                          </div>
+                          <p className={s['help-note']}>URLからの読み込み（Wantedly, LinkedIn 等）にも対応</p>
+                      </div>
+
+                      {/* 検出カテゴリ */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>
+                              検出カテゴリ
+                          </div>
+                          <div className={s['help-grid-2']}>
+                              <div><span style={{color:C.red}}>●</span> 氏名（辞書+AI）</div>
+                              <div><span style={{color:C.blue}}>●</span> 連絡先（メール・電話）</div>
+                              <div><span style={{color:C.orange}}>●</span> 住所・地名</div>
+                              <div><span style={{color:C.purple}}>●</span> 個人情報（生年月日等）</div>
+                              <div><span style={{color:C.cyan}}>●</span> URL</div>
+                              <div><span style={{color:T.text3}}>●</span> 組織名（オプション）</div>
+                          </div>
+                      </div>
+
+                      {/* マスクプリセット */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0110 0v4'/></svg>
+                              マスクプリセット
+                          </div>
+                          <div className={s['help-presets-list']}>
+                              <div><strong>基本</strong> — 氏名・連絡先のみ</div>
+                              <div><strong>標準</strong> — + 住所・年月日・URL（推奨）</div>
+                              <div><strong>厳格</strong> — 組織名含む全項目</div>
+                          </div>
+                      </div>
+
+                      {/* エクスポート */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>
+                              エクスポート
+                          </div>
+                          <div className={s['help-badges-wrap']}>
+                              {['テキスト','Markdown','CSV','Excel','PDF','Word'].map(f=>(
+                                  <span key={f} className={s['help-badge']} style={{color:T.text2,background:T.surfaceAlt}}>{f}</span>
+                              ))}
+                          </div>
+                      </div>
+
+                      {/* キーボードショートカット */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><rect x='2' y='4' width='20' height='16' rx='2'/><line x1='6' y1='8' x2='6' y2='8'/><line x1='10' y1='8' x2='10' y2='8'/><line x1='14' y1='8' x2='14' y2='8'/><line x1='18' y1='8' x2='18' y2='8'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
+                              キーボードショートカット
+                          </div>
+                          <p className={s['help-note']} style={{marginBottom:8,marginTop:0}}>テキスト入力中は無効。エディタ画面でのみ有効なキーがあります。</p>
+                          <div className={s['help-kbd-grid']}>
+                              <kbd className={s['help-kbd']}>Esc</kbd><span>ダイアログを閉じる</span>
+                              <kbd className={s['help-kbd']}>?</kbd><span>ヘルプを表示</span>
+                              <kbd className={s['help-kbd']}>K</kbd><span>ショートカット一覧</span>
+                              <kbd className={s['help-kbd']}>,</kbd><span>設定を開く</span>
+                              <kbd className={s['help-kbd']}>D</kbd><span>ダーク/ライト切替</span>
+                              <kbd className={s['help-kbd']}>E</kbd><span>Lite / Pro 切替</span>
+                          </div>
                       </div>
                   </div>
 
-                  {/* 対応ファイル形式 */}
-                  <div className={s['help-section']}>
-                      <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>
-                          対応ファイル形式
-                      </div>
-                      <div className={s['help-badges-wrap']}>
-                          {['PDF','Word (.docx)','Excel (.xlsx)','CSV','Markdown','HTML','RTF','JSON','ODT','テキスト'].map(f=>(
-                              <span key={f} className={s['help-badge']} style={{color:T.text2,background:T.surfaceAlt}}>{f}</span>
-                          ))}
-                      </div>
-                      <p className={s['help-note']}>URLからの読み込み（Wantedly, LinkedIn 等）にも対応</p>
-                  </div>
+                  {/* ===== 右カラム: Pro機能ガイド ===== */}
+                  <div className={s['help-col-right']}>
+                      <div className={s['help-col-title']}>Pro機能ガイド</div>
 
-                  {/* 検出カテゴリ */}
-                  <div className={s['help-section']}>
-                      <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>
-                          検出カテゴリ
+                      {/* ビューモード */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M5 3v10M11 3v10M5 8h6' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/><path d='M3 5L5 3l2 2M13 11l-2 2-2-2' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round'/></svg>
+                              ビューモード切替
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li><strong>マスク</strong> — マスキング済みテキストを表示</li>
+                              <li><strong>Diff</strong> — 元テキストとマスク後を並べて比較</li>
+                              <li><strong>Raw</strong> — ファイルから抽出した生テキスト</li>
+                              <li><strong>Raw Diff</strong> — 生テキストとAI整形後の差分</li>
+                              <li><strong>AI整形</strong> — AIが読みやすく整形したテキスト</li>
+                              <li><strong>AI Diff</strong> — マスク結果とAI整形後の差分</li>
+                          </ul>
                       </div>
-                      <div className={s['help-grid-2']}>
-                          <div><span style={{color:C.red}}>●</span> 氏名（辞書+AI）</div>
-                          <div><span style={{color:C.blue}}>●</span> 連絡先（メール・電話）</div>
-                          <div><span style={{color:C.orange}}>●</span> 住所・地名</div>
-                          <div><span style={{color:C.purple}}>●</span> 個人情報（生年月日等）</div>
-                          <div><span style={{color:C.cyan}}>●</span> URL</div>
-                          <div><span style={{color:T.text3}}>●</span> 組織名（オプション）</div>
-                      </div>
-                  </div>
 
-                  {/* マスクプリセット */}
-                  <div className={s['help-section']}>
-                      <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0110 0v4'/></svg>
-                          マスクプリセット
+                      {/* AI検出 */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z' stroke={T.accent} strokeWidth='1.2' strokeLinejoin='round'/></svg>
+                              AI検出・AI整形
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>設定 → プロバイダ選択（OpenAI / Claude / Gemini）</li>
+                              <li>APIキーを入力して接続テスト → AI検出をON</li>
+                              <li>正規表現で見逃す文脈依存の個人情報を補完</li>
+                              <li>テキスト整形: PDFやOCR由来の崩れを自動修正</li>
+                              <li>ローカルAI（Ollama等）にも対応</li>
+                          </ul>
                       </div>
-                      <div className={s['help-presets-list']}>
-                          <div><strong>基本</strong> — 氏名・連絡先のみ</div>
-                          <div><strong>標準</strong> — + 住所・年月日・URL（推奨）</div>
-                          <div><strong>厳格</strong> — 組織名含む全項目</div>
-                      </div>
-                  </div>
 
-                  {/* AI機能 */}
-                  <div className={s['help-section']}>
-                      <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4z'/><rect x='3' y='8' width='18' height='14' rx='2'/><line x1='12' y1='12' x2='12' y2='16'/></svg>
-                          AI機能
+                      {/* AIアドバイザー */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='2' y='2' width='12' height='10' rx='2' stroke={T.accent} strokeWidth='1.2'/><path d='M5 14l3-2 3 2' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round'/><path d='M5 6h6M5 8.5h4' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/></svg>
+                              AIアドバイザー（右パネル）
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li><strong>質問モード</strong> — 経歴書について自由に相談。経歴書は変更されない</li>
+                              <li><strong>指示モード</strong> — 改善指示を入力 → AIが経歴書を書き換え → 差分プレビューで確認・取り込み</li>
+                              <li>クイック分析: 強み分析・改善提案・要約などのプリセット</li>
+                              <li>求人票マッチング: 求人票を貼り付けて適合度を分析</li>
+                              <li>マスク済みテキストでの分析も可能（個人情報保護）</li>
+                          </ul>
                       </div>
-                      <ul className={s['help-list']}>
-                          <li>設定画面でプロバイダ（OpenAI / Claude / Gemini）を選択</li>
-                          <li>APIキーを入力して接続テスト可能</li>
-                          <li>AI検出で正規表現では見つけにくい個人情報も補完</li>
-                          <li>テキスト整形・OCR読み取りにも活用</li>
-                      </ul>
-                  </div>
 
-                  {/* エクスポート */}
-                  <div className={s['help-section']}>
-                      <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>
-                          エクスポート
+                      {/* PDF編集 */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M11.5 2.5l2 2L5 13H3v-2z' stroke={T.accent} strokeWidth='1.2' strokeLinejoin='round'/><path d='M9.5 4.5l2 2' stroke={T.accent} strokeWidth='1.2'/></svg>
+                              PDF編集・A4プレビュー
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>編集ボタンでMarkdownエディタを起動</li>
+                              <li>中央パネルにA4サイズのリアルタイムプレビュー</li>
+                              <li>ゴシック体/明朝体の切替、ズーム調整</li>
+                              <li>PDF印刷・HTML・Word出力に対応</li>
+                          </ul>
                       </div>
-                      <div className={s['help-badges-wrap']}>
-                          {['テキスト','Markdown','CSV','Excel','PDF','Word'].map(f=>(
-                              <span key={f} className={s['help-badge']} style={{color:T.text2,background:T.surfaceAlt}}>{f}</span>
-                          ))}
-                      </div>
-                  </div>
 
-                  {/* キーボードショートカット */}
-                  <div className={s['help-section']}>
-                      <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><rect x='2' y='4' width='20' height='16' rx='2'/><line x1='6' y1='8' x2='6' y2='8'/><line x1='10' y1='8' x2='10' y2='8'/><line x1='14' y1='8' x2='14' y2='8'/><line x1='18' y1='8' x2='18' y2='8'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
-                          キーボード操作
+                      {/* URL取込 */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M6.5 9.5a3 3 0 004-4' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/><path d='M9.5 6.5a3 3 0 00-4 4' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/><path d='M4 12L2 14M12 4l2-2' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/></svg>
+                              URL取込
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>Wantedly・LinkedIn等のURLからテキストを自動取得</li>
+                              <li>取得したテキストに対して通常通りマスキング処理</li>
+                          </ul>
                       </div>
-                      <div className={s['help-kbd-grid']}>
-                          <kbd className={s['help-kbd']}>Esc</kbd><span>ダイアログを閉じる</span>
-                          <kbd className={s['help-kbd']}>Tab</kbd><span>次の要素にフォーカス移動</span>
-                      </div>
-                  </div>
 
-                  {/* フッター */}
-                  <div className={s['help-footer']}>
-                      <span>Sumi v1.0</span>
-                      <a
-                          href='https://github.com/BoxPistols/sumi'
-                          target='_blank'
-                          rel='noopener noreferrer'
-                      >GitHub</a>
+                      {/* バッチ処理 */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='2' y='2' width='5' height='5' rx='1' stroke={T.accent} strokeWidth='1.2'/><rect x='9' y='2' width='5' height='5' rx='1' stroke={T.accent} strokeWidth='1.2'/><rect x='2' y='9' width='5' height='5' rx='1' stroke={T.accent} strokeWidth='1.2'/><rect x='9' y='9' width='5' height='5' rx='1' stroke={T.accent} strokeWidth='1.2'/></svg>
+                              バッチ処理
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>複数ファイルを一括でマスキング処理</li>
+                              <li>処理結果をZIPでまとめてダウンロード</li>
+                              <li>各ファイルの検出結果を個別に確認・調整可能</li>
+                          </ul>
+                      </div>
+
+                      {/* カスタムキーワード */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M2 4h12M2 8h8M2 12h10' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/></svg>
+                              カスタムキーワード
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>任意のテキストをマスク対象に追加</li>
+                              <li>プロジェクト名・社内用語など自動検出されない固有名詞に有効</li>
+                          </ul>
+                      </div>
+
+                      {/* レイアウト */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='1' y='1' width='14' height='14' rx='2' stroke={T.accent} strokeWidth='1.2'/><line x1='6' y1='1' x2='6' y2='15' stroke={T.accent} strokeWidth='1.2'/><line x1='11' y1='1' x2='11' y2='15' stroke={T.accent} strokeWidth='1.2'/></svg>
+                              パネルレイアウト
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>5つのレイアウトプリセット（テキスト重視 / バランス / プレビュー重視 / アドバイザー重視 / 集中）</li>
+                              <li>ドラッグでパネル幅を自由に調整</li>
+                              <li>左: テキスト / 中央: A4プレビュー / 右: 検出一覧 or AIアドバイザー</li>
+                          </ul>
+                      </div>
+
+                      {/* エディタ用ショートカット */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='1' y='3' width='14' height='11' rx='2' stroke={T.accent} strokeWidth='1.2'/><path d='M4 6h1M7 6h1M10 6h1M5.5 9h5' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/></svg>
+                              エディタ用ショートカット
+                          </div>
+                          <div className={s['help-kbd-grid']} style={{paddingLeft:22}}>
+                              <kbd className={s['help-kbd']}>1</kbd><span>マスク表示</span>
+                              <kbd className={s['help-kbd']}>2</kbd><span>Diff表示</span>
+                              <kbd className={s['help-kbd']}>3</kbd><span>Raw表示</span>
+                              <kbd className={s['help-kbd']}>4</kbd><span>Raw Diff表示</span>
+                              <kbd className={s['help-kbd']}>5</kbd><span>AI整形表示</span>
+                              <kbd className={s['help-kbd']}>6</kbd><span>AI Diff表示</span>
+                              <kbd className={s['help-kbd']}>M</kbd><span>マスク / 元文 切替</span>
+                              <kbd className={s['help-kbd']}>P</kbd><span>プレビュー表示切替</span>
+                              <kbd className={s['help-kbd']}>W</kbd><span>編集モード切替</span>
+                              <kbd className={s['help-kbd']}>I</kbd><span>PDF印刷</span>
+                              <kbd className={s['help-kbd']}>R</kbd><span>検出結果パネル</span>
+                              <kbd className={s['help-kbd']}>A</kbd><span>AIアドバイザーパネル</span>
+                              <kbd className={s['help-kbd']}>C</kbd><span>テキストをコピー</span>
+                          </div>
+                      </div>
                   </div>
+              </div>
+              {/* フッター */}
+              <div className={s['help-footer']}>
+                  <span>Sumi v1.0</span>
+                  <a
+                      href='https://github.com/BoxPistols/sumi'
+                      target='_blank'
+                      rel='noopener noreferrer'
+                  >GitHub</a>
               </div>
           </div>
       </div>
@@ -3284,7 +3482,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                       />
                       {/* Actions */}
                       <div className={s['design-actions']}>
-                          <Btn onClick={handleExport} style={{ width: '100%', borderRadius: 10, fontSize: 13, background: '#222', gap: 6 }}>
+                          <Btn onClick={handleExport} style={{ width: '100%', borderRadius: 10, fontSize: 13, background: T.accent, color: T.bg, gap: 6 }}>
                               🖨️ PDFとして印刷・保存
                           </Btn>
                           <div className={s['design-actions-hint']}>
@@ -4251,10 +4449,10 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   className={s['up-title']}
                   style={{ fontSize: isLite ? 24 : 22 }}
               >
-                  {isLite ? <>経歴書の個人情報を<span className={s['up-title-accent']}>自動マスキング</span></> : <>経歴書の個人情報を<span className={s['up-title-accent']}>自動検出・マスキング</span></>}
+                  {isLite ? <>経歴書の個人情報を<span className={s['up-title-accent']}>自動マスキング</span></> : <>経歴書の<span className={s['up-title-accent']}>検出・マスキング・改善</span>を一括で</>}
               </h1>
               <p className={s['up-subtitle']}>
-                  {isLite ? 'ファイルをアップロードするだけで個人情報を自動検出・マスキング' : '日本人名辞書 + 正規表現 + AI検出 + AIテキスト再構成で高精度'}
+                  {isLite ? 'ファイルをアップロードするだけで個人情報を自動検出・マスキング' : '個人情報の自動検出 + AIアドバイザーで経歴書の壁打ち・ブラッシュアップまで'}
               </p>
               {/* セキュリティ根拠バッジ */}
               <div className={s['up-badges']}>
@@ -5208,6 +5406,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
       case 'preview': setPreviewVisible(true);setSidebarCollapsed(false);
         // defer leftPct set after state updates
         setTimeout(()=>setLeftPct(30),0);break;
+      case 'advisor': setPreviewVisible(false);setSidebarCollapsed(false);
+        setTimeout(()=>setRightPct(55),0);break;
       case 'focus':   setPreviewVisible(false);setSidebarCollapsed(true);break;
     }
   },[]);
@@ -5360,6 +5560,47 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     a.href=url;a.download=baseName+".html";document.body.appendChild(a);a.click();document.body.removeChild(a);
     URL.revokeObjectURL(url);
   },[editedText,redacted,previewFontType,baseName]);
+
+  // エディタ用キーボードショートカット
+  useEffect(()=>{
+    const handler=(e)=>{
+      const tag=document.activeElement?.tagName;
+      if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||document.activeElement?.isContentEditable)return;
+      if(e.metaKey||e.ctrlKey||e.altKey)return;
+      const hasRaw=data.rawText&&data.rawText!==data.fullText&&data.rawText!==data.text_preview;
+
+      switch(e.key){
+        case '1':e.preventDefault();setViewMode('original');break;
+        case '2':e.preventDefault();setViewMode('diff');break;
+        case '3':if(!isLite&&hasRaw){e.preventDefault();setViewMode('raw');}break;
+        case '4':if(!isLite&&hasRaw){e.preventDefault();setViewMode('raw-diff');}break;
+        case '5':if(!isLite&&aiResult){e.preventDefault();setViewMode('ai');}break;
+        case '6':if(!isLite&&aiResult){e.preventDefault();setViewMode('ai-diff');}break;
+        case 'm':case 'M':
+          if(!isLite){e.preventDefault();setShowRedacted(p=>!p);}break;
+        case 'p':case 'P':
+          if(!isLite){e.preventDefault();setPreviewVisible(p=>!p);}break;
+        case 'w':case 'W':
+          if(!isLite){
+            e.preventDefault();
+            setEditMode(p=>{
+              if(!p){setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);setPreviewVisible(true);return true;}
+              setEditedText(null);return false;
+            });
+          }break;
+        case 'i':case 'I':
+          if(!isLite){e.preventDefault();exportPrintPDF();}break;
+        case 'r':case 'R':
+          if(!isLite){e.preventDefault();setRightTab('detections');}break;
+        case 'a':case 'A':
+          if(!isLite){e.preventDefault();setRightTab('advisor');}break;
+        case 'c':case 'C':
+          e.preventDefault();handleCopy();break;
+      }
+    };
+    window.addEventListener('keydown',handler);
+    return()=>window.removeEventListener('keydown',handler);
+  },[isLite,aiResult,data,viewMode,redacted,exportPrintPDF,handleCopy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportWord=useCallback(()=>{
     const src=editedText??redacted;
@@ -6729,6 +6970,7 @@ export default function App(){
   const batchAddRef=useRef(null);
   const[showSettings,setShowSettings]=useState(false);
   const[showHelp,setShowHelp]=useState(false);
+  const[showShortcuts,setShowShortcuts]=useState(false);
   const[edition,setEdition]=useState('lite');
   const isLite=edition==='lite';
   const switchEdition=useCallback((id)=>{
@@ -6803,6 +7045,39 @@ export default function App(){
     try{localStorage.setItem('rp_onboarding_done','1')}catch{}
     startTour();
   },[startTour]);
+
+  // グローバルキーボードショートカット
+  useEffect(()=>{
+    const handler=(e)=>{
+      // 入力要素フォーカス中は無効
+      const tag=document.activeElement?.tagName;
+      if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||document.activeElement?.isContentEditable)return;
+      // モーダル表示中はEsc以外無効
+      if(e.key==='Escape')return; // Escは各モーダルの独自ハンドラーに任せる
+      if(showSettings||showHelp||showWelcome||showShortcuts)return;
+      // 修飾キー付きはブラウザのデフォルトに任せる
+      if(e.metaKey||e.ctrlKey||e.altKey)return;
+
+      switch(e.key){
+        case 'd':case 'D':
+          e.preventDefault();
+          setIsDark(p=>{const next=!p;storage.set('rp_theme',next?'dark':'light');return next;});
+          break;
+        case '?':
+          e.preventDefault();setShowHelp(true);break;
+        case ',':
+          e.preventDefault();setShowSettings(true);break;
+        case 'k':case 'K':
+          e.preventDefault();setShowShortcuts(true);break;
+        case 'e':case 'E':
+          e.preventDefault();
+          switchEdition(edition==='lite'?'pro':'lite');
+          break;
+      }
+    };
+    window.addEventListener('keydown',handler);
+    return()=>window.removeEventListener('keydown',handler);
+  },[showSettings,showHelp,showWelcome,showShortcuts,edition,switchEdition]);
 
   const curProv=AI_PROVIDERS.find(p=>p.id===settings.provider)||AI_PROVIDERS[0];
   const curModel=curProv.models.find(m=>m.id===settings.model)||curProv.models[0];
@@ -6972,6 +7247,15 @@ export default function App(){
                       {isDark ? '☀️' : '🌙'}
                   </button>
                   <button
+                      title='キーボードショートカット'
+                      aria-label='キーボードショートカット一覧'
+                      onClick={() => setShowShortcuts(true)}
+                      className={s['app-icon-btn']}
+                      data-type='kbd'
+                  >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h8"/></svg>
+                  </button>
+                  <button
                       title='ヘルプ'
                       aria-label='ヘルプを表示'
                       onClick={() => setShowHelp(true)}
@@ -7065,6 +7349,9 @@ export default function App(){
           )}
           {showHelp && (
               <HelpModal onClose={() => setShowHelp(false)} onStartTour={()=>{setShowHelp(false);startTour();}} onShowVideo={()=>{setShowHelp(false);setShowWelcome(true);}} />
+          )}
+          {showShortcuts && (
+              <ShortcutsModal onClose={() => setShowShortcuts(false)} hasEditorContext={!!data||batchMode} />
           )}
           {!isLite && !data && !batchMode && <ChatWidget />}
           {showWelcome && <WelcomeVideoModalWrapper onClose={handleWelcomeClose} onStartTour={handleWelcomeStartTour} />}
