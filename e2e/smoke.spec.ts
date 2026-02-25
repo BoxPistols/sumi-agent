@@ -1,29 +1,43 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 
-// ツアーオーバーレイを閉じるヘルパー
+// 全テスト共通: ページロード前にツアー・ウェルカムモーダルを抑制する
+test.beforeEach(async ({ page }) => {
+  // addInitScript はページ遷移のたびに実行される
+  await page.addInitScript(() => {
+    localStorage.setItem('rp_onboarding_done', '1')
+    localStorage.setItem('rp_visited', '1')
+    localStorage.setItem('rp_tour_upload_done', '1')
+    localStorage.setItem('rp_tour_editor_done', '1')
+    localStorage.setItem('rp_tour_pro_done', '1')
+  })
+})
+
+// 万が一オーバーレイが残っている場合に JS で除去するヘルパー
 async function dismissTour(page: import('@playwright/test').Page) {
-  const skip = page.getByRole('button', { name: 'スキップ' })
-  if (await skip.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await skip.click()
-    await page.waitForTimeout(500)
-  }
+  await page.evaluate(() => {
+    document
+      .querySelectorAll(
+        '.introjs-overlay, .introjs-tour, .introjs-helperLayer, .introjs-tooltipReferenceLayer, .introjs-fixedTooltip',
+      )
+      .forEach((el) => el.remove())
+  })
 }
 
 test.describe('TOP画面', () => {
   test('見出しとドロップゾーンが表示される', async ({ page }) => {
     await page.goto('/')
-    await dismissTour(page)
     await expect(page.getByRole('heading', { name: /個人情報/ })).toBeVisible()
     await expect(page.getByText('ファイルをドラッグ')).toBeVisible()
   })
 
   test('Lite/Pro 切替', async ({ page }) => {
     await page.goto('/')
-    await dismissTour(page)
     // エディション切替はradiogroup
     const proRadio = page.getByRole('radio', { name: /Pro/ })
     await proRadio.click()
+    // Pro切替後のツアーを除去
+    await dismissTour(page)
     // Pro版にはURLスクレイピングタブがある
     await expect(page.getByText('URLスクレイピング')).toBeVisible()
 
@@ -35,7 +49,6 @@ test.describe('TOP画面', () => {
 
   test('テーマ切替', async ({ page }) => {
     await page.goto('/')
-    await dismissTour(page)
     const themeBtn = page.getByRole('button', { name: 'ダークモード切替' })
     await themeBtn.click()
     await page.waitForTimeout(300)
@@ -47,7 +60,6 @@ test.describe('TOP画面', () => {
 test.describe('ファイルアップロード', () => {
   test('TXTファイルで検出結果が表示される', async ({ page }) => {
     await page.goto('/')
-    await dismissTour(page)
     const filePath = path.resolve('test-data/mock-resumes/01_職務経歴書_ITエンジニア.txt')
     const input = page.locator('input[type="file"]')
     await input.setInputFiles(filePath)
@@ -60,13 +72,12 @@ test.describe('ファイルアップロード', () => {
 test.describe('PreviewModal', () => {
   test('プレビューモーダルの表示と最大化', async ({ page }) => {
     await page.goto('/')
-    await dismissTour(page)
     const filePath = path.resolve('test-data/mock-resumes/01_職務経歴書_ITエンジニア.txt')
     const input = page.locator('input[type="file"]')
     await input.setInputFiles(filePath)
     await expect(page.getByText('検出結果')).toBeVisible({ timeout: 15000 })
 
-    // EditorScreen のツアーも閉じる
+    // EditorScreen のツアーオーバーレイを除去
     await dismissTour(page)
 
     // プレビューボタンをクリック
