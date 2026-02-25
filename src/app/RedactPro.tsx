@@ -7073,6 +7073,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const[jobDescription,setJobDescription]=useState("");
   const[showJobInput,setShowJobInput]=useState(false);
   const[advisorModelMode,setAdvisorModelMode]=useState("auto");
+  const[advisorUseRedacted,setAdvisorUseRedacted]=useState(false);
   const[advisorCost,setAdvisorCost]=useState({daily:0,session:0,count:0});
   const[advisorLastModel,setAdvisorLastModel]=useState("");
   const[advisorCostAlert,setAdvisorCostAlert]=useState("none");
@@ -7165,9 +7166,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const buildCtx=useCallback(async()=>{
     try{
       const{buildAdvisorContext}=await import('@/lib/advisor/context');
-      return buildAdvisorContext({originalText:data.fullText||data.text_preview,redactedText:redacted,detections,fileName:data.file_name,format:data.format||'text',pageCount:data.page_count});
-    }catch(e){return `【経歴書テキスト】\n${(data.fullText||data.text_preview).slice(0,6000)}`;}
-  },[data,detections,redacted]);
+      return buildAdvisorContext({originalText:data.fullText||data.text_preview,redactedText:redacted,detections,fileName:data.file_name,format:data.format||'text',pageCount:data.page_count,useRedacted:advisorUseRedacted});
+    }catch(e){return `【経歴書テキスト】\n${(advisorUseRedacted?redacted:(data.fullText||data.text_preview)).slice(0,6000)}`;}
+  },[data,detections,redacted,advisorUseRedacted]);
 
   const handleAdvisorSend=useCallback(async(overridePrompt,presetId)=>{
     const text=typeof overridePrompt==='string'?overridePrompt:advisorInput.trim();
@@ -8614,7 +8615,21 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               {/* プリセット質問 */}
               {advisorMessages.length===0 && (
               <div style={{padding:'12px 14px',borderBottom:`1px solid ${T.border}`,display:'flex',flexDirection:'column',gap:6}}>
-                  <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:2}}>クイック分析</div>
+                  {/* マスク済み送信トグル */}
+                  <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'6px 0'}}>
+                      <span style={{position:'relative',display:'inline-block',width:36,height:20,borderRadius:10,background:advisorUseRedacted?T.green||'#059669':T.surfaceAlt,transition:'background .2s',flexShrink:0}}
+                          onClick={e=>{e.preventDefault();setAdvisorUseRedacted(p=>!p);}}
+                      >
+                          <span style={{position:'absolute',top:2,left:advisorUseRedacted?18:2,width:16,height:16,borderRadius:8,background:'#fff',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.2)'}} />
+                      </span>
+                      <span style={{fontSize:12,fontWeight:600,color:T.text}}>マスク済みテキストで分析</span>
+                  </label>
+                  <div style={{fontSize:11,color:T.text3,lineHeight:1.5,marginTop:-4}}>
+                      {advisorUseRedacted
+                          ? 'ON: 個人情報をマスクした状態でAIに送信します（フリーランス向け）'
+                          : 'OFF: 元テキストで精度の高い分析を行います（正社員紹介向け）'}
+                  </div>
+                  <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:2,marginTop:4}}>クイック分析</div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
                       {(advisorPresets||[]).filter(p=>p.id!=='job-match'&&p.id!=='rewrite-full').map(p=>(
                           <button key={p.id} disabled={advisorLoading}
@@ -8644,6 +8659,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       </button>
                       {showJobInput && (
                       <div style={{marginTop:8}}>
+                          <div style={{fontSize:11,color:T.text3,lineHeight:1.5,marginBottom:6}}>
+                              求人票のテキストを貼り付けて、経歴書との適合度・ギャップを分析します。
+                          </div>
                           <textarea
                               value={jobDescription}
                               onChange={e=>setJobDescription(e.target.value)}
@@ -8666,6 +8684,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           >
                               マッチング分析を実行
                           </button>
+                          <div style={{fontSize:10,color:T.text3,lineHeight:1.5,marginTop:6,padding:'4px 0'}}>
+                              {advisorUseRedacted
+                                  ? '経歴書の個人情報はマスク済みの状態でAIに送信されます。求人票テキストはそのまま送信されます。'
+                                  : '経歴書は元テキストのままAIに送信されます。個人情報を保護する場合は上部の「マスク済みテキストで分析」をONにしてください。'}
+                          </div>
                       </div>
                       )}
                   </div>

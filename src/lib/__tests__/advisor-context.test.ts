@@ -86,4 +86,17 @@ describe('buildAdvisorContext', () => {
     expect(ctx).toContain('氏名: 2件')
     expect(ctx).toContain('連絡先: 1件')
   })
+
+  it('useRedacted=false（デフォルト）は元テキストを使用', () => {
+    const ctx = buildAdvisorContext({ ...baseParams, useRedacted: false })
+    expect(ctx).toContain('田中太郎')
+    expect(ctx).not.toContain('[氏名非公開]')
+  })
+
+  it('useRedacted=true はマスク済みテキストを使用', () => {
+    const ctx = buildAdvisorContext({ ...baseParams, useRedacted: true })
+    expect(ctx).toContain('[氏名非公開]')
+    expect(ctx).toContain('[住所非公開]')
+    expect(ctx).not.toContain('田中太郎')
+  })
 })

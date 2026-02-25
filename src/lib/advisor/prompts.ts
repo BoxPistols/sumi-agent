@@ -51,10 +51,10 @@ export const ADVISOR_PRESETS: AdvisorPreset[] = [
   },
   {
     id: 'matching',
-    label: 'マッチング分析',
+    label: '適性ポジション分析',
     prompt:
       'この求職者が活躍できそうなポジション・業界・企業タイプを分析してください。また、マッチングの際に企業側に確認すべき要件があれば指摘してください。',
-    desc: '適性ポジション・企業タイプの分析',
+    desc: '活躍できるポジション・業界を分析（求人票不要）',
   },
   {
     id: 'rewrite',

@@ -17,6 +17,7 @@ interface ContextParams {
   fileName: string
   format: string
   pageCount?: number
+  useRedacted?: boolean
 }
 
 const MAX_TEXT_LENGTH = 6000
@@ -40,10 +41,11 @@ function summarizeDetections(detections: Detection[]): string {
  * AIに渡すコンテキスト文字列を構築
  */
 export function buildAdvisorContext(params: ContextParams): string {
+  const sourceText = params.useRedacted ? params.redactedText : params.originalText
   const origTrunc =
-    params.originalText.length > MAX_TEXT_LENGTH
-      ? params.originalText.slice(0, MAX_TEXT_LENGTH) + '\n...(以下省略)'
-      : params.originalText
+    sourceText.length > MAX_TEXT_LENGTH
+      ? sourceText.slice(0, MAX_TEXT_LENGTH) + '\n...(以下省略)'
+      : sourceText
 
   const detSummary = summarizeDetections(params.detections)
 
