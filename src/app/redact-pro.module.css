@@ -172,3 +172,362 @@
   border-radius: 1px;
   opacity: 0.7;
 }
+
+/* ═══ ChatWidget ═══ */
+
+.chat-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 98;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: #1c1917;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.chat-fab[data-open='true'] {
+  transform: rotate(90deg);
+}
+
+.chat-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 72px;
+  z-index: 98;
+  border-radius: 16px;
+  border: 1px solid var(--rp-border);
+  background: var(--rp-bg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeUp 0.2s ease;
+  font-family: 'Noto Sans JP', 'DM Sans', system-ui, sans-serif;
+}
+
+.chat-resize {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nw-resize;
+  z-index: 1;
+  border-radius: 16px 0 0 0;
+}
+
+.chat-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--rp-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 16px 16px 0 0;
+  background: var(--rp-surface);
+}
+
+.chat-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--rp-text);
+}
+
+.chat-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--rp-text2);
+  padding: 4px;
+  display: flex;
+}
+
+.chat-body {
+  flex: 1 1 0;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.chat-msg {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.chat-msg[data-type='user'] {
+  align-self: flex-end;
+  background: #1c1917;
+  color: #fff;
+}
+
+.chat-msg[data-type='bot'] {
+  align-self: flex-start;
+  background: var(--rp-surfaceAlt);
+  color: var(--rp-text);
+}
+
+.chat-faq-cat {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rp-text3);
+  padding: 6px 0 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chat-faq-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 12px;
+  margin-bottom: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--rp-border);
+  background: var(--rp-surface);
+  color: var(--rp-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+  line-height: 1.4;
+}
+
+.chat-faq-btn:hover {
+  background: var(--rp-bg2);
+}
+
+/* ═══ HelpModal ═══ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+  animation: fadeIn 0.2s;
+}
+
+.modal-dialog {
+  width: 100%;
+  max-height: 92vh;
+  overflow: auto;
+  background: var(--rp-bg2);
+  border-radius: 16px;
+  border: 1px solid var(--rp-border);
+  animation: fadeUp 0.3s ease;
+}
+
+.modal-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--rp-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--rp-bg2);
+  z-index: 1;
+}
+
+.modal-header-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--rp-text);
+}
+
+.modal-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--rp-border);
+  background: transparent;
+  color: var(--rp-text2);
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-body {
+  padding: 18px 20px;
+}
+
+.help-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.help-action-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.help-video-btn {
+  border: 1px solid var(--rp-border);
+  background: var(--rp-surface);
+  color: var(--rp-text);
+}
+
+.help-video-btn:hover {
+  background: var(--rp-surfaceAlt);
+}
+
+.help-tour-btn {
+  border: none;
+  background: #1c1917;
+  color: #fff;
+}
+
+.help-section {
+  margin-bottom: 20px;
+}
+
+.help-heading {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rp-text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.help-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--rp-text2);
+}
+
+.help-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.help-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: #1c1917;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.help-step {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: var(--rp-text2);
+  line-height: 1.6;
+}
+
+.help-kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--rp-border);
+  background: var(--rp-surfaceAlt);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--rp-text2);
+  font-family: monospace;
+}
+
+.help-badges-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.help-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+  font-size: 13px;
+  color: var(--rp-text2);
+}
+
+.help-kbd-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 13px;
+  color: var(--rp-text2);
+  align-items: center;
+}
+
+.help-footer {
+  padding-top: 12px;
+  border-top: 1px solid var(--rp-border);
+  font-size: 12px;
+  color: var(--rp-text3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.help-footer a {
+  color: #1c1917;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.help-steps-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.help-presets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--rp-text2);
+}
+
+.help-note {
+  font-size: 12px;
+  color: var(--rp-text3);
+  margin: 8px 0 0;
+}

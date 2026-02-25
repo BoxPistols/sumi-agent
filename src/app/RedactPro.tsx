@@ -2074,54 +2074,25 @@ function ChatWidget(){
     </svg>
   );
 
-  const optionBtnStyle={
-    display:'block',width:'100%',textAlign:'left',
-    padding:'7px 12px',marginBottom:3,borderRadius:8,
-    border:`1px solid ${T.border}`,background:T.surface,
-    color:T.text,fontSize:13,cursor:'pointer',
-    transition:'background .15s',lineHeight:1.4,
-  };
-
   return(
     <>
       {/* Floating button */}
       <button
         onClick={()=>setOpen(v=>!v)}
         aria-label={open?'サポートチャットを閉じる':'サポートチャットを開く'}
-        style={{
-          position:'fixed',right:16,bottom:16,zIndex:98,
-          width:48,height:48,borderRadius:'50%',border:'none',
-          background:C.accent,color:'#fff',cursor:'pointer',
-          display:'flex',alignItems:'center',justifyContent:'center',
-          boxShadow:'0 2px 8px rgba(0,0,0,.2)',
-          transition:'transform .2s',
-          transform:open?'rotate(90deg)':'rotate(0deg)',
-        }}
+        className={s['chat-fab']}
+        data-open={open}
       >
         {open?closeSvg:chatBtnSvg}
       </button>
 
       {/* Chat panel */}
       {open&&(
-        <div style={{
-          position:'fixed',right:16,bottom:72,zIndex:98,
-          width:size.w,height:size.h,
-          borderRadius:16,
-          border:`1px solid ${T.border}`,
-          background:T.bg,
-          boxShadow:'0 8px 32px rgba(0,0,0,.2)',
-          display:'flex',flexDirection:'column',
-          overflow:'hidden',
-          animation:'fadeUp .2s ease',
-          fontFamily:C.font,
-        }}>
+        <div className={s['chat-panel']} style={{width:size.w,height:size.h}}>
           {/* Resize handle (top-left corner) */}
           <div
             onMouseDown={onResizeStart}
-            style={{
-              position:'absolute',left:0,top:0,width:18,height:18,
-              cursor:'nw-resize',zIndex:1,borderRadius:'16px 0 0 0',
-            }}
+            className={s['chat-resize']}
             title='ドラッグでリサイズ'
           >
             <svg width="10" height="10" viewBox="0 0 10 10" style={{position:'absolute',left:4,top:4,opacity:.4}}>
@@ -2130,39 +2101,21 @@ function ChatWidget(){
             </svg>
           </div>
           {/* Header */}
-          <div style={{
-            padding:'14px 16px',
-            borderBottom:`1px solid ${T.border}`,
-            display:'flex',alignItems:'center',justifyContent:'space-between',
-            borderRadius:'16px 16px 0 0',
-            background:T.surface,
-          }}>
-            <span style={{fontWeight:700,fontSize:14,color:T.text}}>サポート</span>
+          <div className={s['chat-header']}>
+            <span className={s['chat-title']}>サポート</span>
             <button
               onClick={()=>setOpen(false)}
               aria-label='閉じる'
-              style={{background:'none',border:'none',cursor:'pointer',color:T.text2,padding:4,display:'flex'}}
+              className={s['chat-close']}
             >
               {closeSvg}
             </button>
           </div>
 
           {/* Messages + Options (single scroll area) */}
-          <div ref={scrollRef} style={{
-            flex:'1 1 0',overflowY:'auto',padding:16,
-            display:'flex',flexDirection:'column',gap:8,
-            minHeight:0,
-          }}>
+          <div ref={scrollRef} className={s['chat-body']}>
             {(()=>{const lastBotIdx=messages.findLastIndex(x=>x.type==='bot');return messages.map((m,i)=>(
-              <div key={i} ref={i===lastBotIdx?botMsgRef:null} style={{
-                alignSelf:m.type==='user'?'flex-end':'flex-start',
-                maxWidth:'85%',
-                padding:'8px 12px',borderRadius:12,
-                background:m.type==='user'?C.accent:T.surfaceAlt,
-                color:m.type==='user'?'#fff':T.text,
-                fontSize:13,lineHeight:1.6,
-                whiteSpace:'pre-wrap',
-              }}>
+              <div key={i} ref={i===lastBotIdx?botMsgRef:null} className={s['chat-msg']} data-type={m.type}>
                 {m.text}
               </div>));
             })()}
@@ -2170,16 +2123,14 @@ function ChatWidget(){
             <div style={{marginTop:4}}>
               {CHAT_FAQ.map((cat,ci)=>(
                 <div key={ci}>
-                  <div style={{fontSize:11,fontWeight:700,color:T.text3,padding:'6px 0 3px',textTransform:'uppercase',letterSpacing:'.5px'}}>
+                  <div className={s['chat-faq-cat']}>
                     {cat.category}
                   </div>
                   {cat.questions.map((item,qi)=>(
                     <button
                       key={qi}
                       onClick={()=>selectQuestion(item.q,item.a)}
-                      onMouseEnter={e=>e.currentTarget.style.background=T.bg2}
-                      onMouseLeave={e=>e.currentTarget.style.background=T.surface}
-                      style={optionBtnStyle}
+                      className={s['chat-faq-btn']}
                     >
                       {item.q}
                     </button>
@@ -2198,102 +2149,70 @@ function ChatWidget(){
 function HelpModal({onClose,onStartTour,onShowVideo}){
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
-  const sectionStyle={marginBottom:20};
-  const headingStyle={fontSize:14,fontWeight:700,color:T.text,marginBottom:8,display:'flex',alignItems:'center',gap:6};
-  const listStyle={margin:0,paddingLeft:20,fontSize:13,lineHeight:1.8,color:T.text2};
-  const badgeStyle=(color,bg)=>({display:'inline-block',padding:'1px 7px',borderRadius:4,fontSize:11,fontWeight:600,color,background:bg,marginLeft:4});
-  const stepNumStyle={display:'inline-flex',alignItems:'center',justifyContent:'center',width:20,height:20,borderRadius:10,background:C.accent,color:'#fff',fontSize:11,fontWeight:700,flexShrink:0};
-  const stepStyle={display:'flex',gap:8,alignItems:'flex-start',fontSize:13,color:T.text2,lineHeight:1.6};
-  const kbdStyle={display:'inline-block',padding:'1px 6px',borderRadius:4,border:`1px solid ${T.border}`,background:T.surfaceAlt,fontSize:11,fontWeight:600,color:T.text2,fontFamily:'monospace'};
   return (
       <div
-          style={{
-              position:'fixed',inset:0,
-              background:'rgba(0,0,0,.55)',
-              backdropFilter:'blur(4px)',
-              display:'flex',alignItems:'center',justifyContent:'center',
-              zIndex:100,padding:16,
-              animation:'fadeIn .2s',
-          }}
+          className={s['modal-overlay']}
           onClick={(e)=>{if(e.target===e.currentTarget)onClose()}}
       >
           <div
               ref={trapRef}
-              className='rp-modal-inner'
+              className={`rp-modal-inner ${s['modal-dialog']}`}
               role="dialog"
               aria-modal="true"
               aria-label="ヘルプ"
-              style={{
-                  width:'100%',maxWidth:640,maxHeight:'92vh',overflow:'auto',
-                  background:T.bg2,borderRadius:16,
-                  border:`1px solid ${T.border}`,
-                  animation:'fadeUp .3s ease',
-              }}
+              style={{maxWidth:640}}
           >
-              <div style={{
-                  padding:'14px 20px',borderBottom:`1px solid ${T.border}`,
-                  display:'flex',alignItems:'center',justifyContent:'space-between',
-                  position:'sticky',top:0,background:T.bg2,zIndex:1,
-              }}>
-                  <span style={{fontSize:15,fontWeight:700,color:T.text}}>ヘルプ</span>
-                  <button
-                      onClick={onClose}
-                      aria-label="閉じる"
-                      style={{
-                          width:28,height:28,borderRadius:7,
-                          border:`1px solid ${T.border}`,background:'transparent',
-                          color:T.text2,cursor:'pointer',fontSize:13,
-                          display:'flex',alignItems:'center',justifyContent:'center',
-                      }}
-                  >✕</button>
+              <div className={s['modal-header']}>
+                  <span className={s['modal-header-title']}>ヘルプ</span>
+                  <button onClick={onClose} aria-label="閉じる" className={s['modal-close-btn']}>✕</button>
               </div>
-              <div style={{padding:'18px 20px'}}>
+              <div className={s['modal-body']}>
                   {/* ガイドツアー & 紹介動画 */}
-                  {(onStartTour||onShowVideo)&&<div style={{display:'flex',gap:8,marginBottom:18}}>
-                    {onShowVideo&&<button onClick={()=>{onClose();onShowVideo();}} style={{flex:1,padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6,transition:'background .15s'}} onMouseEnter={e=>e.currentTarget.style.background=T.surfaceAlt} onMouseLeave={e=>e.currentTarget.style.background=T.surface}>
+                  {(onStartTour||onShowVideo)&&<div className={s['help-actions']}>
+                    {onShowVideo&&<button onClick={()=>{onClose();onShowVideo();}} className={`${s['help-action-btn']} ${s['help-video-btn']}`}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                       紹介動画を見る
                     </button>}
-                    {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:C.accent,color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                    {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} className={`${s['help-action-btn']} ${s['help-tour-btn']}`}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       ガイドツアー
                     </button>}
                   </div>}
                   {/* クイックスタート */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
+                  <div className={s['help-section']}>
+                      <div className={s['help-heading']}>
                           <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><polygon points='5 3 19 12 5 21 5 3'/></svg>
                           クイックスタート
                       </div>
-                      <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                          <div style={stepStyle}><span style={stepNumStyle}>1</span><span>ファイルをドラッグ＆ドロップ、またはテキストを貼り付け</span></div>
-                          <div style={stepStyle}><span style={stepNumStyle}>2</span><span>自動で個人情報（PII）を検出・ハイライト表示</span></div>
-                          <div style={stepStyle}><span style={stepNumStyle}>3</span><span>カテゴリ別にマスク設定を調整</span></div>
-                          <div style={stepStyle}><span style={stepNumStyle}>4</span><span>マスク済みテキストをコピー or エクスポート</span></div>
+                      <div className={s['help-steps-wrap']}>
+                          <div className={s['help-step']}><span className={s['help-step-num']}>1</span><span>ファイルをドラッグ＆ドロップ、またはテキストを貼り付け</span></div>
+                          <div className={s['help-step']}><span className={s['help-step-num']}>2</span><span>自動で個人情報（PII）を検出・ハイライト表示</span></div>
+                          <div className={s['help-step']}><span className={s['help-step-num']}>3</span><span>カテゴリ別にマスク設定を調整</span></div>
+                          <div className={s['help-step']}><span className={s['help-step-num']}>4</span><span>マスク済みテキストをコピー or エクスポート</span></div>
                       </div>
                   </div>
 
                   {/* 対応ファイル形式 */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
+                  <div className={s['help-section']}>
+                      <div className={s['help-heading']}>
                           <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>
                           対応ファイル形式
                       </div>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                      <div className={s['help-badges-wrap']}>
                           {['PDF','Word (.docx)','Excel (.xlsx)','CSV','Markdown','HTML','RTF','JSON','ODT','テキスト'].map(f=>(
-                              <span key={f} style={badgeStyle(T.text2,T.surfaceAlt)}>{f}</span>
+                              <span key={f} className={s['help-badge']} style={{color:T.text2,background:T.surfaceAlt}}>{f}</span>
                           ))}
                       </div>
-                      <p style={{fontSize:12,color:T.text3,margin:'8px 0 0'}}>URLからの読み込み（Wantedly, LinkedIn 等）にも対応</p>
+                      <p className={s['help-note']}>URLからの読み込み（Wantedly, LinkedIn 等）にも対応</p>
                   </div>
 
                   {/* 検出カテゴリ */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
+                  <div className={s['help-section']}>
+                      <div className={s['help-heading']}>
                           <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>
                           検出カテゴリ
                       </div>
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 16px',fontSize:13,color:T.text2}}>
+                      <div className={s['help-grid-2']}>
                           <div><span style={{color:C.red}}>●</span> 氏名（辞書+AI）</div>
                           <div><span style={{color:C.blue}}>●</span> 連絡先（メール・電話）</div>
                           <div><span style={{color:C.orange}}>●</span> 住所・地名</div>
@@ -2304,12 +2223,12 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   </div>
 
                   {/* マスクプリセット */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
+                  <div className={s['help-section']}>
+                      <div className={s['help-heading']}>
                           <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0110 0v4'/></svg>
                           マスクプリセット
                       </div>
-                      <div style={{display:'flex',flexDirection:'column',gap:4,fontSize:13,color:T.text2}}>
+                      <div className={s['help-presets-list']}>
                           <div><strong>基本</strong> — 氏名・連絡先のみ</div>
                           <div><strong>標準</strong> — + 住所・年月日・URL（推奨）</div>
                           <div><strong>厳格</strong> — 組織名含む全項目</div>
@@ -2317,12 +2236,12 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   </div>
 
                   {/* AI機能 */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
+                  <div className={s['help-section']}>
+                      <div className={s['help-heading']}>
                           <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4z'/><rect x='3' y='8' width='18' height='14' rx='2'/><line x1='12' y1='12' x2='12' y2='16'/></svg>
                           AI機能
                       </div>
-                      <ul style={listStyle}>
+                      <ul className={s['help-list']}>
                           <li>設定画面でプロバイダ（OpenAI / Claude / Gemini）を選択</li>
                           <li>APIキーを入力して接続テスト可能</li>
                           <li>AI検出で正規表現では見つけにくい個人情報も補完</li>
@@ -2331,38 +2250,37 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   </div>
 
                   {/* エクスポート */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
+                  <div className={s['help-section']}>
+                      <div className={s['help-heading']}>
                           <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>
                           エクスポート
                       </div>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                      <div className={s['help-badges-wrap']}>
                           {['テキスト','Markdown','CSV','Excel','PDF','Word'].map(f=>(
-                              <span key={f} style={badgeStyle(T.text2,T.surfaceAlt)}>{f}</span>
+                              <span key={f} className={s['help-badge']} style={{color:T.text2,background:T.surfaceAlt}}>{f}</span>
                           ))}
                       </div>
                   </div>
 
                   {/* キーボードショートカット */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
+                  <div className={s['help-section']}>
+                      <div className={s['help-heading']}>
                           <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><rect x='2' y='4' width='20' height='16' rx='2'/><line x1='6' y1='8' x2='6' y2='8'/><line x1='10' y1='8' x2='10' y2='8'/><line x1='14' y1='8' x2='14' y2='8'/><line x1='18' y1='8' x2='18' y2='8'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
                           キーボード操作
                       </div>
-                      <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:'4px 12px',fontSize:13,color:T.text2,alignItems:'center'}}>
-                          <kbd style={kbdStyle}>Esc</kbd><span>ダイアログを閉じる</span>
-                          <kbd style={kbdStyle}>Tab</kbd><span>次の要素にフォーカス移動</span>
+                      <div className={s['help-kbd-grid']}>
+                          <kbd className={s['help-kbd']}>Esc</kbd><span>ダイアログを閉じる</span>
+                          <kbd className={s['help-kbd']}>Tab</kbd><span>次の要素にフォーカス移動</span>
                       </div>
                   </div>
 
                   {/* フッター */}
-                  <div style={{paddingTop:12,borderTop:`1px solid ${T.border}`,fontSize:12,color:T.text3,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div className={s['help-footer']}>
                       <span>Sumi v1.0</span>
                       <a
                           href='https://github.com/BoxPistols/sumi'
                           target='_blank'
                           rel='noopener noreferrer'
-                          style={{color:C.accent,textDecoration:'none',fontSize:12}}
                       >GitHub</a>
                   </div>
               </div>
