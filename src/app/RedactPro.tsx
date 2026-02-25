@@ -3793,17 +3793,51 @@ function DiffView({original,modified,label,modifiedLabel}){
     else{diffs.push({type:"changed",orig:o,mod:m});}
   }
   const changeCount=diffs.filter(d=>d.type==="changed").length;
+
+  // チャンク計算: 連続する changed 行をグループ化し、各グループの先頭indexを保持
+  const chunks=useMemo(()=>{
+    const c=[];
+    let inChunk=false;
+    for(let i=0;i<diffs.length;i++){
+      if(diffs[i].type==="changed"){
+        if(!inChunk){c.push(i);inChunk=true;}
+      }else{inChunk=false;}
+    }
+    return c;
+  },[diffs.length,original,modified]);
+
+  const [currentChunk,setCurrentChunk]=useState(-1);
+  const scrollRef=useRef(null);
+
+  const jumpTo=useCallback((idx)=>{
+    if(idx<0||idx>=chunks.length)return;
+    setCurrentChunk(idx);
+    const el=scrollRef.current?.querySelector(`[data-chunk-start="${idx}"]`);
+    if(el)el.scrollIntoView({block:'center',behavior:'smooth'});
+  },[chunks]);
+
   return (
       <div className={s['diff-wrap']}>
           <div className={s['diff-header']}>
               <span className={s['diff-header-label']}>
                   Diff: {label || '変更箇所'}
               </span>
+              {chunks.length>0&&(
+                <div className={s['diff-nav']}>
+                  <button className={s['diff-nav-btn']} disabled={currentChunk<=0} onClick={()=>jumpTo(currentChunk<=0?0:currentChunk-1)} aria-label="前の変更へ">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 12L8 4M8 4L4 8M8 4L12 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button className={s['diff-nav-btn']} disabled={currentChunk>=chunks.length-1} onClick={()=>jumpTo(currentChunk<0?0:currentChunk+1)} aria-label="次の変更へ">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 4L8 12M8 12L12 8M8 12L4 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <span className={s['diff-nav-pos']}>{currentChunk<0?'–':currentChunk+1} / {chunks.length}</span>
+                </div>
+              )}
               <Badge color={T.amber} bg={T.amberDim}>
                   {changeCount} 行変更
               </Badge>
           </div>
-          <div className={s['diff-scroll']}>
+          <div className={s['diff-scroll']} ref={scrollRef}>
               <div className={s['diff-grid']}>
                   <div className={s['diff-col-left']}>
                       <div className={s['diff-col-label']}>元テキスト</div>
@@ -3813,6 +3847,7 @@ function DiffView({original,modified,label,modifiedLabel}){
                               className={s['diff-line']}
                               data-changed={d.type === 'changed'}
                               data-side="del"
+                              {...(chunks.indexOf(i)>=0?{'data-chunk-start':chunks.indexOf(i)}:{})}
                           >
                               <span className={s['diff-line-num']}>{i + 1}</span>
                               <span className={s['diff-line-text']}>
@@ -5135,6 +5170,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const[advisorCostAlert,setAdvisorCostAlert]=useState("none");
   const[advisorDraft,setAdvisorDraft]=useState(null); // AI改善テキスト (string | null)
   const[advisorDraftLoading,setAdvisorDraftLoading]=useState(false);
+  const[advisorInputMode,setAdvisorInputMode]=useState("question"); // 'question' | 'rewrite'
   const[aiRateLimit,setAiRateLimit]=useState(null); // {remaining,limit}
   useEffect(()=>onRateLimitUpdate(rl=>setAiRateLimit(rl)),[]);
   const advisorEndRef=useRef(null);
@@ -5261,14 +5297,17 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
 
   useEffect(()=>{advisorEndRef.current?.scrollIntoView({behavior:'smooth'});},[advisorMessages]);
 
-  // アドバイザー: 改善テキスト全文を生成
-  const handleAdvisorRewriteFull=useCallback(async()=>{
+  // アドバイザー: 改善テキスト全文を生成（userInstruction: ユーザーの自由入力指示）
+  const handleAdvisorRewriteFull=useCallback(async(userInstruction)=>{
     if(advisorDraftLoading)return;
     setAdvisorDraftLoading(true);
     try{
       const{callAdvisor}=await import('@/lib/advisor/call');
       const ctx=await buildCtx();
-      const userMsg={role:'user',content:`以下のマスキング済み経歴書テキストを改善してください:\n\n${redacted}`,timestamp:Date.now()};
+      const prompt=userInstruction
+        ?`以下の指示に従って経歴書テキストを改善してください:\n\n【指示】\n${userInstruction}\n\n【経歴書テキスト】\n${redacted}`
+        :`以下のマスキング済み経歴書テキストを改善してください:\n\n${redacted}`;
+      const userMsg={role:'user',content:prompt,timestamp:Date.now()};
       const result=await callAdvisor({messages:[userMsg],context:ctx,apiKey,model,modelMode:advisorModelMode,presetId:'rewrite-full'});
       setAdvisorLastModel(result.modelLabel);
       setAdvisorDraft(result.text);
@@ -5498,7 +5537,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   color: viewMode === 'original' ? T.accent : T.text3,
                               }}
                           >
-                              マスク
+                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.3 3 2 5.5L1.5 6.5C1.2 7.1 1.2 7.9 1.5 8.5L2 9.5C3.3 12 5.5 13.5 8 13.5C10.5 13.5 12.7 12 14 9.5L14.5 8.5C14.8 7.9 14.8 7.1 14.5 6.5L14 5.5C12.7 3 10.5 1.5 8 1.5Z" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.2"/></svg>
                           </button>
                           <button
                               title='Diff: 元テキストとマスク後の違いを並べて比較'
@@ -5510,7 +5549,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   color: viewMode === 'diff' ? T.amber : T.text3,
                               }}
                           >
-                              Diff
+                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5 3v10M11 3v10M5 8h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M3 5L5 3l2 2M13 11l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                           </button>
                           {!isLite && hasRawText && (
                               <>
@@ -5524,7 +5563,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                           color: viewMode === 'raw' ? T.red : T.text3,
                                       }}
                                   >
-                                      Raw
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 1.5h5l4 4v9H4a1 1 0 01-1-1v-11a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M9 1.5v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
                                   </button>
                                   <button
                                       title='Raw Diff: 生テキストとAI整形後の違いを比較'
@@ -5536,7 +5575,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                           color: viewMode === 'raw-diff' ? T.red : T.text3,
                                       }}
                                   >
-                                      Raw Diff
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 1.5h4l3 3v4H3a1 1 0 01-1-1v-5a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M7 1.5v3h3" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M11 8v5a1 1 0 01-1 1H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M13 10l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                   </button>
                               </>
                           )}
@@ -5552,7 +5591,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                           color: viewMode === 'ai' ? T.purple : T.text3,
                                       }}
                                   >
-                                      AI整形
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
                                   </button>
                                   <button
                                       title='AI Diff: マスク結果とAI整形後の違いを比較'
@@ -5564,30 +5603,35 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                           color: viewMode === 'ai-diff' ? T.cyan : T.text3,
                                       }}
                                   >
-                                      AI Diff
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 2l1 3L10 6l-3 1L6 10 5 7 2 6l3-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M11 8v5a1 1 0 01-1 1H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M13 10l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                   </button>
                               </>
                           )}
                       </div>
                       {!isLite && !showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
-                          <Btn
+                          <button
                               data-intro="mask-toggle"
                               title={showRedacted ? 'マスク済みテキストを表示中（クリックで元文に切替）' : '元のテキストを表示中（クリックでマスク表示に切替）'}
-                              variant={showRedacted ? 'danger' : 'ghost'}
+                              aria-label={showRedacted ? 'マスク済みテキスト表示中' : '元テキスト表示中'}
                               onClick={() => setShowRedacted(!showRedacted)}
+                              className={s['ed-view-tab']}
                               style={{
-                                  padding: '6px 12px',
-                                  fontSize: 12,
+                                  background: showRedacted ? T.redDim : 'transparent',
+                                  color: showRedacted ? T.red : T.text3,
                                   borderRadius: 8,
+                                  border: `1px solid ${T.border}`,
                               }}
                           >
-                              {showRedacted ? 'マスク' : '元文'}
-                          </Btn>
+                              {showRedacted
+                                ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M6.5 6.5a2.5 2.5 0 003 3" stroke="currentColor" strokeWidth="1.2"/><path d="M2 7.5C3.3 5 5.5 3.5 8 3.5c1 0 1.9.2 2.8.6M14 7.5c-.6 1.2-1.4 2.2-2.4 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                                : <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 3.5C5.5 3.5 3.3 5 2 7.5c1.3 2.5 3.5 4 6 4s4.7-1.5 6-4c-1.3-2.5-3.5-4-6-4z" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.2"/></svg>
+                              }
+                          </button>
                       )}
-                      {!isLite && <Btn
+                      {!isLite && <button
                           data-intro="edit-button"
                           title='編集: テキストを直接編集してA4プレビューに即反映'
-                          variant={editMode ? 'primary' : 'ghost'}
+                          aria-label={editMode ? '編集完了' : '編集'}
                           onClick={() => {
                               if(!editMode){
                                   setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
@@ -5598,14 +5642,16 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   setEditedText(null);
                               }
                           }}
+                          className={s['ed-view-tab']}
                           style={{
-                              padding: '6px 12px',
-                              fontSize: 12,
+                              background: editMode ? T.accentDim : 'transparent',
+                              color: editMode ? T.accent : T.text3,
                               borderRadius: 8,
+                              border: `1px solid ${editMode ? T.accent : T.border}`,
                           }}
                       >
-                          {editMode ? '編集完了' : '編集'}
-                      </Btn>}
+                          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L5 13H3v-2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M9.5 4.5l2 2" stroke="currentColor" strokeWidth="1.2"/></svg>
+                      </button>}
                       {!isLite && <>
                       <div style={{width:1,height:20,background:T.border,marginLeft:4,marginRight:2,flexShrink:0}}/>
                       <div style={{display:'flex',gap:2,alignItems:'center'}}>
@@ -6549,56 +6595,73 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   )}
                   <div ref={advisorEndRef}/>
               </div>
-              {/* アクションボタン（入力欄の上に固定） */}
-              <div style={{flexShrink:0,padding:'8px 14px',borderTop:`1px solid ${T.border}`,display:'flex',gap:4}}>
-                  <button
-                      onClick={()=>setShowJobInput(p=>!p)}
-                      style={{flex:1,padding:'8px 10px',fontSize:12,fontWeight:600,
-                          color:T.bg,background:T.accent,
-                          border:'none',borderRadius:8,cursor:'pointer',transition:'opacity .15s',
-                          opacity:advisorLoading?0.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
-                      disabled={advisorLoading}
-                      title='求人票テキストを貼り付けて経歴書との適合度を分析'
-                  >
-                      <span style={{fontSize:14}}>&#x21C4;</span> 求人票
-                  </button>
-                  <button
-                      onClick={handleAdvisorRewriteFull}
-                      disabled={advisorDraftLoading||advisorLoading}
-                      title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
-                      style={{flex:1,padding:'8px 10px',fontSize:12,fontWeight:600,
-                          color:'#fff',background:'#15803d',
-                          border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
-                          transition:'opacity .15s',opacity:advisorDraftLoading||advisorLoading?0.5:1,
-                          display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
-                  >
-                      <span style={{fontSize:13}}>&#x21BB;</span> {advisorDraftLoading?'生成中...':'改善テキスト生成'}
-                  </button>
-              </div>
-              {advisorDraft&&<div style={{fontSize:10,color:'#22c55e',fontWeight:500,textAlign:'center',padding:'0 14px 4px'}}>差分プレビューを左パネルに表示中</div>}
-              {/* 入力欄 */}
-              <div style={{padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
-                  <textarea
-                      rows={2}
-                      value={advisorInput}
-                      onChange={e=>setAdvisorInput(e.target.value)}
-                      onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();handleAdvisorSend();}}}
-                      placeholder="質問を入力..."
-                      disabled={advisorLoading}
-                      style={{flex:1,padding:'8px 12px',fontSize:13,color:T.text,background:T.surface,
-                          border:`1px solid ${T.border}`,borderRadius:8,outline:'none',fontFamily:'inherit',
-                          resize:'vertical',minHeight:48,lineHeight:1.5}}
-                  />
-                  <button
-                      onClick={handleAdvisorSend}
-                      disabled={advisorLoading||!advisorInput.trim()}
-                      title="送信"
-                      style={{padding:'8px 14px',fontSize:13,fontWeight:600,color:'#fff',
-                          background:!advisorInput.trim()||advisorLoading?T.text3:T.accent,
-                          border:'none',borderRadius:8,cursor:!advisorInput.trim()||advisorLoading?'not-allowed':'pointer'}}
-                  >
-                      送信
-                  </button>
+              {advisorDraft&&<div style={{fontSize:10,color:'#22c55e',fontWeight:500,textAlign:'center',padding:'0 14px 4px',borderTop:`1px solid ${T.border}`}}>差分プレビューを左パネルに表示中</div>}
+              {/* モード切替タブ + 入力欄 */}
+              <div style={{flexShrink:0,borderTop:`1px solid ${T.border}`,background:T.bg2}}>
+                  <div style={{display:'flex',borderBottom:`1px solid ${T.border}`}}>
+                      {[
+                        {id:'question',label:'質問',icon:'\u{1F4AC}',desc:'AIアドバイザーに相談（経歴書は変更されません）'},
+                        {id:'rewrite',label:'指示 → 経歴書に反映',icon:'\u270F\uFE0F',desc:'指示を元にAIが経歴書を改善 → 差分プレビューで確認'},
+                      ].map(tab=>(
+                        <button key={tab.id} title={tab.desc}
+                          onClick={()=>setAdvisorInputMode(tab.id)}
+                          style={{flex:1,padding:'6px 8px',fontSize:11,fontWeight:advisorInputMode===tab.id?700:500,
+                            color:advisorInputMode===tab.id?(tab.id==='rewrite'?'#22c55e':T.accent):T.text3,
+                            background:advisorInputMode===tab.id?T.bg:'transparent',
+                            border:'none',borderBottom:advisorInputMode===tab.id?`2px solid ${tab.id==='rewrite'?'#22c55e':T.accent}`:'2px solid transparent',
+                            cursor:'pointer',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                        >
+                          <span style={{fontSize:12}}>{tab.icon}</span>{tab.label}
+                        </button>
+                      ))}
+                  </div>
+                  <div style={{padding:'10px 14px',display:'flex',gap:8,alignItems:'flex-end'}}>
+                      <textarea
+                          rows={2}
+                          value={advisorInput}
+                          onChange={e=>setAdvisorInput(e.target.value)}
+                          onKeyDown={e=>{
+                            if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){
+                              e.preventDefault();
+                              if(advisorInputMode==='rewrite'){
+                                handleAdvisorRewriteFull(advisorInput.trim()||undefined);
+                                setAdvisorInput("");
+                              }else{
+                                handleAdvisorSend();
+                              }
+                            }
+                          }}
+                          placeholder={advisorInputMode==='rewrite'
+                            ?'改善の指示を入力...（例: 技術スタックを最新に絞る）'
+                            :'質問を入力...（例: この経歴書の強みは？）'}
+                          disabled={advisorLoading||advisorDraftLoading}
+                          style={{flex:1,padding:'8px 12px',fontSize:13,color:T.text,background:T.surface,
+                              border:`1px solid ${advisorInputMode==='rewrite'?'#22c55e40':T.border}`,borderRadius:8,outline:'none',fontFamily:'inherit',
+                              resize:'vertical',minHeight:48,lineHeight:1.5}}
+                      />
+                      <button
+                          onClick={()=>{
+                            if(advisorInputMode==='rewrite'){
+                              handleAdvisorRewriteFull(advisorInput.trim()||undefined);
+                              setAdvisorInput("");
+                            }else{
+                              handleAdvisorSend();
+                            }
+                          }}
+                          disabled={advisorInputMode==='rewrite'?(advisorDraftLoading):(advisorLoading||!advisorInput.trim())}
+                          title={advisorInputMode==='rewrite'?'経歴書を改善（差分プレビューで確認）':'質問を送信'}
+                          style={{padding:'8px 14px',fontSize:13,fontWeight:600,color:'#fff',
+                              background:advisorInputMode==='rewrite'
+                                ?(advisorDraftLoading?T.text3:'#15803d')
+                                :(!advisorInput.trim()||advisorLoading?T.text3:C.green),
+                              border:'none',borderRadius:8,
+                              cursor:(advisorInputMode==='rewrite'?advisorDraftLoading:(advisorLoading||!advisorInput.trim()))?'not-allowed':'pointer'}}
+                      >
+                          {advisorInputMode==='rewrite'
+                            ?(advisorDraftLoading?'生成中...':'改善')
+                            :'送信'}
+                      </button>
+                  </div>
               </div>
           </div>
           )}
