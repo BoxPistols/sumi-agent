@@ -8518,9 +8518,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
           <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
               {/* プライバシー注意 */}
               {advisorMessages.length===0 && (
-              <div style={{padding:'8px 14px',background:'#78350f18',borderBottom:`1px solid #92400e40`,fontSize:11,color:T.amber||'#f59e0b',display:'flex',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:14}}>&#9888;</span>
-                  <span>経歴書の内容がAIサービスに送信されます。社内ポリシーに従ってご利用ください。</span>
+              <div style={{padding:'8px 14px',background:T.accentDim,borderBottom:`1px solid ${T.border}`,fontSize:11,color:T.text2,display:'flex',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:13}}>&#8505;</span>
+                  <span>AI APIに送信されますが、各社の規約により学習データには使用されません。</span>
               </div>
               )}
               {/* コストアラート */}
