@@ -4916,7 +4916,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
 }
 
 // ═══ Diff View ═══
-function DiffView({original,modified,label}){
+function DiffView({original,modified,label,modifiedLabel}){
   const origLines=original.split("\n");
   const modLines=modified.split("\n");
   const maxLen=Math.max(origLines.length,modLines.length);
@@ -5033,7 +5033,7 @@ function DiffView({original,modified,label}){
                               marginBottom: 4,
                           }}
                       >
-                          マスキング済み
+                          {modifiedLabel || 'マスキング済み'}
                       </div>
                       {diffs.map((d, i) => {
                           const re = new RegExp(PH_RE.source, 'g')
@@ -7203,6 +7203,40 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   },[handleAdvisorSend,jobDescription]);
 
   useEffect(()=>{advisorEndRef.current?.scrollIntoView({behavior:'smooth'});},[advisorMessages]);
+
+  // アドバイザー: 改善テキスト全文を生成
+  const handleAdvisorRewriteFull=useCallback(async()=>{
+    if(advisorDraftLoading)return;
+    setAdvisorDraftLoading(true);
+    try{
+      const{callAdvisor}=await import('@/lib/advisor/call');
+      const ctx=await buildCtx();
+      const userMsg={role:'user',content:`以下のマスキング済み経歴書テキストを改善してください:\n\n${redacted}`,timestamp:Date.now()};
+      const result=await callAdvisor({messages:[userMsg],context:ctx,apiKey,model,modelMode:advisorModelMode,presetId:'rewrite-full'});
+      setAdvisorLastModel(result.modelLabel);
+      setAdvisorDraft(result.text);
+      if(result.rateLimit){setAiRateLimit(result.rateLimit);_rateLimitListeners.forEach(fn=>fn(result.rateLimit));}
+      const{getCostRecord,checkCostAlert}=await import('@/lib/advisor/model-selector');
+      const rec=getCostRecord();
+      setAdvisorCost({daily:rec.dailyTotal,session:rec.sessionTotal,count:rec.callCount});
+      setAdvisorCostAlert(checkCostAlert(rec));
+    }catch(e){
+      setAdvisorMessages(prev=>[...prev,{role:'assistant',content:`改善テキスト生成エラー: ${e.message||'AI呼び出しに失敗しました'}`,timestamp:Date.now()}]);
+    }finally{setAdvisorDraftLoading(false);}
+  },[advisorDraftLoading,buildCtx,redacted,apiKey,model,advisorModelMode]);
+
+  // アドバイザー: 改善テキストを取り込み（編集モードに移行）
+  const handleAdvisorDraftApply=useCallback(()=>{
+    if(!advisorDraft)return;
+    setEditedText(advisorDraft);
+    setEditMode(true);
+    setPreviewVisible(true);
+    setAdvisorDraft(null);
+  },[advisorDraft]);
+
+  // アドバイザー: 改善テキストを却下
+  const handleAdvisorDraftReject=useCallback(()=>{setAdvisorDraft(null);},[]);
+
   const buildTxt=()=>viewMode==="ai"&&aiResult?aiResult:redacted;
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
@@ -7668,7 +7702,20 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   <button title='すべての検出を無効にする' aria-label='すべての検出を無効にする' onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全OFF</button>
               </div>
               )}
-              {showDiff ? (
+              {advisorDraft ? (
+                  <div style={{flex:1,display:'flex',flexDirection:'column',minHeight:0}}>
+                      <DiffView
+                          original={redacted}
+                          modified={advisorDraft}
+                          label='アドバイザー改善提案'
+                          modifiedLabel='改善提案'
+                      />
+                      <div style={{padding:'8px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,display:'flex',gap:8,justifyContent:'flex-end',flexShrink:0}}>
+                          <button onClick={handleAdvisorDraftReject} style={{padding:'6px 16px',fontSize:12,fontWeight:500,color:T.text2,background:'transparent',border:`1px solid ${T.border}`,borderRadius:6,cursor:'pointer',fontFamily:T.font}}>却下</button>
+                          <button onClick={handleAdvisorDraftApply} style={{padding:'6px 16px',fontSize:12,fontWeight:600,color:'#fff',background:T.green||'#22c55e',border:'none',borderRadius:6,cursor:'pointer',fontFamily:T.font}}>取り込み</button>
+                      </div>
+                  </div>
+              ) : showDiff ? (
                   <DiffView
                       original={data.text_preview}
                       modified={applyRedaction(
@@ -8569,7 +8616,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               <div style={{padding:'12px 14px',borderBottom:`1px solid ${T.border}`,display:'flex',flexDirection:'column',gap:6}}>
                   <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:2}}>クイック分析</div>
                   <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-                      {(advisorPresets||[]).filter(p=>p.id!=='job-match').map(p=>(
+                      {(advisorPresets||[]).filter(p=>p.id!=='job-match'&&p.id!=='rewrite-full').map(p=>(
                           <button key={p.id} disabled={advisorLoading}
                               onClick={()=>handleAdvisorPreset(p)}
                               title={p.desc}
@@ -8621,6 +8668,21 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           </button>
                       </div>
                       )}
+                  </div>
+                  {/* 改善テキスト生成 */}
+                  <div style={{marginTop:4}}>
+                      <button
+                          onClick={handleAdvisorRewriteFull}
+                          disabled={advisorDraftLoading||advisorLoading}
+                          title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
+                          style={{width:'100%',padding:'8px 10px',fontSize:12,fontWeight:600,
+                              color:'#fff',background:`linear-gradient(135deg,${T.green||'#22c55e'},${T.accent})`,
+                              border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
+                              transition:'opacity .15s',opacity:advisorDraftLoading?0.5:1}}
+                      >
+                          {advisorDraftLoading?'改善テキスト生成中...':'改善テキストを生成'}
+                      </button>
+                      {advisorDraft&&<div style={{marginTop:6,fontSize:11,color:T.green||'#22c55e',fontWeight:500}}>差分プレビューを左パネルに表示中</div>}
                   </div>
               </div>
               )}

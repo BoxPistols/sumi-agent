@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import path from 'node:path'
 
-// WCAG AA 最低コントラスト比 (通常テキスト)
+// WCAG AA コントラスト比 (大テキスト基準 3:1, 通常テキストは4.5:1)
 const MIN_CONTRAST = 3.0
 
 // 全テスト共通: ツアー・ウェルカムモーダルを抑制
