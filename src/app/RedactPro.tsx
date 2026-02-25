@@ -7,6 +7,8 @@
  * TODO: Decompose into modules (see docs/REFACTOR_PLAN.md)
  */
 
+import s from './redact-pro.module.css'
+
 // ═══ Storage Compatibility Layer ═══
 // Artifact environment uses window.storage API, Next.js uses localStorage
 const storage = {
@@ -163,24 +165,7 @@ const EXPORT_FORMATS=[
   {id:"docx",label:"Word",ext:".docx",icon:"W"},
 ];
 
-const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-[data-theme="dark"]{--rp-accent:#E7E5E4;--rp-accentDim:rgba(231,229,228,0.1);--rp-bg:#1C1917;--rp-bg2:#292524;--rp-surface:#292524;--rp-surfaceAlt:#44403C;--rp-border:#57534E;--rp-text:#E7E5E4;--rp-text2:#A8A29E;--rp-text3:#78716C;--rp-diffAdd:#1B3326;--rp-diffDel:#331B1B;--rp-diffAddBorder:#2A5A3A;--rp-diffDelBorder:#5A2A2A;--rp-scrollThumb:#57534E}
-[data-theme="light"]{--rp-accent:#1C1917;--rp-accentDim:rgba(28,25,23,0.06);--rp-bg:#FAF9F6;--rp-bg2:#FFFFFF;--rp-surface:#FFFFFF;--rp-surfaceAlt:#F5F5F4;--rp-border:#D6D3D1;--rp-text:#1C1917;--rp-text2:#57534E;--rp-text3:#78716C;--rp-diffAdd:#E8F5E9;--rp-diffDel:#FEE2E2;--rp-diffAddBorder:#A5D6A7;--rp-diffDelBorder:#FECACA;--rp-scrollThumb:#A8A29E}
-body{background:var(--rp-bg);font-size:14px}
-:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:2px;border-radius:4px}
-input:focus-visible,textarea:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:0}
-[role="button"]:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:2px;border-radius:4px}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--rp-scrollThumb);border-radius:3px}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
-@keyframes detFlashA{0%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(120,113,108,.45),0 0 0 10px rgba(120,113,108,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(120,113,108,.28),0 0 0 14px rgba(120,113,108,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}}
-@keyframes detFlashB{0%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(120,113,108,.45),0 0 0 10px rgba(120,113,108,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(120,113,108,.28),0 0 0 14px rgba(120,113,108,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}}
-@media(max-width:768px){.rp-header-badges{display:none!important}.rp-editor-wrap{flex-direction:column!important}.rp-editor-left{border-right:none!important;border-bottom:1px solid var(--rp-border)!important;max-height:45vh!important}.rp-editor-right{max-width:none!important;min-width:0!important}.rp-upload-grid{grid-template-columns:1fr!important}.rp-upload-main{grid-template-columns:1fr!important}.rp-modal-inner{max-width:100%!important;max-height:100vh!important;border-radius:0!important}.rp-settings-models{grid-template-columns:1fr!important}.rp-view-tabs{flex-wrap:wrap!important}.rp-cat-grid{grid-template-columns:1fr!important}.rp-input-tabs button{font-size:12px!important;padding:10px 4px!important}.rp-design-controls{width:100%!important;max-height:40vh!important;border-right:none!important;border-bottom:1px solid var(--rp-border)!important}}
-@media(max-width:480px){.rp-header{padding:0 12px!important}.rp-header h1{font-size:14px!important}}`
+// CSS定数は src/styles/globals.css に外部化済み
 
 // ═══ Unified AI Call (via server-side proxy) ═══
 // 最新のレートリミット情報を保持（コンポーネントから参照）
@@ -1861,47 +1846,20 @@ function triggerDownload(ex){try{if(ex.isPrintPdf){const blob=new Blob([ex.data]
 // ═══ UI primitives ═══
 function Badge({ children, color, bg, style: sx }) {
     return (
-        <span
-            style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '3px 10px',
-                borderRadius: 6,
-                fontSize: 12,
-                fontWeight: 600,
-                color,
-                background: bg,
-                whiteSpace: 'nowrap',
-                ...sx,
-            }}
-        >
+        <span className={s.badge} style={{ color, background: bg, ...sx }}>
             {children}
         </span>
     )
 }
-function Btn({children,variant="primary",onClick,disabled,style:sx,title,...rest}){const base={display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 22px",borderRadius:10,fontSize:14,fontWeight:600,fontFamily:T.font,cursor:disabled?"default":"pointer",border:"none",transition:"all .15s",opacity:disabled?.35:1};const v={primary:{background:T.accent,color:T.bg},ghost:{background:"transparent",color:T.text2,border:`1px solid ${T.border}`},danger:{background:T.redDim,color:T.red},success:{background:T.greenDim,color:T.green}};return <button onClick={disabled?undefined:onClick} title={title} aria-label={rest['aria-label']||title} {...rest} style={{...base,...v[variant],...sx}}>{children}</button>;}
-function Toggle({checked,onChange,size="md",disabled=false,title}){const w=size==="sm"?32:38,h=size==="sm"?18:22,d=size==="sm"?12:16;return <button role="switch" aria-checked={checked} aria-label={title} onClick={(e)=>{if(disabled)return;e.stopPropagation();onChange&&onChange();}} style={{width:w,height:h,borderRadius:h/2,border:"none",cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,background:checked?T.accent:"#A39791",position:"relative",transition:"background .2s",flexShrink:0}}><span style={{position:"absolute",top:(h-d)/2,left:checked?w-d-3:3,width:d,height:d,borderRadius:d/2,background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.25)"}}/></button>;}
+function Btn({children,variant="primary",onClick,disabled,style:sx,title,...rest}){return <button onClick={disabled?undefined:onClick} title={title} aria-label={rest['aria-label']||title} {...rest} className={`${s.btn} ${s[`btn-${variant}`]||''}`} data-disabled={!!disabled} style={sx}>{children}</button>;}
+function Toggle({checked,onChange,size="md",disabled=false,title}){return <button role="switch" aria-checked={checked} aria-label={title} onClick={(e)=>{if(disabled)return;e.stopPropagation();onChange&&onChange();}} className={s.toggle} data-size={size} data-checked={checked} data-disabled={disabled}><span className={s['toggle-knob']}/></button>;}
 function Pill({ children, active, onClick, color }) {
     return (
         <button
             onClick={onClick}
-            style={{
-                padding: '4px 11px',
-                borderRadius: 7,
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: active ? 600 : 400,
-                fontFamily: T.font,
-                background: active
-                    ? color
-                        ? `${color}1A`
-                        : T.accentDim
-                    : T.surfaceAlt,
-                color: active ? color || T.accent : T.text3,
-                transition: 'all .15s',
-            }}
+            className={s.pill}
+            data-active={!!active}
+            style={color && active ? { background: `${color}1A`, color } : undefined}
         >
             {children}
         </button>
@@ -1913,23 +1871,16 @@ const LAYOUT_PRESETS=[
   {id:'text',  label:'テキスト重視',    cols:[{f:3},{f:1}]},
   {id:'balanced',label:'バランス',       cols:[{f:5},{f:3},{f:2}]},
   {id:'preview',label:'プレビュー重視', cols:[{f:2},{f:5},{f:2}]},
+  {id:'advisor',label:'アドバイザー重視',cols:[{f:2},{f:4}]},
   {id:'focus', label:'集中モード',      cols:[{f:1}]},
 ];
 function LayoutIcon({cols,active,color}){
   return (
-    <div style={{
-      width:28,height:18,borderRadius:3,
-      border:`1.5px solid ${active?color:T.border}`,
-      display:'flex',gap:1,padding:2,
-      background:active?`${color}18`:'transparent',
-      overflow:'hidden',
-    }}>
+    <div className={s['layout-icon']} data-active={!!active}
+      style={active?{border:`1.5px solid ${color}`,background:`${color}18`}:undefined}>
       {cols.map((c,i)=>(
-        <span key={i} style={{
-          flex:c.f,borderRadius:1,
-          background:active?color:T.text3,
-          opacity:active?0.7:0.25,
-        }}/>
+        <span key={i} className={s['layout-icon-bar']} data-active={!!active}
+          style={{flex:c.f,...(active?{background:color}:undefined)}}/>
       ))}
     </div>
   );
@@ -2124,54 +2075,25 @@ function ChatWidget(){
     </svg>
   );
 
-  const optionBtnStyle={
-    display:'block',width:'100%',textAlign:'left',
-    padding:'7px 12px',marginBottom:3,borderRadius:8,
-    border:`1px solid ${T.border}`,background:T.surface,
-    color:T.text,fontSize:13,cursor:'pointer',
-    transition:'background .15s',lineHeight:1.4,
-  };
-
   return(
     <>
       {/* Floating button */}
       <button
         onClick={()=>setOpen(v=>!v)}
         aria-label={open?'サポートチャットを閉じる':'サポートチャットを開く'}
-        style={{
-          position:'fixed',right:16,bottom:16,zIndex:98,
-          width:48,height:48,borderRadius:'50%',border:'none',
-          background:C.accent,color:'#fff',cursor:'pointer',
-          display:'flex',alignItems:'center',justifyContent:'center',
-          boxShadow:'0 2px 8px rgba(0,0,0,.2)',
-          transition:'transform .2s',
-          transform:open?'rotate(90deg)':'rotate(0deg)',
-        }}
+        className={s['chat-fab']}
+        data-open={open}
       >
         {open?closeSvg:chatBtnSvg}
       </button>
 
       {/* Chat panel */}
       {open&&(
-        <div style={{
-          position:'fixed',right:16,bottom:72,zIndex:98,
-          width:size.w,height:size.h,
-          borderRadius:16,
-          border:`1px solid ${T.border}`,
-          background:T.bg,
-          boxShadow:'0 8px 32px rgba(0,0,0,.2)',
-          display:'flex',flexDirection:'column',
-          overflow:'hidden',
-          animation:'fadeUp .2s ease',
-          fontFamily:C.font,
-        }}>
+        <div className={s['chat-panel']} style={{width:size.w,height:size.h}}>
           {/* Resize handle (top-left corner) */}
           <div
             onMouseDown={onResizeStart}
-            style={{
-              position:'absolute',left:0,top:0,width:18,height:18,
-              cursor:'nw-resize',zIndex:1,borderRadius:'16px 0 0 0',
-            }}
+            className={s['chat-resize']}
             title='ドラッグでリサイズ'
           >
             <svg width="10" height="10" viewBox="0 0 10 10" style={{position:'absolute',left:4,top:4,opacity:.4}}>
@@ -2180,39 +2102,21 @@ function ChatWidget(){
             </svg>
           </div>
           {/* Header */}
-          <div style={{
-            padding:'14px 16px',
-            borderBottom:`1px solid ${T.border}`,
-            display:'flex',alignItems:'center',justifyContent:'space-between',
-            borderRadius:'16px 16px 0 0',
-            background:T.surface,
-          }}>
-            <span style={{fontWeight:700,fontSize:14,color:T.text}}>サポート</span>
+          <div className={s['chat-header']}>
+            <span className={s['chat-title']}>サポート</span>
             <button
               onClick={()=>setOpen(false)}
               aria-label='閉じる'
-              style={{background:'none',border:'none',cursor:'pointer',color:T.text2,padding:4,display:'flex'}}
+              className={s['chat-close']}
             >
               {closeSvg}
             </button>
           </div>
 
           {/* Messages + Options (single scroll area) */}
-          <div ref={scrollRef} style={{
-            flex:'1 1 0',overflowY:'auto',padding:16,
-            display:'flex',flexDirection:'column',gap:8,
-            minHeight:0,
-          }}>
+          <div ref={scrollRef} className={s['chat-body']}>
             {(()=>{const lastBotIdx=messages.findLastIndex(x=>x.type==='bot');return messages.map((m,i)=>(
-              <div key={i} ref={i===lastBotIdx?botMsgRef:null} style={{
-                alignSelf:m.type==='user'?'flex-end':'flex-start',
-                maxWidth:'85%',
-                padding:'8px 12px',borderRadius:12,
-                background:m.type==='user'?C.accent:T.surfaceAlt,
-                color:m.type==='user'?'#fff':T.text,
-                fontSize:13,lineHeight:1.6,
-                whiteSpace:'pre-wrap',
-              }}>
+              <div key={i} ref={i===lastBotIdx?botMsgRef:null} className={s['chat-msg']} data-type={m.type}>
                 {m.text}
               </div>));
             })()}
@@ -2220,16 +2124,14 @@ function ChatWidget(){
             <div style={{marginTop:4}}>
               {CHAT_FAQ.map((cat,ci)=>(
                 <div key={ci}>
-                  <div style={{fontSize:11,fontWeight:700,color:T.text3,padding:'6px 0 3px',textTransform:'uppercase',letterSpacing:'.5px'}}>
+                  <div className={s['chat-faq-cat']}>
                     {cat.category}
                   </div>
                   {cat.questions.map((item,qi)=>(
                     <button
                       key={qi}
                       onClick={()=>selectQuestion(item.q,item.a)}
-                      onMouseEnter={e=>e.currentTarget.style.background=T.bg2}
-                      onMouseLeave={e=>e.currentTarget.style.background=T.surface}
-                      style={optionBtnStyle}
+                      className={s['chat-faq-btn']}
                     >
                       {item.q}
                     </button>
@@ -2244,177 +2146,341 @@ function ChatWidget(){
   );
 }
 
+// ═══ Shortcuts Modal ═══
+function ShortcutsModal({onClose,hasEditorContext}){
+  const trapRef=useFocusTrap();
+  useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
+  const sections=[
+    {title:'全般',shortcuts:[
+      {key:'D',desc:'ダーク / ライト切替'},
+      {key:'?',desc:'ヘルプ'},
+      {key:'K',desc:'ショートカット一覧'},
+      {key:',',desc:'設定'},
+      {key:'E',desc:'Lite / Pro 切替'},
+      {key:'Esc',desc:'ダイアログを閉じる'},
+    ]},
+    {title:'ビュー切替',pro:true,editor:true,shortcuts:[
+      {key:'1',desc:'マスク'},
+      {key:'2',desc:'Diff'},
+      {key:'3',desc:'Raw'},
+      {key:'4',desc:'Raw Diff'},
+      {key:'5',desc:'AI整形'},
+      {key:'6',desc:'AI Diff'},
+    ]},
+    {title:'エディタ操作',pro:true,editor:true,shortcuts:[
+      {key:'M',desc:'マスク / 元文 切替'},
+      {key:'P',desc:'プレビュー切替'},
+      {key:'W',desc:'編集モード切替'},
+      {key:'I',desc:'PDF印刷'},
+      {key:'C',desc:'コピー'},
+      {key:'R',desc:'検出結果パネル'},
+      {key:'A',desc:'アドバイザーパネル'},
+    ]},
+  ];
+  return (
+    <div className={s['modal-overlay']} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+      <div ref={trapRef} className={`rp-modal-inner ${s['modal-dialog']}`} role="dialog" aria-modal="true" aria-label="キーボードショートカット" style={{maxWidth:720}}>
+        <div className={s['modal-header']}>
+          <span className={s['modal-header-title']}>キーボードショートカット</span>
+          <button onClick={onClose} aria-label="閉じる" className={s['modal-close-btn']}>✕</button>
+        </div>
+        <div className={s['modal-body']}>
+          <p className={s['help-note']} style={{marginTop:0,marginBottom:12}}>テキスト入力中・ダイアログ表示中は無効</p>
+          <div className={s['sc-cols']}>
+            {sections.map(sec=>(
+              <div key={sec.title} className={s['sc-section']}>
+                <div className={s['sc-section-title']}>
+                  {sec.title}
+                  {sec.pro&&<span className={s['help-badge']} style={{color:C.purple,background:C.purpleDim,marginLeft:6,fontSize:10}}>Pro</span>}
+                  {sec.editor&&!hasEditorContext&&<span className={s['help-badge']} style={{color:T.text3,background:T.surfaceAlt,marginLeft:4,fontSize:10}}>エディタ画面</span>}
+                </div>
+                <div className={s['sc-grid']}>
+                  {sec.shortcuts.map(sc=>(
+                    <div key={sc.key} className={s['sc-row']}>
+                      <kbd className={s['sc-key']}>{sc.key}</kbd>
+                      <span className={s['sc-desc']}>{sc.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══ Help Modal ═══
 function HelpModal({onClose,onStartTour,onShowVideo}){
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
-  const sectionStyle={marginBottom:20};
-  const headingStyle={fontSize:14,fontWeight:700,color:T.text,marginBottom:8,display:'flex',alignItems:'center',gap:6};
-  const listStyle={margin:0,paddingLeft:20,fontSize:13,lineHeight:1.8,color:T.text2};
-  const badgeStyle=(color,bg)=>({display:'inline-block',padding:'1px 7px',borderRadius:4,fontSize:11,fontWeight:600,color,background:bg,marginLeft:4});
-  const stepNumStyle={display:'inline-flex',alignItems:'center',justifyContent:'center',width:20,height:20,borderRadius:10,background:C.accent,color:'#fff',fontSize:11,fontWeight:700,flexShrink:0};
-  const stepStyle={display:'flex',gap:8,alignItems:'flex-start',fontSize:13,color:T.text2,lineHeight:1.6};
-  const kbdStyle={display:'inline-block',padding:'1px 6px',borderRadius:4,border:`1px solid ${T.border}`,background:T.surfaceAlt,fontSize:11,fontWeight:600,color:T.text2,fontFamily:'monospace'};
   return (
       <div
-          style={{
-              position:'fixed',inset:0,
-              background:'rgba(0,0,0,.55)',
-              backdropFilter:'blur(4px)',
-              display:'flex',alignItems:'center',justifyContent:'center',
-              zIndex:100,padding:16,
-              animation:'fadeIn .2s',
-          }}
+          className={s['modal-overlay']}
           onClick={(e)=>{if(e.target===e.currentTarget)onClose()}}
       >
           <div
               ref={trapRef}
-              className='rp-modal-inner'
+              className={`rp-modal-inner ${s['modal-dialog']}`}
               role="dialog"
               aria-modal="true"
               aria-label="ヘルプ"
-              style={{
-                  width:'100%',maxWidth:640,maxHeight:'92vh',overflow:'auto',
-                  background:T.bg2,borderRadius:16,
-                  border:`1px solid ${T.border}`,
-                  animation:'fadeUp .3s ease',
-              }}
+              style={{maxWidth:1100}}
           >
-              <div style={{
-                  padding:'14px 20px',borderBottom:`1px solid ${T.border}`,
-                  display:'flex',alignItems:'center',justifyContent:'space-between',
-                  position:'sticky',top:0,background:T.bg2,zIndex:1,
-              }}>
-                  <span style={{fontSize:15,fontWeight:700,color:T.text}}>ヘルプ</span>
-                  <button
-                      onClick={onClose}
-                      aria-label="閉じる"
-                      style={{
-                          width:28,height:28,borderRadius:7,
-                          border:`1px solid ${T.border}`,background:'transparent',
-                          color:T.text2,cursor:'pointer',fontSize:13,
-                          display:'flex',alignItems:'center',justifyContent:'center',
-                      }}
-                  >✕</button>
+              <div className={s['modal-header']}>
+                  <span className={s['modal-header-title']}>ヘルプ</span>
+                  <button onClick={onClose} aria-label="閉じる" className={s['modal-close-btn']}>✕</button>
               </div>
-              <div style={{padding:'18px 20px'}}>
-                  {/* ガイドツアー & 紹介動画 */}
-                  {(onStartTour||onShowVideo)&&<div style={{display:'flex',gap:8,marginBottom:18}}>
-                    {onShowVideo&&<button onClick={()=>{onClose();onShowVideo();}} style={{flex:1,padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6,transition:'background .15s'}} onMouseEnter={e=>e.currentTarget.style.background=T.surfaceAlt} onMouseLeave={e=>e.currentTarget.style.background=T.surface}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                      紹介動画を見る
-                    </button>}
-                    {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:C.accent,color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                      ガイドツアー
-                    </button>}
-                  </div>}
-                  {/* クイックスタート */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><polygon points='5 3 19 12 5 21 5 3'/></svg>
-                          クイックスタート
+              <div className={s['help-layout']}>
+                  {/* ===== 左カラム: 基本ヘルプ ===== */}
+                  <div className={s['help-col-left']}>
+                      <div className={s['help-col-title']}>基本</div>
+                      {/* ガイドツアー & 紹介動画 */}
+                      {(onStartTour||onShowVideo)&&<div className={s['help-actions']}>
+                        {onShowVideo&&<button onClick={()=>{onClose();onShowVideo();}} className={`${s['help-action-btn']} ${s['help-video-btn']}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                          紹介動画を見る
+                        </button>}
+                        {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} className={`${s['help-action-btn']} ${s['help-tour-btn']}`}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                          ガイドツアー
+                        </button>}
+                      </div>}
+                      {/* クイックスタート */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><polygon points='5 3 19 12 5 21 5 3'/></svg>
+                              クイックスタート
+                          </div>
+                          <div className={s['help-steps-wrap']}>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>1</span><span>ファイルをドラッグ＆ドロップ、またはテキストを貼り付け</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>2</span><span>自動で個人情報（PII）を検出・ハイライト表示</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>3</span><span>カテゴリ別にマスク設定を調整</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>4</span><span>マスク済みテキストをコピー or エクスポート</span></div>
+                          </div>
                       </div>
-                      <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                          <div style={stepStyle}><span style={stepNumStyle}>1</span><span>ファイルをドラッグ＆ドロップ、またはテキストを貼り付け</span></div>
-                          <div style={stepStyle}><span style={stepNumStyle}>2</span><span>自動で個人情報（PII）を検出・ハイライト表示</span></div>
-                          <div style={stepStyle}><span style={stepNumStyle}>3</span><span>カテゴリ別にマスク設定を調整</span></div>
-                          <div style={stepStyle}><span style={stepNumStyle}>4</span><span>マスク済みテキストをコピー or エクスポート</span></div>
+
+                      {/* 対応ファイル形式 */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>
+                              対応ファイル形式
+                          </div>
+                          <div className={s['help-badges-wrap']}>
+                              {['PDF','Word (.docx)','Excel (.xlsx)','CSV','Markdown','HTML','RTF','JSON','ODT','テキスト'].map(f=>(
+                                  <span key={f} className={s['help-badge']} style={{color:T.text2,background:T.surfaceAlt}}>{f}</span>
+                              ))}
+                          </div>
+                          <p className={s['help-note']}>URLからの読み込み（Wantedly, LinkedIn 等）にも対応</p>
+                      </div>
+
+                      {/* 検出カテゴリ */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>
+                              検出カテゴリ
+                          </div>
+                          <div className={s['help-grid-2']}>
+                              <div><span style={{color:C.red}}>●</span> 氏名（辞書+AI）</div>
+                              <div><span style={{color:C.blue}}>●</span> 連絡先（メール・電話）</div>
+                              <div><span style={{color:C.orange}}>●</span> 住所・地名</div>
+                              <div><span style={{color:C.purple}}>●</span> 個人情報（生年月日等）</div>
+                              <div><span style={{color:C.cyan}}>●</span> URL</div>
+                              <div><span style={{color:T.text3}}>●</span> 組織名（オプション）</div>
+                          </div>
+                      </div>
+
+                      {/* マスクプリセット */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0110 0v4'/></svg>
+                              マスクプリセット
+                          </div>
+                          <div className={s['help-presets-list']}>
+                              <div><strong>基本</strong> — 氏名・連絡先のみ</div>
+                              <div><strong>標準</strong> — + 住所・年月日・URL（推奨）</div>
+                              <div><strong>厳格</strong> — 組織名含む全項目</div>
+                          </div>
+                      </div>
+
+                      {/* エクスポート */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>
+                              エクスポート
+                          </div>
+                          <div className={s['help-badges-wrap']}>
+                              {['テキスト','Markdown','CSV','Excel','PDF','Word'].map(f=>(
+                                  <span key={f} className={s['help-badge']} style={{color:T.text2,background:T.surfaceAlt}}>{f}</span>
+                              ))}
+                          </div>
+                      </div>
+
+                      {/* キーボードショートカット */}
+                      <div className={s['help-section']}>
+                          <div className={s['help-heading']}>
+                              <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><rect x='2' y='4' width='20' height='16' rx='2'/><line x1='6' y1='8' x2='6' y2='8'/><line x1='10' y1='8' x2='10' y2='8'/><line x1='14' y1='8' x2='14' y2='8'/><line x1='18' y1='8' x2='18' y2='8'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
+                              キーボードショートカット
+                          </div>
+                          <p className={s['help-note']} style={{marginBottom:8,marginTop:0}}>テキスト入力中は無効。エディタ画面でのみ有効なキーがあります。</p>
+                          <div className={s['help-kbd-grid']}>
+                              <kbd className={s['help-kbd']}>Esc</kbd><span>ダイアログを閉じる</span>
+                              <kbd className={s['help-kbd']}>?</kbd><span>ヘルプを表示</span>
+                              <kbd className={s['help-kbd']}>K</kbd><span>ショートカット一覧</span>
+                              <kbd className={s['help-kbd']}>,</kbd><span>設定を開く</span>
+                              <kbd className={s['help-kbd']}>D</kbd><span>ダーク/ライト切替</span>
+                              <kbd className={s['help-kbd']}>E</kbd><span>Lite / Pro 切替</span>
+                          </div>
                       </div>
                   </div>
 
-                  {/* 対応ファイル形式 */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>
-                          対応ファイル形式
-                      </div>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-                          {['PDF','Word (.docx)','Excel (.xlsx)','CSV','Markdown','HTML','RTF','JSON','ODT','テキスト'].map(f=>(
-                              <span key={f} style={badgeStyle(T.text2,T.surfaceAlt)}>{f}</span>
-                          ))}
-                      </div>
-                      <p style={{fontSize:12,color:T.text3,margin:'8px 0 0'}}>URLからの読み込み（Wantedly, LinkedIn 等）にも対応</p>
-                  </div>
+                  {/* ===== 右カラム: Pro機能ガイド ===== */}
+                  <div className={s['help-col-right']}>
+                      <div className={s['help-col-title']}>Pro機能ガイド</div>
 
-                  {/* 検出カテゴリ */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>
-                          検出カテゴリ
+                      {/* ビューモード */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M5 3v10M11 3v10M5 8h6' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/><path d='M3 5L5 3l2 2M13 11l-2 2-2-2' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round'/></svg>
+                              ビューモード切替
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li><strong>マスク</strong> — マスキング済みテキストを表示</li>
+                              <li><strong>Diff</strong> — 元テキストとマスク後を並べて比較</li>
+                              <li><strong>Raw</strong> — ファイルから抽出した生テキスト</li>
+                              <li><strong>Raw Diff</strong> — 生テキストとAI整形後の差分</li>
+                              <li><strong>AI整形</strong> — AIが読みやすく整形したテキスト</li>
+                              <li><strong>AI Diff</strong> — マスク結果とAI整形後の差分</li>
+                          </ul>
                       </div>
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 16px',fontSize:13,color:T.text2}}>
-                          <div><span style={{color:C.red}}>●</span> 氏名（辞書+AI）</div>
-                          <div><span style={{color:C.blue}}>●</span> 連絡先（メール・電話）</div>
-                          <div><span style={{color:C.orange}}>●</span> 住所・地名</div>
-                          <div><span style={{color:C.purple}}>●</span> 個人情報（生年月日等）</div>
-                          <div><span style={{color:C.cyan}}>●</span> URL</div>
-                          <div><span style={{color:T.text3}}>●</span> 組織名（オプション）</div>
-                      </div>
-                  </div>
 
-                  {/* マスクプリセット */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0110 0v4'/></svg>
-                          マスクプリセット
+                      {/* AI検出 */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z' stroke={T.accent} strokeWidth='1.2' strokeLinejoin='round'/></svg>
+                              AI検出・AI整形
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>設定 → プロバイダ選択（OpenAI / Claude / Gemini）</li>
+                              <li>APIキーを入力して接続テスト → AI検出をON</li>
+                              <li>正規表現で見逃す文脈依存の個人情報を補完</li>
+                              <li>テキスト整形: PDFやOCR由来の崩れを自動修正</li>
+                              <li>ローカルAI（Ollama等）にも対応</li>
+                          </ul>
                       </div>
-                      <div style={{display:'flex',flexDirection:'column',gap:4,fontSize:13,color:T.text2}}>
-                          <div><strong>基本</strong> — 氏名・連絡先のみ</div>
-                          <div><strong>標準</strong> — + 住所・年月日・URL（推奨）</div>
-                          <div><strong>厳格</strong> — 組織名含む全項目</div>
-                      </div>
-                  </div>
 
-                  {/* AI機能 */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4z'/><rect x='3' y='8' width='18' height='14' rx='2'/><line x1='12' y1='12' x2='12' y2='16'/></svg>
-                          AI機能
+                      {/* AIアドバイザー */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='2' y='2' width='12' height='10' rx='2' stroke={T.accent} strokeWidth='1.2'/><path d='M5 14l3-2 3 2' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round'/><path d='M5 6h6M5 8.5h4' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/></svg>
+                              AIアドバイザー（右パネル）
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li><strong>質問モード</strong> — 経歴書について自由に相談。経歴書は変更されない</li>
+                              <li><strong>指示モード</strong> — 改善指示を入力 → AIが経歴書を書き換え → 差分プレビューで確認・取り込み</li>
+                              <li>クイック分析: 強み分析・改善提案・要約などのプリセット</li>
+                              <li>求人票マッチング: 求人票を貼り付けて適合度を分析</li>
+                              <li>マスク済みテキストでの分析も可能（個人情報保護）</li>
+                          </ul>
                       </div>
-                      <ul style={listStyle}>
-                          <li>設定画面でプロバイダ（OpenAI / Claude / Gemini）を選択</li>
-                          <li>APIキーを入力して接続テスト可能</li>
-                          <li>AI検出で正規表現では見つけにくい個人情報も補完</li>
-                          <li>テキスト整形・OCR読み取りにも活用</li>
-                      </ul>
-                  </div>
 
-                  {/* エクスポート */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>
-                          エクスポート
+                      {/* PDF編集 */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M11.5 2.5l2 2L5 13H3v-2z' stroke={T.accent} strokeWidth='1.2' strokeLinejoin='round'/><path d='M9.5 4.5l2 2' stroke={T.accent} strokeWidth='1.2'/></svg>
+                              PDF編集・A4プレビュー
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>編集ボタンでMarkdownエディタを起動</li>
+                              <li>中央パネルにA4サイズのリアルタイムプレビュー</li>
+                              <li>ゴシック体/明朝体の切替、ズーム調整</li>
+                              <li>PDF印刷・HTML・Word出力に対応</li>
+                          </ul>
                       </div>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-                          {['テキスト','Markdown','CSV','Excel','PDF','Word'].map(f=>(
-                              <span key={f} style={badgeStyle(T.text2,T.surfaceAlt)}>{f}</span>
-                          ))}
-                      </div>
-                  </div>
 
-                  {/* キーボードショートカット */}
-                  <div style={sectionStyle}>
-                      <div style={headingStyle}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><rect x='2' y='4' width='20' height='16' rx='2'/><line x1='6' y1='8' x2='6' y2='8'/><line x1='10' y1='8' x2='10' y2='8'/><line x1='14' y1='8' x2='14' y2='8'/><line x1='18' y1='8' x2='18' y2='8'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
-                          キーボード操作
+                      {/* URL取込 */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M6.5 9.5a3 3 0 004-4' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/><path d='M9.5 6.5a3 3 0 00-4 4' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/><path d='M4 12L2 14M12 4l2-2' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/></svg>
+                              URL取込
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>Wantedly・LinkedIn等のURLからテキストを自動取得</li>
+                              <li>取得したテキストに対して通常通りマスキング処理</li>
+                          </ul>
                       </div>
-                      <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:'4px 12px',fontSize:13,color:T.text2,alignItems:'center'}}>
-                          <kbd style={kbdStyle}>Esc</kbd><span>ダイアログを閉じる</span>
-                          <kbd style={kbdStyle}>Tab</kbd><span>次の要素にフォーカス移動</span>
-                      </div>
-                  </div>
 
-                  {/* フッター */}
-                  <div style={{paddingTop:12,borderTop:`1px solid ${T.border}`,fontSize:12,color:T.text3,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                      <span>Sumi v1.0</span>
-                      <a
-                          href='https://github.com/BoxPistols/sumi'
-                          target='_blank'
-                          rel='noopener noreferrer'
-                          style={{color:C.accent,textDecoration:'none',fontSize:12}}
-                      >GitHub</a>
+                      {/* バッチ処理 */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='2' y='2' width='5' height='5' rx='1' stroke={T.accent} strokeWidth='1.2'/><rect x='9' y='2' width='5' height='5' rx='1' stroke={T.accent} strokeWidth='1.2'/><rect x='2' y='9' width='5' height='5' rx='1' stroke={T.accent} strokeWidth='1.2'/><rect x='9' y='9' width='5' height='5' rx='1' stroke={T.accent} strokeWidth='1.2'/></svg>
+                              バッチ処理
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>複数ファイルを一括でマスキング処理</li>
+                              <li>処理結果をZIPでまとめてダウンロード</li>
+                              <li>各ファイルの検出結果を個別に確認・調整可能</li>
+                          </ul>
+                      </div>
+
+                      {/* カスタムキーワード */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><path d='M2 4h12M2 8h8M2 12h10' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/></svg>
+                              カスタムキーワード
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>任意のテキストをマスク対象に追加</li>
+                              <li>プロジェクト名・社内用語など自動検出されない固有名詞に有効</li>
+                          </ul>
+                      </div>
+
+                      {/* レイアウト */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='1' y='1' width='14' height='14' rx='2' stroke={T.accent} strokeWidth='1.2'/><line x1='6' y1='1' x2='6' y2='15' stroke={T.accent} strokeWidth='1.2'/><line x1='11' y1='1' x2='11' y2='15' stroke={T.accent} strokeWidth='1.2'/></svg>
+                              パネルレイアウト
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>5つのレイアウトプリセット（テキスト重視 / バランス / プレビュー重視 / アドバイザー重視 / 集中）</li>
+                              <li>ドラッグでパネル幅を自由に調整</li>
+                              <li>左: テキスト / 中央: A4プレビュー / 右: 検出一覧 or AIアドバイザー</li>
+                          </ul>
+                      </div>
+
+                      {/* エディタ用ショートカット */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='1' y='3' width='14' height='11' rx='2' stroke={T.accent} strokeWidth='1.2'/><path d='M4 6h1M7 6h1M10 6h1M5.5 9h5' stroke={T.accent} strokeWidth='1.2' strokeLinecap='round'/></svg>
+                              エディタ用ショートカット
+                          </div>
+                          <div className={s['help-kbd-grid']} style={{paddingLeft:22}}>
+                              <kbd className={s['help-kbd']}>1</kbd><span>マスク表示</span>
+                              <kbd className={s['help-kbd']}>2</kbd><span>Diff表示</span>
+                              <kbd className={s['help-kbd']}>3</kbd><span>Raw表示</span>
+                              <kbd className={s['help-kbd']}>4</kbd><span>Raw Diff表示</span>
+                              <kbd className={s['help-kbd']}>5</kbd><span>AI整形表示</span>
+                              <kbd className={s['help-kbd']}>6</kbd><span>AI Diff表示</span>
+                              <kbd className={s['help-kbd']}>M</kbd><span>マスク / 元文 切替</span>
+                              <kbd className={s['help-kbd']}>P</kbd><span>プレビュー表示切替</span>
+                              <kbd className={s['help-kbd']}>W</kbd><span>編集モード切替</span>
+                              <kbd className={s['help-kbd']}>I</kbd><span>PDF印刷</span>
+                              <kbd className={s['help-kbd']}>R</kbd><span>検出結果パネル</span>
+                              <kbd className={s['help-kbd']}>A</kbd><span>AIアドバイザーパネル</span>
+                              <kbd className={s['help-kbd']}>C</kbd><span>テキストをコピー</span>
+                          </div>
+                      </div>
                   </div>
+              </div>
+              {/* フッター */}
+              <div className={s['help-footer']}>
+                  <span>Sumi v1.0</span>
+                  <a
+                      href='https://github.com/BoxPistols/sumi'
+                      target='_blank'
+                      rel='noopener noreferrer'
+                  >GitHub</a>
               </div>
           </div>
       </div>
@@ -2529,118 +2595,32 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   }
   return (
       <div
-          style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,.55)',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 100,
-              padding: 16,
-              animation: 'fadeIn .2s',
-          }}
+          className={s['modal-overlay']}
           onClick={(e) => {
               if (e.target === e.currentTarget) onClose()
           }}
       >
           <div
               ref={trapRef}
-              className='rp-modal-inner'
+              className={`rp-modal-inner ${s['settings-dialog']}`}
               role="dialog"
               aria-modal="true"
               aria-label="設定"
-              style={{
-                  width: '100%',
-                  maxWidth: 560,
-                  maxHeight: '92vh',
-                  overflow: 'auto',
-                  background: T.bg2,
-                  borderRadius: 16,
-                  border: `1px solid ${T.border}`,
-                  animation: 'fadeUp .3s ease',
-              }}
           >
-              <div
-                  style={{
-                      padding: '14px 20px',
-                      borderBottom: `1px solid ${T.border}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      position: 'sticky',
-                      top: 0,
-                      background: T.bg2,
-                      zIndex: 1,
-                  }}
-              >
-                  <span
-                      style={{ fontSize: 15, fontWeight: 700, color: T.text }}
-                  >
-                      設定
-                  </span>
-                  <button
-                      onClick={onClose}
-                      aria-label="閉じる"
-                      style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: 7,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          color: T.text2,
-                          cursor: 'pointer',
-                          fontSize: 13,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                      }}
-                  >
-                      ✕
-                  </button>
+              <div className={s['modal-header']}>
+                  <span className={s['modal-header-title']}>設定</span>
+                  <button onClick={onClose} aria-label="閉じる" className={s['modal-close-btn']}>✕</button>
               </div>
-              <div
-                  style={{
-                      padding: '18px 20px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 20,
-                  }}
-              >
+              <div className={s['settings-body']}>
                   {/* Theme */}
-                  <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 14px',
-                          borderRadius: 10,
-                          border: `1px solid ${T.border}`,
-                          background: T.surface,
-                      }}
-                  >
-                      <div
-                          style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                          }}
-                      >
+                  <div className={s['settings-row']}>
+                      <div className={s['settings-row-left']}>
                           <span style={{ fontSize: 16 }}>
                               {isDark ? '🌙' : '☀️'}
                           </span>
                           <div>
-                              <div
-                                  style={{
-                                      fontSize: 12,
-                                      fontWeight: 600,
-                                      color: T.text,
-                                  }}
-                              >
-                                  テーマ
-                              </div>
-                              <div style={{ fontSize: 12, color: T.text3 }}>
+                              <div className={s['settings-label']}>テーマ</div>
+                              <div className={s['settings-sublabel']}>
                                   {isDark ? 'ダークモード' : 'ライトモード（デフォルト）'}
                               </div>
                           </div>
@@ -2652,21 +2632,19 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                       />
                   </div>
                   {/* エディション切替 */}
-                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
+                  <div className={s['settings-row']}>
                       <div>
-                          <div style={{fontSize:12,fontWeight:600,color:T.text}}>エディション</div>
-                          <div style={{fontSize:12,color:T.text3,lineHeight:1.5}}>
+                          <div className={s['settings-label']}>エディション</div>
+                          <div className={s['settings-sublabel-lh']}>
                               {isLite ? 'Lite — 基本的なマスキング機能' : 'Pro — AI検出・アドバイザー・再フォーマット等を含む全機能'}
                           </div>
-                          <div style={{fontSize:11,color:T.accent,marginTop:2}}>Pro版は現在無料でご利用いただけます</div>
+                          <div className={s['settings-edition-pro-note']}>Pro版は現在無料でご利用いただけます</div>
                       </div>
-                      <div style={{display:'flex',gap:4}}>
+                      <div className={s['settings-edition-btns']}>
                           {['lite','pro'].map(ed=>(
                               <button key={ed} onClick={()=>switchEdition(ed)}
-                                  style={{padding:'5px 14px',fontSize:12,fontWeight:edition===ed?700:500,
-                                      borderRadius:6,border:`1.5px solid ${edition===ed?T.accent:T.border}`,
-                                      background:edition===ed?`${T.accent}18`:'transparent',
-                                      color:edition===ed?T.accent:T.text2,cursor:'pointer',transition:'all .15s',textTransform:'capitalize'}}>
+                                  className={s['settings-edition-btn']}
+                                  data-active={edition===ed}>
                                   {ed==='lite'?'Lite':'Pro'}
                               </button>
                           ))}
@@ -2674,80 +2652,34 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   </div>
                   {/* ─── Pro版設定（Liteではdisabledで表示） ─── */}
                   {isLite && (
-                  <div style={{fontSize:12,color:T.text3,padding:'6px 10px',borderRadius:8,background:`${T.accent}10`,border:`1px solid ${T.accent}30`}}>
+                  <div className={s['settings-lite-notice']} style={{background:`${T.accent}10`,border:`1px solid ${T.accent}30`}}>
                       以下のAI設定はPro版に切り替えると有効になります。
                   </div>
                   )}
-                  <fieldset disabled={isLite} style={{border:'none',margin:0,padding:0,display:'flex',flexDirection:'column',gap:20,opacity:isLite?0.5:1}}>
+                  <fieldset disabled={isLite} className={s['settings-fieldset']} data-disabled={isLite}>
                   {/* Provider */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
-                          AIプロバイダー
-                      </div>
-                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.5}}>
+                      <div className={s['settings-section-title']}>AIプロバイダー</div>
+                      <div className={s['settings-section-desc']}>
                           AI機能（PII検出・再フォーマット・アドバイザー）で使用するAIサービスを選択します。
                       </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                      <div className={s['settings-provider-grid']}>
                           {AI_PROVIDERS.map((p) => (
                               <button
                                   key={p.id}
                                   onClick={() => switchProvider(p.id)}
-                                  style={{
-                                      flex: 1,
-                                      padding: '10px 8px',
-                                      borderRadius: 10,
-                                      border: `1.5px solid ${provider === p.id ? p.color : T.border}`,
-                                      background:
-                                          provider === p.id
-                                              ? `${p.color}15`
-                                              : 'transparent',
-                                      cursor: 'pointer',
-                                      textAlign: 'center',
-                                      transition: 'all .15s',
-                                  }}
+                                  className={s['settings-provider-btn']}
+                                  data-active={provider === p.id}
+                                  style={{'--provider-color': p.color}}
                               >
-                                  <div
-                                      style={{
-                                          fontSize: 14,
-                                          fontWeight: 700,
-                                          color:
-                                              provider === p.id
-                                                  ? p.color
-                                                  : T.text3,
-                                          marginBottom: 2,
-                                      }}
-                                  >
+                                  <div className={s['settings-provider-icon']} data-active={provider === p.id} style={provider === p.id ? {color: p.color} : undefined}>
                                       {p.icon}
                                   </div>
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          color:
-                                              provider === p.id
-                                                  ? p.color
-                                                  : T.text,
-                                      }}
-                                  >
+                                  <div className={s['settings-provider-name']} data-active={provider === p.id} style={provider === p.id ? {color: p.color} : undefined}>
                                       {p.label}
                                   </div>
                                   {p.needsKey && (
-                                      <div
-                                          style={{
-                                              fontSize: 12,
-                                              color: T.text3,
-                                              marginTop: 2,
-                                          }}
-                                      >
-                                          要APIキー
-                                      </div>
+                                      <div className={s['settings-provider-note']}>要APIキー</div>
                                   )}
                               </button>
                           ))}
@@ -2755,51 +2687,22 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   </div>
                   {/* Models */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
+                      <div className={s['settings-section-title']}>
                           モデル{' '}
                           <span style={{ fontWeight: 400, color: T.text3 }}>
                               — {curProv.label}
                           </span>
                       </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              marginBottom: 8,
-                              lineHeight: 1.6,
-                          }}
-                      >
-                          {aiProfile === 'balanced' && (
-                              <>
-                                  再フォーマット/再構成はこのモデル。PII検出は高速モデルを自動選択します。
-                              </>
-                          )}
-                          {aiProfile === 'speed' && (
-                              <>
-                                  全て高速モデル寄りで実行します（品質より速度優先）。
-                              </>
-                          )}
-                          {aiProfile === 'quality' && (
-                              <>
-                                  可能な限り高品質モデルで実行します（遅くなります）。
-                              </>
-                          )}
+                      <div className={s['settings-section-desc-lg']}>
+                          {aiProfile === 'balanced' && <>再フォーマット/再構成はこのモデル。PII検出は高速モデルを自動選択します。</>}
+                          {aiProfile === 'speed' && <>全て高速モデル寄りで実行します（品質より速度優先）。</>}
+                          {aiProfile === 'quality' && <>可能な限り高品質モデルで実行します（遅くなります）。</>}
                       </div>
                       <div
                           className='rp-settings-models'
                           style={{
                               display: 'grid',
-                              gridTemplateColumns:
-                                  curProv.models.length <= 2
-                                      ? '1fr 1fr'
-                                      : '1fr 1fr 1fr',
+                              gridTemplateColumns: curProv.models.length <= 2 ? '1fr 1fr' : '1fr 1fr 1fr',
                               gap: 6,
                           }}
                       >
@@ -2807,158 +2710,56 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               <button
                                   key={m.id}
                                   onClick={() => setModel(m.id)}
-                                  style={{
-                                      padding: '9px 12px',
-                                      borderRadius: 9,
-                                      border: `1.5px solid ${model === m.id ? curProv.color : T.border}`,
-                                      background:
-                                          model === m.id
-                                              ? `${curProv.color}15`
-                                              : 'transparent',
-                                      cursor: 'pointer',
-                                      textAlign: 'left',
-                                      transition: 'all .15s',
-                                  }}
+                                  className={s['settings-model-btn']}
+                                  data-active={model === m.id}
+                                  style={{'--provider-color': curProv.color}}
                               >
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          color:
-                                              model === m.id
-                                                  ? curProv.color
-                                                  : T.text,
-                                      }}
-                                  >
+                                  <div className={s['settings-model-label']} data-active={model === m.id} style={model === m.id ? {color: curProv.color} : undefined}>
                                       {m.label}
                                   </div>
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          color: T.text3,
-                                          marginTop: 1,
-                                      }}
-                                  >
-                                      {m.desc}
-                                  </div>
+                                  <div className={s['settings-model-desc']}>{m.desc}</div>
                               </button>
                           ))}
                       </div>
                   </div>
                   {/* AI profile */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
-                          AI品質プロファイル
-                      </div>
-                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.5}}>
+                      <div className={s['settings-section-title']}>AI品質プロファイル</div>
+                      <div className={s['settings-section-desc']}>
                           AI処理の速度と品質のバランスを選択します。コスト（API利用料）に影響します。
                       </div>
-                      <div
-                          style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1fr 1fr 1fr',
-                              gap: 6,
-                          }}
-                      >
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
                           {PROFILES.map((p) => (
                               <button
                                   key={p.id}
                                   onClick={() => {
                                       setAiProfile(p.id)
-                                      setModel(
-                                          pickFormatModelForProfile(
-                                              provider,
-                                              p.id,
-                                          ) || model,
-                                      )
+                                      setModel(pickFormatModelForProfile(provider, p.id) || model)
                                   }}
-                                  style={{
-                                      padding: '10px 12px',
-                                      borderRadius: 10,
-                                      border: `1.5px solid ${aiProfile === p.id ? curProv.color : T.border}`,
-                                      background:
-                                          aiProfile === p.id
-                                              ? `${curProv.color}15`
-                                              : 'transparent',
-                                      cursor: 'pointer',
-                                      textAlign: 'left',
-                                      transition: 'all .15s',
-                                  }}
+                                  className={s['settings-profile-btn']}
+                                  data-active={aiProfile === p.id}
+                                  style={{'--provider-color': curProv.color}}
                               >
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 700,
-                                          color:
-                                              aiProfile === p.id
-                                                  ? curProv.color
-                                                  : T.text,
-                                          marginBottom: 2,
-                                      }}
-                                  >
+                                  <div className={s['settings-profile-label']} data-active={aiProfile === p.id} style={aiProfile === p.id ? {color: curProv.color} : undefined}>
                                       {p.label}
                                   </div>
-                                  <div
-                                      style={{
-                                          fontSize: 12,
-                                          color: T.text3,
-                                          lineHeight: 1.4,
-                                      }}
-                                  >
-                                      {p.desc}
-                                  </div>
+                                  <div className={s['settings-profile-desc']}>{p.desc}</div>
                               </button>
                           ))}
                       </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              marginTop: 8,
-                              lineHeight: 1.6,
-                          }}
-                      >
+                      <div className={s['settings-profile-hint']}>
                           バランス推奨:{' '}
-                          <span style={{ fontFamily: T.mono }}>
-                              PII検出=高速
-                          </span>{' '}
+                          <span className={s['settings-mono']}>PII検出=高速</span>{' '}
                           /{' '}
-                          <span style={{ fontFamily: T.mono }}>
-                              再構成・再フォーマット=高品質
-                          </span>
+                          <span className={s['settings-mono']}>再構成・再フォーマット=高品質</span>
                           （例: OpenAIなら検出は GPT-5 Nano、整形は GPT-5 Mini）
                       </div>
                   </div>
                   {/* AI detect toggle */}
-                  <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '10px 14px',
-                          borderRadius: 10,
-                          border: `1px solid ${T.border}`,
-                          background: T.surface,
-                      }}
-                  >
+                  <div className={s['settings-row']}>
                       <div>
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  color: T.text,
-                              }}
-                          >
-                              AI PII検出
-                          </div>
-                          <div style={{ fontSize: 12, color: T.text3, lineHeight: 1.5 }}>
+                          <div className={s['settings-label']}>AI PII検出</div>
+                          <div className={s['settings-sublabel-lh']}>
                               アップロード時にAIで人名を追加検出。正規表現では拾えない名前をカバーします。無効にすると正規表現＋辞書のみで検出します。
                           </div>
                       </div>
@@ -2970,24 +2771,8 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   </div>
                   {/* API Key */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 4,
-                          }}
-                      >
-                          API Key
-                      </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              marginBottom: 8,
-                              lineHeight: 1.5,
-                          }}
-                      >
+                      <div className={s['settings-section-title']} style={{marginBottom:4}}>API Key</div>
+                      <div className={s['settings-section-desc']}>
                           {provider === 'anthropic'
                               ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のキーを入力すると無制限に利用できます。'
                               : provider === 'openai'
@@ -3001,78 +2786,27 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               value={apiKey}
                               onChange={(e) => setApiKey(e.target.value)}
                               placeholder={keyPlaceholder}
-                              style={{
-                                  width: '100%',
-                                  padding: '10px 14px',
-                                  paddingRight: 52,
-                                  borderRadius: 10,
-                                  border: `1px solid ${T.border}`,
-                                  background: T.surface,
-                                  color: T.text,
-                                  fontSize: 12,
-                                  fontFamily: T.mono,
-                                  outline: 'none',
-                              }}
+                              className={s['settings-input-apikey']}
                           />
-                          <button
-                              onClick={() => setShowKey(!showKey)}
-                              style={{
-                                  position: 'absolute',
-                                  right: 8,
-                                  top: '50%',
-                                  transform: 'translateY(-50%)',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: T.text3,
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  fontFamily: T.font,
-                              }}
-                          >
+                          <button onClick={() => setShowKey(!showKey)} className={s['settings-show-key-btn']}>
                               {showKey ? '隠す' : '表示'}
                           </button>
                       </div>
                       {apiKey && !showKey && (
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  color: T.text3,
-                                  marginTop: 4,
-                                  fontFamily: T.mono,
-                              }}
-                          >
-                              {masked}
-                          </div>
+                          <div className={s['settings-masked-key']}>{masked}</div>
                       )}
-                      <div
-                          style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              marginTop: 8,
-                          }}
-                      >
+                      <div className={s['settings-key-actions']}>
                           <Btn
                               variant='ghost'
                               onClick={testApiConnection}
                               disabled={testingKey}
-                              style={{
-                                  padding: '6px 12px',
-                                  fontSize: 12,
-                                  borderRadius: 7,
-                              }}
+                              style={{ padding: '6px 12px', fontSize: 12, borderRadius: 7 }}
                           >
                               {testingKey ? '接続テスト中...' : 'API接続テスト'}
                           </Btn>
                           <span aria-live="polite" aria-atomic="true">
                           {keyTest && (
-                              <span
-                                  style={{
-                                      fontSize: 12,
-                                      color: keyTest.ok ? T.green : T.red,
-                                      lineHeight: 1.4,
-                                  }}
-                              >
+                              <span className={s['settings-key-result']} style={{ color: keyTest.ok ? T.green : T.red }}>
                                   {keyTest.msg}
                               </span>
                           )}
@@ -3081,41 +2815,19 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   </div>
                   {/* Proxy URL for URL scraping */}
                   <div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 4,
-                          }}
-                      >
+                      <div className={s['settings-section-title']} style={{marginBottom:4}}>
                           スクレイピング用プロキシURL{' '}
-                          <span
-                              style={{
-                                  fontSize: 12,
-                                  fontWeight: 400,
-                                  color: T.text3,
-                              }}
-                          >
-                              (任意)
-                          </span>
+                          <span style={{ fontWeight: 400, color: T.text3 }}>(任意)</span>
                       </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              marginBottom: 8,
-                              lineHeight: 1.6,
-                          }}
-                      >
+                      <div className={s['settings-section-desc-lg']}>
                           URLタブでWebページ本文を取るときに使う「中継サーバー」のURLです。
                           <br />
                           例:{' '}
-                          <span style={{ fontFamily: T.mono }}>
+                          <span className={s['settings-mono']}>
                               https://your-proxy.example.com/fetch?url={'{url}'}
                           </span>
                           （
-                          <span style={{ fontFamily: T.mono }}>{'{url}'}</span>{' '}
+                          <span className={s['settings-mono']}>{'{url}'}</span>{' '}
                           は取得対象URLに自動置換）
                           <br />
                           通常はサーバー経由で自動取得されるため、設定不要です。独自の中継サーバーがある場合のみ入力してください。
@@ -3125,40 +2837,15 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           value={proxyUrl}
                           onChange={(e) => setProxyUrl(e.target.value)}
                           placeholder='https://your-proxy.example.com/fetch?url={url}'
-                          style={{
-                              width: '100%',
-                              padding: '10px 14px',
-                              borderRadius: 10,
-                              border: `1px solid ${T.border}`,
-                              background: T.surface,
-                              color: T.text,
-                              fontSize: 12,
-                              fontFamily: T.mono,
-                              outline: 'none',
-                              boxSizing: 'border-box',
-                          }}
+                          className={s['settings-input']}
                       />
                       {!proxyUrl && (
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  color: T.text3,
-                                  marginTop: 6,
-                                  lineHeight: 1.5,
-                              }}
-                          >
+                          <div className={s['settings-sublabel-lh']} style={{marginTop:6}}>
                               未設定でOK — サーバー経由で自動取得します。
                           </div>
                       )}
                       {proxyUrl && !proxyUrl.includes('{url}') && (
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  color: T.red,
-                                  marginTop: 6,
-                                  lineHeight: 1.5,
-                              }}
-                          >
+                          <div style={{ fontSize: 12, color: T.red, marginTop: 6, lineHeight: 1.5 }}>
                               ⚠ プロキシURLに {'{url}'}{' '}
                               がありません。対象URLを渡せないため正しく動作しません。
                           </div>
@@ -3167,10 +2854,8 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   {/* ローカルAI設定 */}
                   {provider==='local' && (
                   <div>
-                      <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:4}}>
-                          ローカルAIエンドポイント
-                      </div>
-                      <div style={{fontSize:12,color:T.text3,marginBottom:8,lineHeight:1.6}}>
+                      <div className={s['settings-section-title']} style={{marginBottom:4}}>ローカルAIエンドポイント</div>
+                      <div className={s['settings-section-desc-lg']}>
                           Ollama、LM Studio、LocalAI等のOpenAI互換APIエンドポイントを指定します。
                           ローカルで動作するためデータが外部に送信されず、利用回数の制限もありません。
                       </div>
@@ -3179,58 +2864,52 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           value={localEndpoint}
                           onChange={(e) => setLocalEndpoint(e.target.value)}
                           placeholder='http://localhost:11434/v1'
-                          style={{width:'100%',padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface,color:T.text,fontSize:12,fontFamily:T.mono,outline:'none',boxSizing:'border-box'}}
+                          className={s['settings-input']}
                       />
-                      <div style={{fontSize:12,color:T.text3,marginTop:6,lineHeight:1.6}}>
-                          Ollama: <span style={{fontFamily:T.mono}}>http://localhost:11434/v1</span><br/>
-                          LM Studio: <span style={{fontFamily:T.mono}}>http://localhost:1234/v1</span><br/>
+                      <div className={s['settings-section-desc-lg']} style={{marginTop:6,marginBottom:0}}>
+                          Ollama: <span className={s['settings-mono']}>http://localhost:11434/v1</span><br/>
+                          LM Studio: <span className={s['settings-mono']}>http://localhost:1234/v1</span><br/>
                           モデル名はサーバー側で設定されたデフォルトが使用されます。
                       </div>
                   </div>
                   )}
                   </fieldset>
                   {/* 利用制限 */}
-                  <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
-                      <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>利用制限（サーバー共用キー）</div>
+                  <div className={s['settings-card']}>
+                      <div className={s['settings-card-title']}>利用制限（サーバー共用キー）</div>
                       {rateInfo && !apiKey ? (
                       <div style={{marginBottom:6}}>
-                          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
-                              <div style={{flex:1,height:6,borderRadius:3,background:T.border,overflow:'hidden'}}>
+                          <div className={s['settings-rate-bar-wrap']}>
+                              <div className={s['settings-rate-bar']}>
                                   <div style={{width:`${Math.min(100,(rateInfo.used/rateInfo.limit)*100)}%`,height:'100%',borderRadius:3,background:rateInfo.used>=rateInfo.limit?T.red:rateInfo.used>=rateInfo.limit*0.8?'#f59e0b':T.accent,transition:'width .3s'}}/>
                               </div>
-                              <span style={{fontSize:12,fontWeight:600,color:rateInfo.used>=rateInfo.limit?T.red:T.text,whiteSpace:'nowrap'}}>
+                              <span className={s['settings-rate-count']} style={{color:rateInfo.used>=rateInfo.limit?T.red:T.text}}>
                                   {rateInfo.used} / {rateInfo.limit} 回使用
                               </span>
                           </div>
-                          <div style={{fontSize:12,color:T.text3,lineHeight:1.5}}>
+                          <div className={s['settings-sublabel-lh']}>
                               24時間あたり{rateInfo.limit}回まで（IP単位）。残り {rateInfo.remaining} 回
                           </div>
                       </div>
                       ) : apiKey ? (
-                      <div style={{fontSize:12,color:T.green,lineHeight:1.6}}>
+                      <div className={s['settings-card-text']} style={{color:T.green}}>
                           自分のAPIキーを使用中 — 利用回数の制限はありません。
                       </div>
                       ) : (
-                      <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
+                      <div className={s['settings-card-text']}>
                           APIキー未設定時: AI機能は24時間あたり50回まで（IP単位）。
                       </div>
                       )}
-                      {!apiKey && <div style={{fontSize:12,color:T.text3,marginTop:4,lineHeight:1.5}}>自分のAPIキーを設定すると無制限に利用できます。</div>}
+                      {!apiKey && <div className={s['settings-sublabel-lh']} style={{marginTop:4}}>自分のAPIキーを設定すると無制限に利用できます。</div>}
                   </div>
                   {/* プライバシー */}
-                  <div style={{padding:'10px 14px',borderRadius:10,border:`1px solid ${T.border}`,background:T.surface}}>
-                      <div style={{fontSize:12,fontWeight:600,color:T.text,marginBottom:4}}>プライバシー</div>
-                      <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
+                  <div className={s['settings-card']}>
+                      <div className={s['settings-card-title']}>プライバシー</div>
+                      <div className={s['settings-card-text']}>
                           ファイルの読み込み・PII検出・マスキングはすべてブラウザ内で処理されます。サーバーやデータベースにデータは保存されません。AI機能を有効にした場合のみ、テキストがAI APIに送信されます（各社APIは学習データとして使用しません）。
                       </div>
                   </div>
-                  <div
-                      style={{
-                          display: 'flex',
-                          gap: 8,
-                          justifyContent: 'flex-end',
-                      }}
-                  >
+                  <div className={s['settings-footer']}>
                       <Btn
                           variant='ghost'
                           onClick={() => {
@@ -3240,12 +2919,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               setAiProfile('balanced');setProxyUrl('');setLocalEndpoint('http://localhost:11434/v1');
                           }}
                           title="AIプロバイダー・モデル・APIキーなどの設定を初期値に戻します。ファイルデータには影響しません。"
-                          style={{
-                              padding: '8px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                              color: T.red,
-                          }}
+                          style={{ padding: '8px 16px', fontSize: 12, borderRadius: 8, color: T.red }}
                       >
                           設定リセット
                       </Btn>
@@ -3256,27 +2930,12 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               clearAllSiteData();
                           }}
                           title="ブラウザに保存されたすべてのデータ（設定・APIキー・キャッシュ等）を完全に消去してページをリロードします。"
-                          style={{
-                              padding: '8px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                              marginRight: 'auto',
-                              color: T.red,
-                              border: `1px solid ${T.red}44`,
-                          }}
+                          style={{ padding: '8px 16px', fontSize: 12, borderRadius: 8, marginRight: 'auto', color: T.red, border: `1px solid ${T.red}44` }}
                       >
                           全データ削除
                       </Btn>
                       {apiKey && (
-                          <Btn
-                              variant='ghost'
-                              onClick={() => setApiKey('')}
-                              style={{
-                                  padding: '8px 16px',
-                                  fontSize: 12,
-                                  borderRadius: 8,
-                              }}
-                          >
+                          <Btn variant='ghost' onClick={() => setApiKey('')} style={{ padding: '8px 16px', fontSize: 12, borderRadius: 8 }}>
                               消去
                           </Btn>
                       )}
@@ -3284,11 +2943,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           variant={saved ? 'success' : 'primary'}
                           onClick={handleSave}
                           aria-live="polite"
-                          style={{
-                              padding: '8px 20px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                          }}
+                          style={{ padding: '8px 20px', fontSize: 12, borderRadius: 8 }}
                       >
                           {saved ? '✓ 保存済' : '保存'}
                       </Btn>
@@ -3643,44 +3298,30 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
     return {type:"body"};
   }
 
-  const pageStyle={
-    maxWidth:595,margin:"0 auto",padding:"26px 30px",
-    fontFamily:"'Noto Sans JP',sans-serif",color:"#111827",
-    fontSize:"10.2pt",lineHeight:1.75,background:"#fff",
-    minHeight:842,
-  };
-  const h2Style={fontSize:"14pt",fontWeight:700,color:"#0f172a",margin:"18px 0 8px",paddingBottom:7,borderBottom:"1px solid #d1d5db",letterSpacing:0.2};
-  const h3Style={fontSize:"11.5pt",fontWeight:700,color:"#111827",margin:"14px 0 6px"};
-  const kvStyle={display:"grid",gridTemplateColumns:"minmax(110px,160px) 1fr",gap:12,padding:"2.5px 0"};
-  const kvKeyStyle={color:"#475569",fontWeight:700};
-  const kvValStyle={color:"#0f172a"};
-  const liStyle={paddingLeft:"1em",textIndent:"-1em",lineHeight:1.75,margin:"1px 0"};
-  const hrStyle={border:0,borderTop:"1px solid #e5e7eb",margin:"12px 0"};
-
   return (
-    <div style={{flex:1,overflow:"auto",background:"#e5e7eb",padding:"24px 16px",display:"flex",justifyContent:"center"}}>
+    <div className={s['a4-wrap']}>
       <div style={{width:Math.round(595*zoom),flexShrink:0}}>
-        <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${zoom})`,transformOrigin:"top left"}}>
-        <div style={pageStyle}>
+        <div className={s['a4-shadow']} style={{transform:`scale(${zoom})`}}>
+        <div className={s['a4-page']}>
           {lines.map(({line,raw},li)=>{
             const cls=classifyLine(raw);
             const segs=line.map((seg,si)=>renderSegment(seg,`${li}_${si}`));
 
             if(cls.type==="blank")return <br key={li} style={{display:"block",marginTop:8}}/>;
-            if(cls.type==="hr")return <hr key={li} style={hrStyle}/>;
+            if(cls.type==="hr")return <hr key={li} className={s['a4-hr']}/>;
             if(cls.type==="heading"){
-              const style=cls.level<=2?h2Style:h3Style;
+              const hCls=cls.level<=2?s['a4-h2']:s['a4-h3'];
               // 見出しマーカーを除去して表示
               const cleaned=raw.trim().replace(/^#{1,3}\s+/,"").replace(/^[■●◆◇▶▷☆★]+\s*/,"").replace(/^【(.+?)】$/,"$1");
               // セグメント内の検出値はそのまま表示
               const hasDetection=line.some(s=>s.type==="det");
               if(hasDetection){
-                return <div key={li} style={style}>{segs}</div>;
+                return <div key={li} className={hCls}>{segs}</div>;
               }
-              return <div key={li} style={style}>{cleaned}</div>;
+              return <div key={li} className={hCls}>{cleaned}</div>;
             }
             if(cls.type==="list"){
-              return <div key={li} style={liStyle}>・{segs}</div>;
+              return <div key={li} className={s['a4-li']}>・{segs}</div>;
             }
             if(cls.type==="kv"){
               const kvMatch=raw.trim().match(/^(.{1,30}?)[：:]\s*(.+)$/);
@@ -3707,9 +3348,9 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
                   charCount+=segLen;
                 }
                 return (
-                  <div key={li} style={kvStyle}>
-                    <div style={kvKeyStyle}>{keySegs}</div>
-                    <div style={kvValStyle}>{valSegs}</div>
+                  <div key={li} className={s['a4-kv']}>
+                    <div className={s['a4-kv-key']}>{keySegs}</div>
+                    <div className={s['a4-kv-val']}>{valSegs}</div>
                   </div>
                 );
               }
@@ -3782,17 +3423,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
 
   return (
       <div
-          style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 1000,
-              background: 'rgba(0,0,0,.65)',
-              backdropFilter: 'blur(8px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 16,
-          }}
+          className={s['design-overlay']}
           onClick={(e) => e.target === e.currentTarget && onClose()}
       >
           <div
@@ -3800,218 +3431,46 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
               role="dialog"
               aria-modal="true"
               aria-label="PDF プレビュー・編集"
-              style={{
-                  width: '95vw',
-                  maxWidth: 1300,
-                  height: '92vh',
-                  background: T.bg2,
-                  borderRadius: 16,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  border: `1px solid ${T.border}`,
-              }}
+              className={s['design-dialog']}
           >
               {/* Header */}
-              <div
-                  style={{
-                      padding: '12px 20px',
-                      borderBottom: `1px solid ${T.border}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: T.bg,
-                      flexShrink: 0,
-                  }}
-              >
-                  <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 10 }}
-                  >
+              <div className={s['design-header']}>
+                  <div className={s['design-header-left']}>
                       <span style={{ fontSize: 16 }}>📄</span>
                       <div>
-                          <div
-                              style={{
-                                  fontSize: 14,
-                                  fontWeight: 700,
-                                  color: T.text,
-                              }}
-                          >
-                              PDF プレビュー・編集
-                          </div>
-                          <div style={{ fontSize: 12, color: T.text3 }}>
-                              最終確認 → テキスト編集 → 出力
-                          </div>
+                          <div className={s['design-header-title']}>PDF プレビュー・編集</div>
+                          <div className={s['settings-sublabel']}>最終確認 → テキスト編集 → 出力</div>
                       </div>
                   </div>
-                  <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-                  >
-                      <span
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              fontFamily: T.mono,
-                          }}
-                      >
+                  <div className={s['design-header-right']}>
+                      <span className={s['settings-sublabel']} style={{fontFamily:T.mono}}>
                           {lineCount}行 / {charCount}文字
                       </span>
-                      <button
-                          onClick={onClose}
-                          aria-label="閉じる"
-                          style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: T.text3,
-                              fontSize: 18,
-                              cursor: 'pointer',
-                              padding: 4,
-                          }}
-                      >
-                          ✕
-                      </button>
+                      <button onClick={onClose} aria-label="閉じる" className={s['design-close-btn']}>✕</button>
                   </div>
               </div>
 
               {/* Body */}
-              <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+              <div className={s['design-body']}>
                   {/* Left: Editor */}
-                  <div
-                      className='rp-design-controls'
-                      style={{
-                          width: '45%',
-                          minWidth: 300,
-                          borderRight: `1px solid ${T.border}`,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          overflow: 'hidden',
-                      }}
-                  >
+                  <div className={`rp-design-controls ${s['design-editor']}`}>
                       {/* Toolbar */}
-                      <div
-                          style={{
-                              padding: '8px 14px',
-                              borderBottom: `1px solid ${T.border}`,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              flexShrink: 0,
-                              flexWrap: 'wrap',
-                          }}
-                      >
-                          <span
-                              style={{
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  color: T.text2,
-                              }}
-                          >
-                              フォント
-                          </span>
-                          <button
-                              onClick={() => setFontType('gothic')}
-                              style={{
-                                  padding: '4px 10px',
-                                  borderRadius: 6,
-                                  border: `1.5px solid ${fontType === 'gothic' ? T.accent : T.border}`,
-                                  background:
-                                      fontType === 'gothic'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  fontWeight: fontType === 'gothic' ? 600 : 400,
-                                  color:
-                                      fontType === 'gothic' ? T.accent : T.text,
-                              }}
-                          >
-                              ゴシック
-                          </button>
-                          <button
-                              onClick={() => setFontType('mincho')}
-                              style={{
-                                  padding: '4px 10px',
-                                  borderRadius: 6,
-                                  border: `1.5px solid ${fontType === 'mincho' ? T.accent : T.border}`,
-                                  background:
-                                      fontType === 'mincho'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  fontWeight: fontType === 'mincho' ? 600 : 400,
-                                  color:
-                                      fontType === 'mincho' ? T.accent : T.text,
-                              }}
-                          >
-                              明朝
-                          </button>
+                      <div className={s['design-toolbar']}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: T.text2 }}>フォント</span>
+                          <button onClick={() => setFontType('gothic')} className={s['design-font-btn']} data-active={fontType === 'gothic'}>ゴシック</button>
+                          <button onClick={() => setFontType('mincho')} className={s['design-font-btn']} data-active={fontType === 'mincho'}>明朝</button>
                           <div style={{ flex: 1 }} />
-                          <button
-                              onClick={handleCopyText}
-                              aria-live="polite"
-                              style={{
-                                  padding: '4px 10px',
-                                  borderRadius: 6,
-                                  border: `1px solid ${T.border}`,
-                                  background: 'transparent',
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  color: saved ? T.green : T.text3,
-                              }}
-                          >
+                          <button onClick={handleCopyText} aria-live="polite" className={s['design-copy-btn']} style={{color: saved ? T.green : T.text3}}>
                               {saved ? '✓ コピー済' : '📋 コピー'}
                           </button>
                       </div>
                       {/* Tips */}
-                      <div
-                          style={{
-                              padding: '6px 14px',
-                              borderBottom: `1px solid ${T.border}`,
-                              fontSize: 12,
-                              color: T.text3,
-                              lineHeight: 1.6,
-                              flexShrink: 0,
-                          }}
-                      >
-                          <span style={{ fontWeight: 600, color: T.text2 }}>
-                              記法:{' '}
-                          </span>
-                          <code
-                              style={{
-                                  background: T.surface,
-                                  padding: '1px 4px',
-                                  borderRadius: 3,
-                                  fontFamily: T.mono,
-                              }}
-                          >
-                              **太字**
-                          </code>
-                          <code
-                              style={{
-                                  background: T.surface,
-                                  padding: '1px 4px',
-                                  borderRadius: 3,
-                                  fontFamily: T.mono,
-                                  marginLeft: 6,
-                              }}
-                          >
-                              # 見出し
-                          </code>
-                          <code
-                              style={{
-                                  background: T.surface,
-                                  padding: '1px 4px',
-                                  borderRadius: 3,
-                                  fontFamily: T.mono,
-                                  marginLeft: 6,
-                              }}
-                          >
-                              ## 小見出し
-                          </code>
-                          　
-                          <span style={{ opacity: 0.6 }}>
-                              非公開タグは自動除去
-                          </span>
+                      <div className={s['design-tips']}>
+                          <span style={{ fontWeight: 600, color: T.text2 }}>記法: </span>
+                          <code style={{background:T.surface,padding:'1px 4px',borderRadius:3,fontFamily:T.mono}}>**太字**</code>
+                          <code style={{background:T.surface,padding:'1px 4px',borderRadius:3,fontFamily:T.mono,marginLeft:6}}># 見出し</code>
+                          <code style={{background:T.surface,padding:'1px 4px',borderRadius:3,fontFamily:T.mono,marginLeft:6}}>## 小見出し</code>
+                          　<span style={{ opacity: 0.6 }}>非公開タグは自動除去</span>
                       </div>
                       {/* Textarea */}
                       <textarea
@@ -4019,95 +3478,21 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                           value={editText}
                           onChange={(e) => setEditText(e.target.value)}
                           spellCheck={false}
-                          style={{
-                              flex: 1,
-                              padding: '14px 16px',
-                              border: 'none',
-                              outline: 'none',
-                              resize: 'none',
-                              fontFamily: T.mono,
-                              fontSize: 12,
-                              lineHeight: 1.8,
-                              color: T.text,
-                              background: T.bg2,
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-word',
-                          }}
+                          className={s['design-textarea']}
                       />
                       {/* Actions */}
-                      <div
-                          style={{
-                              padding: 12,
-                              borderTop: `1px solid ${T.border}`,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 6,
-                              flexShrink: 0,
-                          }}
-                      >
-                          <Btn
-                              onClick={handleExport}
-                              style={{
-                                  width: '100%',
-                                  borderRadius: 10,
-                                  fontSize: 13,
-                                  background: '#222',
-                                  gap: 6,
-                              }}
-                          >
+                      <div className={s['design-actions']}>
+                          <Btn onClick={handleExport} style={{ width: '100%', borderRadius: 10, fontSize: 13, background: T.accent, color: T.bg, gap: 6 }}>
                               🖨️ PDFとして印刷・保存
                           </Btn>
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  color: T.text3,
-                                  textAlign: 'center',
-                                  lineHeight: 1.4,
-                                  padding: '0 4px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: 4,
-                              }}
-                          >
+                          <div className={s['design-actions-hint']}>
                               <span>🖨️</span>{' '}
                               別タブで開き、ブラウザの印刷ダイアログから「PDFとして保存」を選択してください
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
-                              <Btn
-                                  variant='ghost'
-                                  onClick={handleDownloadWord}
-                                  style={{
-                                      flex: 1,
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      padding: '9px 8px',
-                                  }}
-                              >
-                                  Word (.docx)
-                              </Btn>
-                              <Btn
-                                  variant='ghost'
-                                  onClick={handleDownloadHTML}
-                                  style={{
-                                      flex: 1,
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      padding: '9px 8px',
-                                  }}
-                              >
-                                  HTML
-                              </Btn>
-                              <Btn
-                                  variant='ghost'
-                                  onClick={handleCopyText}
-                                  style={{
-                                      flex: 1,
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      padding: '9px 8px',
-                                  }}
-                              >
+                              <Btn variant='ghost' onClick={handleDownloadWord} style={{ flex: 1, borderRadius: 8, fontSize: 12, padding: '9px 8px' }}>Word (.docx)</Btn>
+                              <Btn variant='ghost' onClick={handleDownloadHTML} style={{ flex: 1, borderRadius: 8, fontSize: 12, padding: '9px 8px' }}>HTML</Btn>
+                              <Btn variant='ghost' onClick={handleCopyText} style={{ flex: 1, borderRadius: 8, fontSize: 12, padding: '9px 8px' }}>
                                   {saved ? '✓ コピー済' : '📋 テキスト'}
                               </Btn>
                           </div>
@@ -4115,29 +3500,8 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                   </div>
 
                   {/* Right: Live Preview */}
-                  <div
-                      style={{
-                          flex: 1,
-                          background: '#e5e7eb',
-                          overflow: 'auto',
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          justifyContent: 'center',
-                          padding: 24,
-                      }}
-                  >
-                      <div
-                          style={{
-                              width: 595,
-                              minHeight: 842,
-                              background: '#fff',
-                              boxShadow: '0 4px 24px rgba(0,0,0,.12)',
-                              borderRadius: 4,
-                              overflow: 'hidden',
-                              transform: 'scale(0.88)',
-                              transformOrigin: 'top center',
-                          }}
-                      >
+                  <div className={s['design-preview-area']}>
+                      <div className={s['design-preview-page']}>
                           <iframe
                               srcDoc={htmlContent}
                               sandbox="allow-same-origin"
@@ -4353,62 +3717,26 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
   const finalHtml=useMemo(()=>layoutHtml.replace('</head>',ruleOverride+'</head>'),[layoutHtml,ruleOverride]);
   return (
       <div
-          style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 110,
-              padding: 20,
-              animation: 'fadeIn .2s',
-          }}
+          className={s['preview-overlay']}
           onClick={(e) => {
               if (e.target === e.currentTarget) onClose()
           }}
       >
           <div
               ref={trapRef}
-              className='rp-modal-inner'
+              className={`rp-modal-inner ${s['preview-dialog']}`}
               role="dialog"
               aria-modal="true"
               aria-label={title}
               style={{
-                  width: '100%',
                   maxWidth: expanded ? '96vw' : 820,
                   maxHeight: expanded ? '96vh' : '92vh',
-                  background: T.bg2,
-                  borderRadius: 16,
-                  border: `1px solid ${T.border}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden',
-                  animation: 'fadeUp .3s ease',
-                  transition: 'max-width .25s ease, max-height .25s ease',
               }}
           >
-              <div
-                  style={{
-                      padding: '14px 22px',
-                      borderBottom: `1px solid ${T.border}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexShrink: 0,
-                  }}
-              >
+              <div className={s['preview-header']}>
                   <div>
-                      <div
-                          style={{
-                              fontSize: 14,
-                              fontWeight: 700,
-                              color: T.text,
-                          }}
-                      >
-                          {title}
-                      </div>
-                      <div style={{ fontSize: 12, color: T.text3, display:'flex', alignItems:'center', gap:8 }}>
+                      <div className={s['preview-title']}>{title}</div>
+                      <div className={s['preview-meta']}>
                           {lines} 行 / {chars.toLocaleString()} 文字
                           {meta && (
                             <span style={{fontSize:11,color:T.text3,opacity:.8}}>
@@ -4417,75 +3745,13 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           )}
                       </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div
-                          data-intro="preview-tabs"
-                          style={{
-                              display: 'flex',
-                              border: `1px solid ${T.border}`,
-                              borderRadius: 10,
-                              overflow: 'hidden',
-                          }}
-                      >
-                          <button
-                              onClick={() => setView('layout')}
-                              title='書式付きプレビュー'
-                              aria-label='書式付きプレビュー'
-                              style={{
-                                  padding: '6px 10px',
-                                  border: 'none',
-                                  background:
-                                      view === 'layout'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  color: view === 'layout' ? T.accent : T.text3,
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                              }}
-                          >
-                              レイアウト
-                          </button>
-                          <button
-                              onClick={() => setView('text')}
-                              title='プレーンテキスト表示'
-                              aria-label='プレーンテキスト表示'
-                              style={{
-                                  padding: '6px 10px',
-                                  border: 'none',
-                                  background:
-                                      view === 'text'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  color: view === 'text' ? T.accent : T.text3,
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                              }}
-                          >
-                              テキスト
-                          </button>
+                  <div className={s['preview-header-right']}>
+                      <div data-intro="preview-tabs" className={s['preview-tabs']}>
+                          <button onClick={() => setView('layout')} title='書式付きプレビュー' aria-label='書式付きプレビュー' className={s['preview-tab']} data-active={view === 'layout'}>レイアウト</button>
+                          <button onClick={() => setView('text')} title='プレーンテキスト表示' aria-label='プレーンテキスト表示' className={s['preview-tab']} data-active={view === 'text'}>テキスト</button>
                           {editable!==false&&onContentChange&&(<>
                           <span style={{width:1,alignSelf:'stretch',background:T.border}} />
-                          <button
-                              onClick={() => setView('edit')}
-                              title='テキストを編集'
-                              aria-label='テキストを編集'
-                              style={{
-                                  padding: '6px 10px',
-                                  border: 'none',
-                                  background:
-                                      view === 'edit'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  color: view === 'edit' ? T.accent : T.text3,
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                              }}
-                          >
-                              編集
-                          </button>
+                          <button onClick={() => setView('edit')} title='テキストを編集' aria-label='テキストを編集' className={s['preview-tab']} data-active={view === 'edit'}>編集</button>
                           </>)}
                       </div>
                       {view==='layout'&&fmt!=='csv'&&fmt!=='xlsx'&&(
@@ -4493,35 +3759,14 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           onClick={()=>{const next=!headingRule;setHeadingRule(next);try{localStorage.setItem('rp_heading_rule',next?'on':'off')}catch{}}}
                           title={headingRule?'見出し罫線を非表示':'見出し罫線を表示'}
                           aria-label='見出し罫線の切替'
-                          style={{
-                            padding:'5px 8px',border:`1px solid ${T.border}`,borderRadius:7,
-                            background:headingRule?T.accentDim:'transparent',
-                            color:headingRule?T.accent:T.text3,cursor:'pointer',fontSize:11,fontWeight:600,
-                            display:'flex',alignItems:'center',gap:4,transition:'all .15s',
-                          }}
+                          className={s['preview-rule-btn']}
+                          data-active={headingRule}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="12" x2="21" y2="12"/></svg>
                           罫線
                         </button>
                       )}
-                      <button
-                          onClick={()=>setExpanded(v=>!v)}
-                          title={expanded?'縮小':'最大化'}
-                          aria-label={expanded?'縮小':'最大化'}
-                          style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 7,
-                              border: `1px solid ${T.border}`,
-                              background: 'transparent',
-                              color: T.text2,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                          }}
-                      >
+                      <button onClick={()=>setExpanded(v=>!v)} title={expanded?'縮小':'最大化'} aria-label={expanded?'縮小':'最大化'} className={s['modal-close-btn']}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             {expanded?(
                               <>{/* 縮小アイコン */}<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></>
@@ -4530,47 +3775,21 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                             )}
                           </svg>
                       </button>
-                      <button
-                          onClick={onClose}
-                          title='閉じる'
-                          aria-label='閉じる'
-                          style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 7,
-                              border: `1px solid ${T.border}`,
-                              background: 'transparent',
-                              color: T.text2,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                          }}
-                      >
-                          x
-                      </button>
+                      <button onClick={onClose} title='閉じる' aria-label='閉じる' className={s['modal-close-btn']}>x</button>
                   </div>
               </div>
               <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
                   {view === 'edit' ? (
-                      <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+                      <div className={s['preview-edit-area']}>
                           <textarea
                               aria-label="テキストを編集"
                               value={editedContent}
                               onChange={(e)=>{setEditedContent(e.target.value);setHasChanges(e.target.value!==content);}}
-                              style={{
-                                  width:'100%',flex:1,minHeight:400,
-                                  padding:'16px 24px',fontFamily:T.mono,fontSize:12,
-                                  lineHeight:1.8,color:T.text,background:T.bg,
-                                  border:'none',resize:'none',
-                                  outline:`2px solid ${T.accent}`,outlineOffset:-2,
-                                  borderRadius:0,
-                              }}
+                              className={s['preview-edit-textarea']}
                               spellCheck={false}
                               autoFocus
                           />
-                          <div style={{padding:'10px 22px',display:'flex',justifyContent:'flex-end',gap:8,alignItems:'center',borderTop:`1px solid ${T.border}`,background:T.bg2}}>
+                          <div className={s['preview-edit-bar']}>
                               {hasChanges&&<span style={{fontSize:11,color:T.amber,marginRight:'auto'}}>未保存の変更があります</span>}
                               <Btn variant='ghost' onClick={handleCancelEdit} style={{padding:'6px 14px',fontSize:12,borderRadius:8}}>キャンセル</Btn>
                               <Btn onClick={handleSave} disabled={!hasChanges} style={{padding:'6px 14px',fontSize:12,borderRadius:8,opacity:hasChanges?1:.5}}>保存 (Ctrl+S)</Btn>
@@ -4664,18 +3883,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           )}
                       </div>
                   ) : (
-                      <pre
-                          style={{
-                              padding: '16px 24px',
-                              fontFamily: T.mono,
-                              fontSize: 12,
-                              lineHeight: 1.8,
-                              color: T.text,
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-word',
-                              margin: 0,
-                          }}
-                      >
+                      <pre className={s['preview-text-view']}>
                           {content.split('\n').map((line, i) => {
                               const re = new RegExp(PH_RE.source, 'g')
                               const parts = []
@@ -4689,16 +3897,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                                           </span>,
                                       )
                                   parts.push(
-                                      <span
-                                          key={`r${i}-${m.index}`}
-                                          style={{
-                                              background: T.redDim,
-                                              color: T.red,
-                                              padding: '0 4px',
-                                              borderRadius: 3,
-                                              fontWeight: 600,
-                                          }}
-                                      >
+                                      <span key={`r${i}-${m.index}`} className={s['preview-redact-tag']}>
                                           {m[0]}
                                       </span>,
                                   )
@@ -4711,22 +3910,8 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                                       </span>,
                                   )
                               return (
-                                  <div
-                                      key={i}
-                                      style={{ display: 'flex', minHeight: 20 }}
-                                  >
-                                      <span
-                                          style={{
-                                              width: 36,
-                                              flexShrink: 0,
-                                              textAlign: 'right',
-                                              paddingRight: 10,
-                                              color: T.text3,
-                                              fontSize: 12,
-                                              userSelect: 'none',
-                                              lineHeight: '20px',
-                                          }}
-                                      >
+                                  <div key={i} className={s['preview-line']}>
+                                      <span className={s['preview-line-num']}>
                                           {i + 1}
                                       </span>
                                       <span style={{ flex: 1 }}>
@@ -4740,168 +3925,47 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                       </pre>
                   )}
               </div>
-              <div
-                  style={{
-                      padding: '12px 22px',
-                      borderTop: `1px solid ${T.border}`,
-                      flexShrink: 0,
-                  }}
-              >
-                  <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          flexWrap: 'wrap',
-                          marginBottom: 10,
-                      }}
-                  >
-                      <span
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text3,
-                              flexShrink: 0,
-                          }}
-                      >
-                          出力形式:
-                      </span>
-                      <div
-                          data-intro="export-formats"
-                          style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}
-                      >
+              <div className={s['preview-footer']}>
+                  <div className={s['preview-formats']}>
+                      <span className={s['preview-formats-label']}>出力形式:</span>
+                      <div data-intro="export-formats" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                           {EXPORT_FORMATS.map((f) => (
                               <button
                                   key={f.id}
                                   onClick={() => setFmt(f.id)}
                                   title={`${f.label}形式`}
                                   aria-label={`${f.label}形式`}
-                                  style={{
-                                      padding: '5px 12px',
-                                      borderRadius: 7,
-                                      border: `1px solid ${fmt === f.id ? T.accent : T.border}`,
-                                      background:
-                                          fmt === f.id
-                                              ? T.accentDim
-                                              : 'transparent',
-                                      color: fmt === f.id ? T.accent : T.text3,
-                                      fontSize: 12,
-                                      fontWeight: fmt === f.id ? 600 : 400,
-                                      cursor: 'pointer',
-                                      fontFamily: T.font,
-                                      transition: 'all .15s',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 4,
-                                  }}
+                                  className={s['preview-fmt-btn']}
+                                  data-active={fmt === f.id}
                               >
-                                  <span
-                                      style={{
-                                          width: 16,
-                                          height: 16,
-                                          borderRadius: 4,
-                                          background:
-                                              fmt === f.id
-                                                  ? T.accent
-                                                  : T.border,
-                                          color:
-                                              fmt === f.id ? '#fff' : T.text3,
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          fontSize: 12,
-                                          fontWeight: 700,
-                                      }}
-                                  >
+                                  <span className={s['preview-fmt-icon']} data-active={fmt === f.id}>
                                       {f.icon}
                                   </span>
                                   {f.label}
                                   {f.id === 'pdf' && (
-                                      <span
-                                          title='ブラウザの印刷機能を使用してPDFを生成します'
-                                          style={{
-                                              fontSize: 12,
-                                              marginLeft: -2,
-                                              opacity: 0.8,
-                                          }}
-                                      >
-                                          🖨️
-                                      </span>
+                                      <span title='ブラウザの印刷機能を使用してPDFを生成します' style={{ fontSize: 12, marginLeft: -2, opacity: 0.8 }}>🖨️</span>
                                   )}
                               </button>
                           ))}
                       </div>
                   </div>
-                  <div
-                      data-intro="export-actions"
-                      style={{
-                          display: 'flex',
-                          gap: 8,
-                          justifyContent: 'flex-end',
-                          alignItems: 'center',
-                      }}
-                  >
+                  <div data-intro="export-actions" className={s['preview-export-row']}>
                       {fmt === 'pdf' && (
-                          <span
-                              style={{
-                                  fontSize: 12,
-                                  color: T.amber,
-                                  marginRight: 'auto',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 4,
-                              }}
-                          >
+                          <span style={{ fontSize: 12, color: T.amber, marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
                               <span style={{ fontSize: 12 }}>🖨️</span>{' '}
                               印刷ダイアログから「PDFとして保存」を選択してください
                           </span>
                       )}
-                      <Btn
-                          variant='ghost'
-                          onClick={onClose}
-                          title='閉じる'
-                          style={{
-                              padding: '7px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                          }}
-                      >
-                          閉じる
-                      </Btn>
-                      <Btn
-                          variant='ghost'
-                          onClick={handleCopy}
-                          title='クリップボードにコピー'
-                          aria-live="polite"
-                          style={{
-                              padding: '7px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                          }}
-                      >
+                      <Btn variant='ghost' onClick={onClose} title='閉じる' style={{ padding: '7px 16px', fontSize: 12, borderRadius: 8 }}>閉じる</Btn>
+                      <Btn variant='ghost' onClick={handleCopy} title='クリップボードにコピー' aria-live="polite" style={{ padding: '7px 16px', fontSize: 12, borderRadius: 8 }}>
                           {copied ? '\u2713 コピー済' : 'コピー'}
                       </Btn>
-                      <Btn
-                          onClick={handleDownload}
-                          title={`${curFmt?.label}形式でダウンロード`}
-                          style={{
-                              padding: '7px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                          }}
-                      >
+                      <Btn onClick={handleDownload} title={`${curFmt?.label}形式でダウンロード`} style={{ padding: '7px 16px', fontSize: 12, borderRadius: 8 }}>
                           {curFmt?.label} で保存
                       </Btn>
                   </div>
                   {view === 'layout' && (
-                      <div
-                          style={{
-                              marginTop: 10,
-                              fontSize: 10,
-                              color: T.text3,
-                              lineHeight: 1.5,
-                          }}
-                      >
+                      <div className={s['preview-format-hint']}>
                           {fmt==='csv'||fmt==='xlsx' ? 'テーブルプレビューはCSV/Excel出力のイメージです。'
                            : fmt==='txt' ? 'プレーンテキスト表示です。'
                            : fmt==='md' ? 'Markdownをレンダリングしたプレビューです。'
@@ -4927,114 +3991,71 @@ function DiffView({original,modified,label,modifiedLabel}){
     else{diffs.push({type:"changed",orig:o,mod:m});}
   }
   const changeCount=diffs.filter(d=>d.type==="changed").length;
+
+  // チャンク計算: 連続する changed 行をグループ化し、各グループの先頭indexを保持
+  const chunks=useMemo(()=>{
+    const c=[];
+    let inChunk=false;
+    for(let i=0;i<diffs.length;i++){
+      if(diffs[i].type==="changed"){
+        if(!inChunk){c.push(i);inChunk=true;}
+      }else{inChunk=false;}
+    }
+    return c;
+  },[diffs.length,original,modified]);
+
+  const [currentChunk,setCurrentChunk]=useState(-1);
+  const scrollRef=useRef(null);
+
+  const jumpTo=useCallback((idx)=>{
+    if(idx<0||idx>=chunks.length)return;
+    setCurrentChunk(idx);
+    const el=scrollRef.current?.querySelector(`[data-chunk-start="${idx}"]`);
+    if(el)el.scrollIntoView({block:'center',behavior:'smooth'});
+  },[chunks]);
+
   return (
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <div
-              style={{
-                  padding: '8px 16px',
-                  borderBottom: `1px solid ${T.border}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: T.bg2,
-                  flexShrink: 0,
-              }}
-          >
-              <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
+      <div className={s['diff-wrap']}>
+          <div className={s['diff-header']}>
+              <span className={s['diff-header-label']}>
                   Diff: {label || '変更箇所'}
-              </div>
+              </span>
+              {chunks.length>0&&(
+                <div className={s['diff-nav']}>
+                  <button className={s['diff-nav-btn']} disabled={currentChunk<=0} onClick={()=>jumpTo(currentChunk<=0?0:currentChunk-1)} aria-label="前の変更へ">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 12L8 4M8 4L4 8M8 4L12 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <button className={s['diff-nav-btn']} disabled={currentChunk>=chunks.length-1} onClick={()=>jumpTo(currentChunk<0?0:currentChunk+1)} aria-label="次の変更へ">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 4L8 12M8 12L12 8M8 12L4 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <span className={s['diff-nav-pos']}>{currentChunk<0?'–':currentChunk+1} / {chunks.length}</span>
+                </div>
+              )}
               <Badge color={T.amber} bg={T.amberDim}>
                   {changeCount} 行変更
               </Badge>
           </div>
-          <div style={{ flex: 1, overflow: 'auto' }}>
-              <div
-                  style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      minWidth: 0,
-                  }}
-              >
-                  <div
-                      style={{
-                          borderRight: `1px solid ${T.border}`,
-                          padding: '4px 0',
-                      }}
-                  >
-                      <div
-                          style={{
-                              padding: '4px 12px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text3,
-                              borderBottom: `1px solid ${T.border}`,
-                              marginBottom: 4,
-                          }}
-                      >
-                          元テキスト
-                      </div>
+          <div className={s['diff-scroll']} ref={scrollRef}>
+              <div className={s['diff-grid']}>
+                  <div className={s['diff-col-left']}>
+                      <div className={s['diff-col-label']}>元テキスト</div>
                       {diffs.map((d, i) => (
                           <div
                               key={i}
-                              style={{
-                                  display: 'flex',
-                                  minHeight: 22,
-                                  padding: '1px 0',
-                                  background:
-                                      d.type === 'changed'
-                                          ? T.diffDel
-                                          : 'transparent',
-                                  borderLeft:
-                                      d.type === 'changed'
-                                          ? `3px solid ${T.red}`
-                                          : '3px solid transparent',
-                              }}
+                              className={s['diff-line']}
+                              data-changed={d.type === 'changed'}
+                              data-side="del"
+                              {...(chunks.indexOf(i)>=0?{'data-chunk-start':chunks.indexOf(i)}:{})}
                           >
-                              <span
-                                  style={{
-                                      width: 32,
-                                      flexShrink: 0,
-                                      textAlign: 'right',
-                                      paddingRight: 8,
-                                      color: T.text3,
-                                      fontSize: 12,
-                                      userSelect: 'none',
-                                      lineHeight: '22px',
-                                  }}
-                              >
-                                  {i + 1}
-                              </span>
-                              <span
-                                  style={{
-                                      flex: 1,
-                                      fontSize: 12,
-                                      fontFamily: T.mono,
-                                      lineHeight: '22px',
-                                      color:
-                                          d.type === 'changed' ? T.red : T.text,
-                                      whiteSpace: 'pre-wrap',
-                                      wordBreak: 'break-word',
-                                      paddingRight: 8,
-                                  }}
-                              >
+                              <span className={s['diff-line-num']}>{i + 1}</span>
+                              <span className={s['diff-line-text']}>
                                   {d.orig || '\u00A0'}
                               </span>
                           </div>
                       ))}
                   </div>
-                  <div style={{ padding: '4px 0' }}>
-                      <div
-                          style={{
-                              padding: '4px 12px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text3,
-                              borderBottom: `1px solid ${T.border}`,
-                              marginBottom: 4,
-                          }}
-                      >
-                          {modifiedLabel || 'マスキング済み'}
-                      </div>
+                  <div className={s['diff-col-right']}>
+                      <div className={s['diff-col-label']}>{modifiedLabel || 'マスキング済み'}</div>
                       {diffs.map((d, i) => {
                           const re = new RegExp(PH_RE.source, 'g')
                           const parts = []
@@ -5051,13 +4072,7 @@ function DiffView({original,modified,label,modifiedLabel}){
                               parts.push(
                                   <span
                                       key={`r${m.index}`}
-                                      style={{
-                                          background: T.greenDim,
-                                          color: T.green,
-                                          padding: '0 3px',
-                                          borderRadius: 3,
-                                          fontWeight: 600,
-                                      }}
+                                      className={s['diff-redact-tag']}
                                   >
                                       {m[0]}
                                   </span>,
@@ -5073,49 +4088,12 @@ function DiffView({original,modified,label,modifiedLabel}){
                           return (
                               <div
                                   key={i}
-                                  style={{
-                                      display: 'flex',
-                                      minHeight: 22,
-                                      padding: '1px 0',
-                                      background:
-                                          d.type === 'changed'
-                                              ? T.diffAdd
-                                              : 'transparent',
-                                      borderLeft:
-                                          d.type === 'changed'
-                                              ? `3px solid ${T.green}`
-                                              : '3px solid transparent',
-                                  }}
+                                  className={s['diff-line']}
+                                  data-changed={d.type === 'changed'}
+                                  data-side="add"
                               >
-                                  <span
-                                      style={{
-                                          width: 32,
-                                          flexShrink: 0,
-                                          textAlign: 'right',
-                                          paddingRight: 8,
-                                          color: T.text3,
-                                          fontSize: 12,
-                                          userSelect: 'none',
-                                          lineHeight: '22px',
-                                      }}
-                                  >
-                                      {i + 1}
-                                  </span>
-                                  <span
-                                      style={{
-                                          flex: 1,
-                                          fontSize: 12,
-                                          fontFamily: T.mono,
-                                          lineHeight: '22px',
-                                          color:
-                                              d.type === 'changed'
-                                                  ? T.green
-                                                  : T.text,
-                                          whiteSpace: 'pre-wrap',
-                                          wordBreak: 'break-word',
-                                          paddingRight: 8,
-                                      }}
-                                  >
+                                  <span className={s['diff-line-num']}>{i + 1}</span>
+                                  <span className={s['diff-line-text']}>
                                       {parts.length ? parts : line || '\u00A0'}
                                   </span>
                               </div>
@@ -5374,142 +4352,43 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
 
   if (loading)
       return (
-          <div
-              style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: 'calc(100vh - 56px)',
-                  padding: 40,
-                  animation: 'fadeUp .4s',
-              }}
-          >
-              <div
-                  style={{ maxWidth: 480, width: '100%', textAlign: 'center' }}
-              >
-                  <div
-                      style={{
-                          width: 56,
-                          height: 56,
-                          borderRadius: 28,
-                          border: `3px solid ${T.border}`,
-                          borderTopColor: T.accent,
-                          animation: 'spin .8s linear infinite',
-                          margin: '0 auto 24px',
-                      }}
-                  />
-                  <h2
-                      style={{
-                          fontSize: 18,
-                          fontWeight: 700,
-                          color: T.text,
-                          marginBottom: 6,
-                      }}
-                  >
-                      {fileName}
-                  </h2>
-                  <p style={{ fontSize: 13, color: T.text2, marginBottom: 20 }}>
-                      解析中...
-                  </p>
-                  <div style={{ padding: '0 20px', marginBottom: 14 }}>
-                      <div
-                          style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              marginBottom: 8,
-                          }}
-                      >
-                          <span style={{ fontSize: 11, color: T.text3 }}>
+          <div className={s['up-loading']}>
+              <div className={s['up-loading-inner']}>
+                  <div className={s['up-spinner']} />
+                  <h2 className={s['up-loading-name']}>{fileName}</h2>
+                  <p className={s['up-loading-sub']}>解析中...</p>
+                  <div className={s['up-progress-wrap']}>
+                      <div className={s['up-progress-header']}>
+                          <span className={s['up-progress-label']}>
                               進捗（{Math.min(stageIdx + 1, visibleStages.length)}/
                               {visibleStages.length}）
                           </span>
-                          <span
-                              style={{
-                                  fontSize: 12,
-                                  fontFamily: T.mono,
-                                  color: T.text2,
-                                  fontWeight: 700,
-                              }}
-                          >
+                          <span className={s['up-progress-pct']}>
                               {progressPct}%
                           </span>
                       </div>
-                      <div
-                          style={{
-                              height: 8,
-                              borderRadius: 999,
-                              background: T.surfaceAlt,
-                              overflow: 'hidden',
-                              border: `1px solid ${T.border}`,
-                          }}
-                      >
-                          <div
-                              style={{
-                                  height: '100%',
-                                  width: `${progressPct}%`,
-                                  background: T.accent,
-                                  transition: 'width .25s ease',
-                              }}
-                          />
+                      <div className={s['up-progress-bar-bg']}>
+                          <div className={s['up-progress-bar-fill']} style={{ width: `${progressPct}%` }} />
                       </div>
-                      <div
-                          style={{
-                              fontSize: 10,
-                              color: T.text3,
-                              marginTop: 8,
-                              textAlign: 'left',
-                              lineHeight: 1.4,
-                          }}
-                      >
+                      <div className={s['up-progress-stage']}>
                           現在: {visibleStages[stageIdx] || '処理中'}
                           {subPct != null ? `（${subPct}%）` : ''}
                       </div>
-                      <div
-                          style={{
-                              fontSize: 10,
-                              color: T.text3,
-                              marginTop: 4,
-                              textAlign: 'left',
-                              lineHeight: 1.4,
-                              fontFamily: T.mono,
-                          }}
-                      >
+                      <div className={s['up-progress-elapsed']}>
                           経過: {formatDuration(elapsedMs)}
                       </div>
                   </div>
                   {aiStatus && (
-                      <div
-                          style={{
-                              padding: '10px 16px',
-                              borderRadius: 10,
-                              background: T.accentDim,
-                              marginBottom: 20,
-                              fontSize: 12,
-                              color: T.accent,
-                              fontWeight: 500,
-                              fontFamily: T.mono,
-                              lineHeight: 1.6,
-                              minHeight: 36,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                          }}
-                      >
+                      <div className={s['up-ai-status']}>
                           {aiStatus}
                       </div>
                   )}
-                  <div style={{ textAlign: 'left', padding: '0 20px' }}>
-                      {visibleStages.map((s, i) => (
+                  <div className={s['up-stages-list']}>
+                      {visibleStages.map((st, i) => (
                           <div
                               key={i}
+                              className={s['up-stage-item']}
                               style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 10,
-                                  padding: '7px 0',
-                                  fontSize: 13,
                                   color:
                                       i < stage
                                           ? T.green
@@ -5519,15 +4398,8 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               }}
                           >
                               <div
+                                  className={s['up-stage-dot']}
                                   style={{
-                                      width: 20,
-                                      height: 20,
-                                      borderRadius: 10,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      fontSize: 12,
-                                      fontWeight: 700,
                                       background:
                                           i < stage
                                               ? T.greenDim
@@ -5548,7 +4420,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       fontWeight: i === stage ? 600 : 400,
                                   }}
                               >
-                                  {s}
+                                  {st}
                               </span>
                           </div>
                       ))}
@@ -5558,60 +4430,40 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
       )
 
   return (
-      <div
-          style={{
-              minHeight: 'calc(100vh - 56px)',
-              padding: '32px 40px',
-              animation: 'fadeUp .5s ease',
-          }}
-      >
+      <div className={s['up-root']}>
           <div
+              className={s['up-hero']}
               style={{
-                  textAlign: 'center',
-                  marginBottom: isLite ? 36 : 28,
                   maxWidth: isLite ? 820 : 1200,
-                  margin: isLite ? '0 auto 36px' : '0 auto 28px',
+                  margin: isLite ? '0 auto 20px' : '0 auto 16px',
               }}
           >
-              <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,marginBottom:4}}>
-                  <div style={{width:40,height:40,borderRadius:8,background:T.text,display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center',padding:'0 8px',gap:4,flexShrink:0}}>
-                      <div style={{width:22,height:4,borderRadius:2,background:T.bg}} />
-                      <div style={{width:16,height:4,borderRadius:2,background:T.bg}} />
+              <div className={s['up-logo']}>
+                  <div className={s['up-logo-icon']}>
+                      <div className={s['up-logo-bar1']} />
+                      <div className={s['up-logo-bar2']} />
                   </div>
-                  <span style={{fontSize:28,fontWeight:800,color:T.text,letterSpacing:1}}>Sumi</span>
+                  <span className={s['up-logo-text']}>Sumi</span>
               </div>
               <h1
-                  style={{
-                      fontSize: isLite ? 32 : 28,
-                      fontWeight: 700,
-                      color: T.text,
-                      lineHeight: 1.35,
-                  }}
+                  className={s['up-title']}
+                  style={{ fontSize: isLite ? 24 : 22 }}
               >
-                  {isLite ? <>経歴書の個人情報を<span style={{ color: T.accent }}>自動マスキング</span></> : <>経歴書の個人情報を<span style={{ color: T.accent }}>自動検出・マスキング</span></>}
+                  {isLite ? <>経歴書の個人情報を<span className={s['up-title-accent']}>自動マスキング</span></> : <>経歴書の<span className={s['up-title-accent']}>検出・マスキング・改善</span>を一括で</>}
               </h1>
-              <p
-                  style={{
-                      fontSize: 13,
-                      color: T.text2,
-                      marginTop: 8,
-                      lineHeight: 1.7,
-                  }}
-              >
-                  {isLite ? 'ファイルをアップロードするだけで個人情報を自動検出・マスキング' : '日本人名辞書 + 正規表現 + AI検出 + AIテキスト再構成で高精度'}
+              <p className={s['up-subtitle']}>
+                  {isLite ? 'ファイルをアップロードするだけで個人情報を自動検出・マスキング' : '個人情報の自動検出 + AIアドバイザーで経歴書の壁打ち・ブラッシュアップまで'}
               </p>
               {/* セキュリティ根拠バッジ */}
-              <div style={{display:'flex',flexWrap:'wrap',gap:8,marginTop:12}}>
+              <div className={s['up-badges']}>
                   {[
                       {icon:'\u{1F512}',text:'ブラウザ内完結',tip:'ファイルはサーバーに送信されません。すべてブラウザ内で処理されます'},
                       {icon:'\u{1F6AB}',text:'DB保存なし',tip:'データベースは一切使用しません。処理結果はブラウザのメモリ上のみに存在します'},
                       {icon:'\u2699',text:'AI利用は任意',tip:'AI検出・AI整形はユーザーが有効にした場合のみ動作します（デフォルトOFF）'},
                       {icon:'\u2705',text:'AI API学習除外',tip:'OpenAI / Anthropic / Google のAPIはトレーニングデータに使用されません（オプトアウト済み）'},
                   ].map((b,i)=>(
-                      <span key={i} title={b.tip} style={{display:'inline-flex',alignItems:'center',gap:4,padding:'4px 10px',
-                          fontSize:11,color:T.text2,background:T.surface,border:`1px solid ${T.border}`,borderRadius:20,
-                          cursor:'help',lineHeight:1.4,whiteSpace:'nowrap'}}>
-                          <span style={{fontSize:13}}>{b.icon}</span>{b.text}
+                      <span key={i} title={b.tip} className={s['up-trust-badge']}>
+                          <span className={s['up-trust-badge-icon']}>{b.icon}</span>{b.text}
                       </span>
                   ))}
               </div>
@@ -5628,78 +4480,43 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   alignItems: isLite ? 'stretch' : 'start',
               }}
           >
-              <div
-                  style={{
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: 14,
-                      padding: '18px 20px',
-                  }}
-              >
-                  <div
-                      style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: T.text,
-                          marginBottom: 14,
-                      }}
-                  >
+              <div className={s['up-card']}>
+                  <div className={s['up-card-title']}>
                       マスキング設定{' '}
-                      {!isLite && <span
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 400,
-                              color: T.text3,
-                          }}
-                      >
+                      {!isLite && <span className={s['up-card-title-sub']}>
                           -- アップロード前に対象を選択
                       </span>}
                   </div>
-                  <div data-intro="mask-presets" style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <div data-intro="mask-presets" className={s['up-presets']}>
                       {MASK_PRESETS.map((p, i) => (
                           <button
                               key={p.id}
                               onClick={() => setMask({ ...p.mask })}
+                              className={s['up-preset-btn']}
                               style={{
-                                  flex: 1,
-                                  padding: '10px 12px',
-                                  borderRadius: 10,
                                   border: `1.5px solid ${activePreset === i ? T.accent : T.border}`,
                                   background:
                                       activePreset === i
                                           ? T.accentDim
                                           : 'transparent',
-                                  cursor: 'pointer',
-                                  textAlign: 'left',
-                                  transition: 'all .15s',
                               }}
                           >
                               <div
+                                  className={s['up-preset-name']}
                                   style={{
-                                      fontSize: 13,
-                                      fontWeight: 600,
                                       color:
                                           activePreset === i
                                               ? T.accent
                                               : T.text,
-                                      marginBottom: 2,
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 6,
                                   }}
                               >
                                   <span
-                                      style={{
-                                          display: 'inline-block',
-                                          width: 8,
-                                          height: 8,
-                                          borderRadius: 4,
-                                          background: lc[p.level],
-                                      }}
+                                      className={s['up-preset-dot']}
+                                      style={{ background: lc[p.level] }}
                                   />
                                   {p.label}
                               </div>
-                              <div style={{ fontSize: 12, color: T.text3 }}>
+                              <div className={s['up-preset-desc']}>
                                   {p.desc}
                               </div>
                           </button>
@@ -5707,36 +4524,24 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   </div>
                   {!isLite && <div
                       data-intro="category-toggles"
-                      style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
-                          gap: '6px 16px',
-                      }}
+                      className={s['up-cat-grid']}
                   >
                       {Object.entries(CATEGORIES)
                           .filter(([k]) => k !== 'photo')
                           .map(([key, meta]) => (
                               <div
                                   key={key}
+                                  className={s['up-cat-row']}
                                   style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      padding: '8px 12px',
-                                      borderRadius: 8,
                                       background: mask[key]
                                           ? `${meta.color}08`
                                           : 'transparent',
                                       border: `1px solid ${mask[key] ? `${meta.color}20` : 'transparent'}`,
-                                      transition: 'all .2s',
                                   }}
                               >
                                   <span
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 500,
-                                          color: mask[key] ? T.text : T.text3,
-                                      }}
+                                      className={s['up-cat-label']}
+                                      style={{ color: mask[key] ? T.text : T.text3 }}
                                   >
                                       {meta.label}
                                   </span>
@@ -5751,43 +4556,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   {/* Advanced options */}
                   {!isLite && <div
                       data-intro="detail-options"
-                      style={{
-                          marginTop: 12,
-                          padding: '10px 12px',
-                          borderRadius: 10,
-                          background: T.bg,
-                          border: `1px solid ${T.border}`,
-                      }}
+                      className={s['up-detail-section']}
                   >
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
+                      <div className={s['up-detail-title']}>
                           詳細オプション
                       </div>
-                      <div
-                          style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 8,
-                          }}
-                      >
-                          <div
-                              style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                              }}
-                          >
+                      <div className={s['up-detail-col']}>
+                          <div className={s['up-detail-row']}>
                               <div>
                                   <div
+                                      className={s['up-detail-name']}
                                       style={{
-                                          fontSize: 12,
-                                          fontWeight: 500,
                                           color: mask.address
                                               ? T.text
                                               : T.text3,
@@ -5795,7 +4574,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   >
                                       都道府県を残す
                                   </div>
-                                  <div style={{ fontSize: 12, color: T.text3 }}>
+                                  <div className={s['up-detail-desc']}>
                                       住所マスク時に在住エリアだけ公開
                                   </div>
                               </div>
@@ -5811,24 +4590,15 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   disabled={!mask.address}
                               />
                           </div>
-                          <div
-                              style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                              }}
-                          >
+                          <div className={s['up-detail-row']}>
                               <div>
                                   <div
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 500,
-                                          color: mask.name ? T.text : T.text3,
-                                      }}
+                                      className={s['up-detail-name']}
+                                      style={{ color: mask.name ? T.text : T.text3 }}
                                   >
                                       氏名イニシャル化
                                   </div>
-                                  <div style={{ fontSize: 12, color: T.text3 }}>
+                                  <div className={s['up-detail-desc']}>
                                       田中太郎 → T.T.（フリガナから変換）
                                   </div>
                               </div>
@@ -5847,10 +4617,10 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </div>
                   </div>}
                   {/* カスタムキーワード */}
-                  {!isLite && <div data-intro="custom-keywords" style={{marginTop:12,padding:'10px 12px',borderRadius:10,background:T.bg,border:`1px solid ${T.border}`}}>
-                    <div style={{fontSize:12,fontWeight:600,color:T.text2,marginBottom:8}}>カスタムキーワード</div>
-                    <div style={{fontSize:11,color:T.text3,marginBottom:8}}>任意の文字列を指定してマスキング対象に追加</div>
-                    <div style={{display:'flex',gap:6,marginBottom:8}}>
+                  {!isLite && <div data-intro="custom-keywords" className={s['up-kw-section']}>
+                    <div className={s['up-kw-title']}>カスタムキーワード</div>
+                    <div className={s['up-kw-desc']}>任意の文字列を指定してマスキング対象に追加</div>
+                    <div className={s['up-kw-input-row']}>
                       <input
                         type="text"
                         value={customInput}
@@ -5858,7 +4628,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                         onKeyDown={(e)=>{if(e.key==='Enter'&&customInput.trim()){e.preventDefault();const kw=customInput.trim();if(!customKeywords.includes(kw)){setCustomKeywords(p=>[...p,kw]);}setCustomInput("");}}}
                         placeholder="マスクしたい文字列を入力"
                         aria-label="カスタムキーワード入力"
-                        style={{flex:1,padding:'6px 10px',fontSize:12,borderRadius:6,border:`1px solid ${T.border}`,background:T.bg2||T.bg,color:T.text,outline:'none'}}
+                        className={s['up-kw-input']}
                       />
                       <button
                         type="button"
@@ -5868,7 +4638,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       >追加</button>
                     </div>
                     {customKeywords.length>0&&(
-                      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+                      <div className={s['up-kw-tags']}>
                         {customKeywords.map((kw,i)=>(
                           <span key={i} style={{display:'inline-flex',alignItems:'center',gap:4,padding:'3px 8px',fontSize:11,borderRadius:12,background:CATEGORIES.custom.bg,color:CATEGORIES.custom.color,border:`1px solid ${CATEGORIES.custom.color}20`}}>
                             {kw}
@@ -5879,14 +4649,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </div>
                     )}
                   </div>}
-                  {!isLite && <div
-                      style={{
-                          marginTop: 10,
-                          display: 'flex',
-                          gap: 6,
-                          flexWrap: 'wrap',
-                      }}
-                  >
+                  {!isLite && <div className={s['up-badge-wrap']}>
                       {Object.entries(mask)
                           .filter(([, v]) => v)
                           .map(([k]) => {
@@ -5920,21 +4683,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       role="button" tabIndex={0}
                       onClick={()=>{if(onSwitchPro)onSwitchPro();}}
                       onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&onSwitchPro){e.preventDefault();onSwitchPro();}}}
+                      className={s['up-pro-cta']}
                       style={{
-                        marginTop:12,padding:'12px 16px',borderRadius:10,
                         background:`${C.accent}10`,
                         border:`1px solid ${C.accent}20`,
-                        cursor:'pointer',display:'flex',alignItems:'center',gap:10,
-                        transition:'all .2s',
                       }}
-                      onMouseEnter={e=>e.currentTarget.style.borderColor=`${C.accent}40`}
-                      onMouseLeave={e=>e.currentTarget.style.borderColor=`${C.accent}20`}
                     >
                       <div style={{flex:1}}>
-                        <div style={{fontSize:12,fontWeight:600,color:T.text}}>
+                        <div className={s['up-pro-cta-title']}>
                           Pro版に切替
                         </div>
-                        <div style={{fontSize:11,color:T.text3,marginTop:2}}>
+                        <div className={s['up-pro-cta-desc']}>
                           AI検出・URL取込・バッチ処理・カスタムキーワード等
                         </div>
                       </div>
@@ -5949,16 +4708,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   <div>
                       {!isLite && <div
                           data-intro="input-tabs"
-                          className='rp-input-tabs'
-                          style={{
-                              display: 'flex',
-                              gap: 0,
-                              marginBottom: 0,
-                              borderRadius: '12px 12px 0 0',
-                              overflow: 'hidden',
-                              border: `1px solid ${T.border}`,
-                              borderBottom: 'none',
-                          }}
+                          className={`rp-input-tabs ${s['up-input-tabs']}`}
                       >
                           {[
                               {
@@ -5980,45 +4730,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               <button
                                   key={tab.id}
                                   onClick={() => setInputMode(tab.id)}
-                                  style={{
-                                      flex: 1,
-                                      padding: '12px 8px',
-                                      border: 'none',
-                                      background:
-                                          inputMode === tab.id
-                                              ? T.surface
-                                              : T.bg2,
-                                      cursor: 'pointer',
-                                      fontSize: 12,
-                                      fontWeight:
-                                          inputMode === tab.id ? 700 : 500,
-                                      color:
-                                          inputMode === tab.id
-                                              ? T.accent
-                                              : T.text3,
-                                      borderBottom:
-                                          inputMode === tab.id
-                                              ? `2px solid ${T.accent}`
-                                              : `2px solid transparent`,
-                                      transition: 'all .15s',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      gap: 6,
-                                  }}
+                                  className={s['up-input-tab']}
+                                  data-active={inputMode === tab.id}
                               >
                                   {tab.icon} {tab.label}
                               </button>
                           ))}
                       </div>}
                       <div
-                          style={{
-                              border: `1px solid ${T.border}`,
-                              borderTop: isLite ? undefined : 'none',
-                              borderRadius: isLite ? 14 : '0 0 12px 12px',
-                              background: T.bg2,
-                              overflow: 'hidden',
-                          }}
+                          className={s['up-input-body']}
+                          data-top={isLite ? 'none' : 'file'}
+                          style={isLite ? undefined : {borderTop:'none'}}
                       >
                           {(isLite || inputMode === 'file') && (
                               <div
@@ -6036,18 +4758,9 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       if(!isLite&&fl&&fl.length>1&&onSubmitBatch){onSubmitBatch(Array.from(fl),mask,customKeywords);return;}
                                       handleFile(fl?.[0]);
                                   }}
-                                  style={{
-                                      padding: isLite ? '56px 32px' : '44px 32px',
-                                      display: 'flex',
-                                      flexDirection: 'column',
-                                      alignItems: 'center',
-                                      gap: 14,
-                                      cursor: 'pointer',
-                                      transition: 'all .25s',
-                                      background: dragOver
-                                          ? T.accentDim
-                                          : T.bg2,
-                                  }}
+                                  className={s['up-zone']}
+                                  data-drag={dragOver}
+                                  style={{ padding: isLite ? '56px 32px' : '44px 32px' }}
                               >
                                   <input
                                       aria-label="ファイルを選択"
@@ -6077,22 +4790,10 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       <line x1='12' y1='3' x2='12' y2='15' />
                                   </svg>
                                   <div style={{ textAlign: 'center' }}>
-                                      <p
-                                          style={{
-                                              fontSize: 15,
-                                              fontWeight: 600,
-                                              color: T.text,
-                                          }}
-                                      >
+                                      <p className={s['up-zone-title']}>
                                           ファイルをドラッグ＆ドロップ
                                       </p>
-                                      <p
-                                          style={{
-                                              fontSize: 12,
-                                              color: T.text3,
-                                              marginTop: 4,
-                                          }}
-                                      >
+                                      <p className={s['up-zone-desc']}>
                                           PDF / Word / Excel / ODS / CSV /
                                           Markdown / HTML / RTF / JSON / ODT /
                                           TXT
@@ -6101,55 +4802,21 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               </div>
                           )}
                           {inputMode === 'url' && (
-                              <div style={{ padding: '24px 24px 28px' }}>
-                                  <div
-                                      style={{
-                                          fontSize: 13,
-                                          fontWeight: 600,
-                                          color: T.text,
-                                          marginBottom: 4,
-                                      }}
-                                  >
+                              <div className={s['up-section-pad']}>
+                                  <div className={s['up-section-title']}>
                                       URLからスクレイピング
                                   </div>
-                                  <p
-                                      style={{
-                                          fontSize: 12,
-                                          color: T.text3,
-                                          marginBottom: 10,
-                                          lineHeight: 1.6,
-                                      }}
-                                  >
+                                  <p className={s['up-section-desc']} style={{ marginBottom: 10 }}>
                                       Webページの職務経歴書・ポートフォリオをそのまま取得してマスキングします
                                   </p>
-                                  <div
-                                      style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 8,
-                                          marginBottom: 12,
-                                      }}
-                                  >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                                       <button
                                           ref={urlHelpTriggerRef}
                                           onClick={() => setShowUrlHelp(true)}
                                           aria-haspopup='dialog'
                                           aria-expanded={showUrlHelp}
                                           title='URL取得の注意とヒントを表示'
-                                          style={{
-                                              display: 'inline-flex',
-                                              alignItems: 'center',
-                                              gap: 6,
-                                              padding: '6px 10px',
-                                              borderRadius: 8,
-                                              border: `1px solid ${T.border}`,
-                                              background: T.surface,
-                                              color: T.text2,
-                                              fontSize: 12,
-                                              fontWeight: 600,
-                                              cursor: 'pointer',
-                                              transition: 'all .15s',
-                                          }}
+                                          className={s['up-guide-help-btn']}
                                       >
                                           <svg
                                               width='14'
@@ -6179,13 +4846,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                           補足ガイド
                                       </button>
                                   </div>
-                                  <div
-                                      style={{
-                                          display: 'flex',
-                                          gap: 8,
-                                          marginBottom: 12,
-                                      }}
-                                  >
+                                  <div className={s['up-url-row']} style={{ marginBottom: 12 }}>
                                       <input
                                           aria-label="URLを入力"
                                           value={urlValue}
@@ -6200,41 +4861,25 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                                   handleURL()
                                           }}
                                           placeholder='https://example.com/resume'
-                                          style={{
-                                              flex: 1,
-                                              padding: '10px 14px',
-                                              borderRadius: 10,
-                                              border: `1px solid ${T.border}`,
-                                              background: T.surface,
-                                              color: T.text,
-                                              fontSize: 13,
-                                              fontFamily: T.mono,
-                                              outline: 'none',
-                                          }}
+                                          className={s['up-url-input']}
                                       />
                                       <button
                                           onClick={handleURL}
                                           disabled={
                                               !urlValue.trim() || urlFetching
                                           }
+                                          className={s['up-url-submit']}
                                           style={{
-                                              padding: '10px 20px',
-                                              borderRadius: 10,
-                                              border: 'none',
                                               background: urlValue.trim()
                                                   ? T.accent
                                                   : T.border,
                                               color: urlValue.trim()
                                                   ? '#fff'
                                                   : T.text3,
-                                              fontSize: 13,
-                                              fontWeight: 600,
                                               cursor: urlValue.trim()
                                                   ? 'pointer'
                                                   : 'default',
                                               opacity: urlFetching ? 0.6 : 1,
-                                              transition: 'all .15s',
-                                              whiteSpace: 'nowrap',
                                           }}
                                       >
                                           {urlFetching
@@ -6244,18 +4889,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   </div>
                                   {showUrlHelp && (
                                       <div
-                                          style={{
-                                              position: 'fixed',
-                                              inset: 0,
-                                              background: 'rgba(0,0,0,.55)',
-                                              backdropFilter: 'blur(4px)',
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              justifyContent: 'center',
-                                              zIndex: 120,
-                                              padding: 16,
-                                              animation: 'fadeIn .2s',
-                                          }}
+                                          className={s['up-guide-overlay']}
                                           onClick={(e) => {
                                               if (e.target === e.currentTarget)
                                                   closeUrlHelp()
@@ -6265,109 +4899,35 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                               role='dialog'
                                               aria-modal='true'
                                               aria-label='URLスクレイピングのガイド'
-                                              style={{
-                                                  width: '100%',
-                                                  maxWidth: 520,
-                                                  maxHeight: '90vh',
-                                                  overflow: 'auto',
-                                                  background: T.bg2,
-                                                  borderRadius: 14,
-                                                  border: `1px solid ${T.border}`,
-                                                  animation: 'fadeUp .25s ease',
-                                              }}
+                                              className={s['up-guide-dialog']}
                                           >
-                                              <div
-                                                  style={{
-                                                      padding: '12px 16px',
-                                                      borderBottom: `1px solid ${T.border}`,
-                                                      display: 'flex',
-                                                      alignItems: 'center',
-                                                      justifyContent:
-                                                          'space-between',
-                                                      position: 'sticky',
-                                                      top: 0,
-                                                      background: T.bg2,
-                                                  }}
-                                              >
-                                                  <div
-                                                      style={{
-                                                          fontSize: 14,
-                                                          fontWeight: 700,
-                                                          color: T.text,
-                                                      }}
-                                                  >
+                                              <div className={s['up-guide-header']}>
+                                                  <div className={s['up-guide-title']}>
                                                       URLスクレイピング ガイド
                                                   </div>
                                                   <button
                                                       ref={urlHelpCloseRef}
                                                       onClick={closeUrlHelp}
                                                       aria-label='閉じる'
-                                                      style={{
-                                                          width: 28,
-                                                          height: 28,
-                                                          borderRadius: 7,
-                                                          border: `1px solid ${T.border}`,
-                                                          background:
-                                                              'transparent',
-                                                          color: T.text2,
-                                                          cursor: 'pointer',
-                                                          fontSize: 13,
-                                                          display: 'flex',
-                                                          alignItems: 'center',
-                                                          justifyContent:
-                                                              'center',
-                                                      }}
+                                                      className={s['modal-close-btn']}
                                                   >
                                                       ×
                                                   </button>
                                               </div>
-                                              <div
-                                                  style={{
-                                                      padding: '16px 18px',
-                                                      display: 'flex',
-                                                      flexDirection: 'column',
-                                                      gap: 14,
-                                                  }}
-                                              >
+                                              <div className={s['up-guide-body']}>
                                                   <div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              fontWeight: 700,
-                                                              color: T.text,
-                                                              marginBottom: 6,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-title']}>
                                                           対象外/非推奨
                                                       </div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.text2,
-                                                              lineHeight: 1.7,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-text']}>
                                                           SNS/テックブログ系のURLは情報が断片的で、マスク後に内容がほぼ残らないためURLスクレイピングは非推奨です。必要に応じて「テキスト/HTML貼付」やPDFでの取り込みをご利用ください。
                                                       </div>
                                                   </div>
                                                   <div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              fontWeight: 700,
-                                                              color: T.text,
-                                                              marginBottom: 6,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-title']}>
                                                           取得の安定化
                                                       </div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.text2,
-                                                              lineHeight: 1.7,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-text']}>
                                                           {settings?.proxyUrl ? (
                                                               <>
                                                                   自前プロキシ設定済。URL取得は安定して動作します。
@@ -6378,35 +4938,16 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                                               </>
                                                           )}
                                                       </div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.text3,
-                                                              marginTop: 6,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-tip']}>
                                                           Tip:
                                                           取得失敗時は「テキスト/HTML貼付」タブへ。Ctrl+U→ソースコピーで確実に取り込めます。
                                                       </div>
                                                   </div>
                                                   <div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              fontWeight: 700,
-                                                              color: T.text,
-                                                              marginBottom: 6,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-title']}>
                                                           非対応サイト
                                                       </div>
-                                                      <div
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.text2,
-                                                              lineHeight: 1.7,
-                                                          }}
-                                                      >
+                                                      <div className={s['up-guide-section-text']}>
                                                           Canva / Figma / Notion
                                                           / Google Docs
                                                           はSPAのため取得不可。PDF保存
@@ -6420,25 +4961,11 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               </div>
                           )}
                           {inputMode === 'paste' && (
-                              <div style={{ padding: '24px 24px 28px' }}>
-                                  <div
-                                      style={{
-                                          fontSize: 13,
-                                          fontWeight: 600,
-                                          color: T.text,
-                                          marginBottom: 4,
-                                      }}
-                                  >
+                              <div className={s['up-section-pad']}>
+                                  <div className={s['up-section-title']}>
                                       テキストまたはHTMLソースを貼付
                                   </div>
-                                  <p
-                                      style={{
-                                          fontSize: 12,
-                                          color: T.text3,
-                                          marginBottom: 14,
-                                          lineHeight: 1.6,
-                                      }}
-                                  >
+                                  <p className={s['up-section-desc']} style={{ marginBottom: 14 }}>
                                       職務経歴書のテキストをコピー＆ペースト、またはHTMLソースを貼り付けてください
                                   </p>
                                   <textarea
@@ -6450,36 +4977,10 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       placeholder={
                                           'ここにテキストまたはHTMLを貼り付け...\n\n例:\n・職務経歴書のテキスト全文\n・Ctrl+U でコピーしたHTMLソース\n・Wantedlyプロフィールのコピー'
                                       }
-                                      style={{
-                                          width: '100%',
-                                          minHeight: 160,
-                                          padding: '12px 14px',
-                                          borderRadius: 10,
-                                          border: `1px solid ${T.border}`,
-                                          background: T.surface,
-                                          color: T.text,
-                                          fontSize: 12,
-                                          fontFamily: T.mono,
-                                          lineHeight: 1.7,
-                                          resize: 'vertical',
-                                          outline: 'none',
-                                          boxSizing: 'border-box',
-                                      }}
+                                      className={s['up-paste-textarea']}
                                   />
-                                  <div
-                                      style={{
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'space-between',
-                                          marginTop: 10,
-                                      }}
-                                  >
-                                      <div
-                                          style={{
-                                              fontSize: 12,
-                                              color: T.text3,
-                                          }}
-                                      >
+                                  <div className={s['up-paste-footer']}>
+                                      <div className={s['up-paste-meta']}>
                                           {pasteValue.trim() ? (
                                               <>
                                                   {/<[a-z][\s\S]*>/i.test(
@@ -6515,22 +5016,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       <button
                                           onClick={handlePaste}
                                           disabled={!pasteValue.trim()}
+                                          className={s['up-paste-submit']}
                                           style={{
-                                              padding: '10px 24px',
-                                              borderRadius: 10,
-                                              border: 'none',
                                               background: pasteValue.trim()
                                                   ? T.accent
                                                   : T.border,
                                               color: pasteValue.trim()
                                                   ? '#fff'
                                                   : T.text3,
-                                              fontSize: 13,
-                                              fontWeight: 600,
                                               cursor: pasteValue.trim()
                                                   ? 'pointer'
                                                   : 'default',
-                                              transition: 'all .15s',
                                           }}
                                       >
                                           解析開始
@@ -6541,15 +5037,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </div>
                   </div>
                   {error && (
-                      <div
-                          style={{
-                              padding: '10px 16px',
-                              borderRadius: 10,
-                              background: T.redDim,
-                              color: T.red,
-                              fontSize: 13,
-                          }}
-                      >
+                      <div className={s['up-error']}>
                           ! {error}
                       </div>
                   )}
@@ -6581,30 +5069,13 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   )}
                   {!isLite && <div
                       data-intro="sample-files"
-                      style={{
-                          background: T.surface,
-                          border: `1px solid ${T.border}`,
-                          borderRadius: 14,
-                          padding: '16px 20px',
-                      }}
+                      className={s['up-samples-card']}
                   >
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 12,
-                          }}
-                      >
+                      <div className={s['up-samples-title']}>
                           テストサンプルで動作確認
                       </div>
                       <div
-                          className='rp-upload-grid'
-                          style={{
-                              display: 'grid',
-                              gridTemplateColumns: '1fr 1fr',
-                              gap: 8,
-                          }}
+                          className={`rp-upload-grid ${s['up-samples-grid']}`}
                       >
                           {[
                               {
@@ -6631,58 +5102,25 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   desc: '詳細経歴書 3社分',
                                   color: C.purple,
                               },
-                          ].map((s) => (
+                          ].map((sm) => (
                               <button
-                                  key={s.type}
-                                  onClick={() => handleDemo(s.type)}
-                                  style={{
-                                      padding: '12px 14px',
-                                      borderRadius: 10,
-                                      border: `1px solid ${T.border}`,
-                                      background: T.bg2,
-                                      cursor: 'pointer',
-                                      textAlign: 'left',
-                                      transition: 'all .15s',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 10,
-                                  }}
+                                  key={sm.type}
+                                  onClick={() => handleDemo(sm.type)}
+                                  className={s['up-sample-btn']}
                               >
                                   <span
-                                      style={{
-                                          width: 8,
-                                          height: 8,
-                                          borderRadius: 4,
-                                          background: s.color,
-                                          flexShrink: 0,
-                                      }}
+                                      className={s['up-sample-dot']}
+                                      style={{ background: sm.color }}
                                   />
                                   <div>
-                                      <div
-                                          style={{
-                                              fontSize: 12,
-                                              fontWeight: 600,
-                                              color: T.text,
-                                          }}
-                                      >
-                                          {s.label}{' '}
-                                          <span
-                                              style={{
-                                                  fontSize: 12,
-                                                  color: T.text3,
-                                                  fontWeight: 400,
-                                              }}
-                                          >
+                                      <div className={s['up-sample-label']}>
+                                          {sm.label}{' '}
+                                          <span className={s['up-sample-sub']}>
                                               DEMO
                                           </span>
                                       </div>
-                                      <div
-                                          style={{
-                                              fontSize: 12,
-                                              color: T.text3,
-                                          }}
-                                      >
-                                          {s.desc}
+                                      <div className={s['up-sample-desc']}>
+                                          {sm.desc}
                                       </div>
                                   </div>
                               </button>
@@ -6693,20 +5131,12 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                           download="mock-resumes.zip"
                           title="モック履歴書一式をダウンロード（ZIP）"
                           aria-label="モック履歴書一式をダウンロード（ZIP）"
-                          style={{
-                              display:"flex",alignItems:"center",gap:8,
-                              marginTop:12,padding:"10px 14px",borderRadius:10,
-                              border:`1px solid ${T.border}`,background:T.bg2,
-                              cursor:"pointer",textDecoration:"none",
-                              transition:"all .15s",fontSize:12,color:T.text2,
-                          }}
-                          onMouseEnter={(e)=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.color=T.accent;}}
-                          onMouseLeave={(e)=>{e.currentTarget.style.borderColor=T.border;e.currentTarget.style.color=T.text2;}}
+                          className={s['up-zip-link']}
                       >
                           <span style={{fontSize:16}}>&#x1F4E6;</span>
                           <div>
-                              <div style={{fontWeight:600,color:"inherit"}}>モック履歴書一式 (ZIP)</div>
-                              <div style={{fontSize:11,color:T.text3}}>18種 / TXT・CSV・XLSX・HTML・MD・JSON・RTF・DOCX</div>
+                              <div className={s['up-zip-title']}>モック履歴書一式 (ZIP)</div>
+                              <div className={s['up-zip-desc']}>18種 / TXT・CSV・XLSX・HTML・MD・JSON・RTF・DOCX</div>
                           </div>
                       </a>
                   </div>}
@@ -6785,95 +5215,30 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
   const curModel=AI_MODELS.find(m=>m.id===model)||AI_MODELS[1];
   return (
       <>
-          <div
-              style={{
-                  position: 'fixed',
-                  inset: 0,
-                  background: 'rgba(0,0,0,.7)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 100,
-                  padding: 20,
-                  animation: 'fadeIn .2s',
-              }}
-          >
-              <div
-                  style={{
-                      width: '100%',
-                      maxWidth: 720,
-                      maxHeight: '90vh',
-                      background: T.bg2,
-                      borderRadius: 16,
-                      border: `1px solid ${T.border}`,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      overflow: 'hidden',
-                      animation: 'fadeUp .3s ease',
-                  }}
-              >
-                  <div
-                      style={{
-                          padding: '14px 22px',
-                          borderBottom: `1px solid ${T.border}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                      }}
-                  >
+          <div className={s['ai-overlay']}>
+              <div className={s['ai-dialog']}>
+                  <div className={s['ai-header']}>
                       <div>
-                          <div
-                              style={{
-                                  fontSize: 15,
-                                  fontWeight: 700,
-                                  color: T.text,
-                              }}
-                          >
+                          <div className={s['ai-title']}>
                               AI 再フォーマット
                           </div>
-                          <div style={{ fontSize: 12, color: T.text3 }}>
+                          <div className={s['ai-model-info']}>
                               Model: {curModel.label} --
                               マスキング維持のまま形式変換
                           </div>
                       </div>
                       <button
                           onClick={onClose}
-                          style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 7,
-                              border: `1px solid ${T.border}`,
-                              background: 'transparent',
-                              color: T.text2,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                          }}
+                          className={s['modal-close-btn']}
                       >
                           x
                       </button>
                   </div>
-                  <div style={{ flex: 1, overflow: 'auto', padding: 22 }}>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
+                  <div className={s['ai-body']}>
+                      <div className={s['ai-label']}>
                           プリセット
                       </div>
-                      <div
-                          style={{
-                              display: 'flex',
-                              gap: 8,
-                              flexWrap: 'wrap',
-                              marginBottom: 18,
-                          }}
-                      >
+                      <div className={s['ai-presets']}>
                           {PRESETS.map((p, i) => (
                               <button
                                   key={i}
@@ -6881,53 +5246,22 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
                                       setInstruction(p.prompt)
                                       gen(p.prompt)
                                   }}
-                                  style={{
-                                      padding: '8px 14px',
-                                      borderRadius: 9,
-                                      border: `1px solid ${T.border}`,
-                                      background: T.surface,
-                                      color: T.text,
-                                      fontSize: 12,
-                                      fontWeight: 500,
-                                      cursor: 'pointer',
-                                      fontFamily: T.font,
-                                  }}
+                                  className={s['ai-preset-btn']}
                               >
                                   {p.label}
                               </button>
                           ))}
                       </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
+                      <div className={s['ai-label']}>
                           カスタム指示
                       </div>
-                      <div
-                          style={{ display: 'flex', gap: 8, marginBottom: 18 }}
-                      >
+                      <div className={s['ai-custom-row']}>
                           <textarea
                               aria-label="カスタム指示"
                               value={instruction}
                               onChange={(e) => setInstruction(e.target.value)}
                               placeholder='例: 箇条書きで技術スキルを整理し...'
-                              style={{
-                                  flex: 1,
-                                  padding: '10px 14px',
-                                  borderRadius: 10,
-                                  border: `1px solid ${T.border}`,
-                                  background: T.surface,
-                                  color: T.text,
-                                  fontSize: 13,
-                                  fontFamily: T.font,
-                                  resize: 'vertical',
-                                  minHeight: 54,
-                                  outline: 'none',
-                              }}
+                              className={s['ai-textarea']}
                           />
                           <Btn
                               onClick={() => gen()}
@@ -6941,59 +5275,22 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
                           </Btn>
                       </div>
                       {error && (
-                          <div
-                              style={{
-                                  padding: '10px 14px',
-                                  borderRadius: 10,
-                                  background: T.redDim,
-                                  color: T.red,
-                                  fontSize: 12,
-                                  marginBottom: 14,
-                              }}
-                          >
+                          <div className={s['ai-error']}>
                               ! {error}
                           </div>
                       )}
                       {loading && (
-                          <div
-                              style={{
-                                  textAlign: 'center',
-                                  padding: '32px 20px',
-                              }}
-                          >
-                              <div
-                                  style={{
-                                      width: 36,
-                                      height: 36,
-                                      borderRadius: 18,
-                                      border: `3px solid ${T.border}`,
-                                      borderTopColor: T.accent,
-                                      animation: 'spin .8s linear infinite',
-                                      margin: '0 auto 14px',
-                                  }}
-                              />
-                              <p style={{ fontSize: 13, color: T.text2 }}>
+                          <div className={s['ai-loading']}>
+                              <div className={s['ai-loading-spinner']} />
+                              <p className={s['ai-loading-text']}>
                                   AIが再フォーマット中... ({curModel.label})
                               </p>
                           </div>
                       )}
                       {result && !loading && (
                           <div>
-                              <div
-                                  style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      marginBottom: 8,
-                                  }}
-                              >
-                                  <span
-                                      style={{
-                                          fontSize: 13,
-                                          fontWeight: 600,
-                                          color: T.text,
-                                      }}
-                                  >
+                              <div className={s['ai-result-header']}>
+                                  <span className={s['ai-result-title']}>
                                       生成結果
                                   </span>
                                   <div style={{ display: 'flex', gap: 6 }}>
@@ -7021,22 +5318,7 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
                                       </Btn>
                                   </div>
                               </div>
-                              <pre
-                                  style={{
-                                      padding: 18,
-                                      borderRadius: 12,
-                                      background: T.surface,
-                                      border: `1px solid ${T.border}`,
-                                      fontFamily: T.mono,
-                                      fontSize: 12,
-                                      lineHeight: 1.8,
-                                      color: T.text,
-                                      whiteSpace: 'pre-wrap',
-                                      wordBreak: 'break-word',
-                                      maxHeight: 300,
-                                      overflow: 'auto',
-                                  }}
-                              >
+                              <pre className={s['ai-result-pre']}>
                                   {result}
                               </pre>
                           </div>
@@ -7086,6 +5368,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const[advisorCostAlert,setAdvisorCostAlert]=useState("none");
   const[advisorDraft,setAdvisorDraft]=useState(null); // AI改善テキスト (string | null)
   const[advisorDraftLoading,setAdvisorDraftLoading]=useState(false);
+  const[advisorInputMode,setAdvisorInputMode]=useState("question"); // 'question' | 'rewrite'
   const[aiRateLimit,setAiRateLimit]=useState(null); // {remaining,limit}
   useEffect(()=>onRateLimitUpdate(rl=>setAiRateLimit(rl)),[]);
   const advisorEndRef=useRef(null);
@@ -7123,6 +5406,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
       case 'preview': setPreviewVisible(true);setSidebarCollapsed(false);
         // defer leftPct set after state updates
         setTimeout(()=>setLeftPct(30),0);break;
+      case 'advisor': setPreviewVisible(false);setSidebarCollapsed(false);
+        setTimeout(()=>setRightPct(55),0);break;
       case 'focus':   setPreviewVisible(false);setSidebarCollapsed(true);break;
     }
   },[]);
@@ -7212,14 +5497,17 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
 
   useEffect(()=>{advisorEndRef.current?.scrollIntoView({behavior:'smooth'});},[advisorMessages]);
 
-  // アドバイザー: 改善テキスト全文を生成
-  const handleAdvisorRewriteFull=useCallback(async()=>{
+  // アドバイザー: 改善テキスト全文を生成（userInstruction: ユーザーの自由入力指示）
+  const handleAdvisorRewriteFull=useCallback(async(userInstruction)=>{
     if(advisorDraftLoading)return;
     setAdvisorDraftLoading(true);
     try{
       const{callAdvisor}=await import('@/lib/advisor/call');
       const ctx=await buildCtx();
-      const userMsg={role:'user',content:`以下のマスキング済み経歴書テキストを改善してください:\n\n${redacted}`,timestamp:Date.now()};
+      const prompt=userInstruction
+        ?`以下の指示に従って経歴書テキストを改善してください:\n\n【指示】\n${userInstruction}\n\n【経歴書テキスト】\n${redacted}`
+        :`以下のマスキング済み経歴書テキストを改善してください:\n\n${redacted}`;
+      const userMsg={role:'user',content:prompt,timestamp:Date.now()};
       const result=await callAdvisor({messages:[userMsg],context:ctx,apiKey,model,modelMode:advisorModelMode,presetId:'rewrite-full'});
       setAdvisorLastModel(result.modelLabel);
       setAdvisorDraft(result.text);
@@ -7272,6 +5560,47 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     a.href=url;a.download=baseName+".html";document.body.appendChild(a);a.click();document.body.removeChild(a);
     URL.revokeObjectURL(url);
   },[editedText,redacted,previewFontType,baseName]);
+
+  // エディタ用キーボードショートカット
+  useEffect(()=>{
+    const handler=(e)=>{
+      const tag=document.activeElement?.tagName;
+      if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||document.activeElement?.isContentEditable)return;
+      if(e.metaKey||e.ctrlKey||e.altKey)return;
+      const hasRaw=data.rawText&&data.rawText!==data.fullText&&data.rawText!==data.text_preview;
+
+      switch(e.key){
+        case '1':e.preventDefault();setViewMode('original');break;
+        case '2':e.preventDefault();setViewMode('diff');break;
+        case '3':if(!isLite&&hasRaw){e.preventDefault();setViewMode('raw');}break;
+        case '4':if(!isLite&&hasRaw){e.preventDefault();setViewMode('raw-diff');}break;
+        case '5':if(!isLite&&aiResult){e.preventDefault();setViewMode('ai');}break;
+        case '6':if(!isLite&&aiResult){e.preventDefault();setViewMode('ai-diff');}break;
+        case 'm':case 'M':
+          if(!isLite){e.preventDefault();setShowRedacted(p=>!p);}break;
+        case 'p':case 'P':
+          if(!isLite){e.preventDefault();setPreviewVisible(p=>!p);}break;
+        case 'w':case 'W':
+          if(!isLite){
+            e.preventDefault();
+            setEditMode(p=>{
+              if(!p){setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);setPreviewVisible(true);return true;}
+              setEditedText(null);return false;
+            });
+          }break;
+        case 'i':case 'I':
+          if(!isLite){e.preventDefault();exportPrintPDF();}break;
+        case 'r':case 'R':
+          if(!isLite){e.preventDefault();setRightTab('detections');}break;
+        case 'a':case 'A':
+          if(!isLite){e.preventDefault();setRightTab('advisor');}break;
+        case 'c':case 'C':
+          e.preventDefault();handleCopy();break;
+      }
+    };
+    window.addEventListener('keydown',handler);
+    return()=>window.removeEventListener('keydown',handler);
+  },[isLite,aiResult,data,viewMode,redacted,exportPrintPDF,handleCopy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const exportWord=useCallback(()=>{
     const src=editedText??redacted;
@@ -7343,14 +5672,6 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     document.addEventListener('mouseup',onUp);
   },[]);
 
-  const dividerStyle={
-    cursor:'col-resize',
-    background:'transparent',
-    position:'relative',
-    zIndex:5,
-    transition:'background .15s',
-  };
-
   // CSS Grid列定義: 左パネルは常に1fr（残りスペースすべて）
   const centerCol=`minmax(280px,min(${Math.round(595*previewZoom)+48}px,42%))`;
   const gridCols=useMemo(()=>{
@@ -7397,34 +5718,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   overflow: 'hidden',
               }}
           >
-              <div
-                  style={{
-                      padding: '8px 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      borderBottom: `1px solid ${T.border}`,
-                      background: T.bg2,
-                      flexWrap: 'wrap',
-                      gap: 6,
-                      flexShrink: 0,
-                  }}
-              >
-                  <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          flexWrap: 'wrap',
-                      }}
-                  >
-                      <span
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text,
-                          }}
-                      >
+              <div className={s['ed-toolbar']}>
+                  <div className={s['ed-file-info']}>
+                      <span className={s['ed-file-name']}>
                           {data.file_name}
                       </span>
                       <Badge color={T.text3} bg={T.surfaceAlt}>
@@ -7476,45 +5772,25 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               title='マスク: 個人情報を隠した結果を表示'
                               aria-label='マスク: 個人情報を隠した結果を表示'
                               onClick={() => setViewMode('original')}
+                              className={s['ed-view-tab']}
                               style={{
-                                  padding: '5px 10px',
-                                  border: 'none',
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  fontFamily: T.font,
-                                  background:
-                                      viewMode === 'original'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  color:
-                                      viewMode === 'original'
-                                          ? T.accent
-                                          : T.text3,
+                                  background: viewMode === 'original' ? T.accentDim : 'transparent',
+                                  color: viewMode === 'original' ? T.accent : T.text3,
                               }}
                           >
-                              マスク
+                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.3 3 2 5.5L1.5 6.5C1.2 7.1 1.2 7.9 1.5 8.5L2 9.5C3.3 12 5.5 13.5 8 13.5C10.5 13.5 12.7 12 14 9.5L14.5 8.5C14.8 7.9 14.8 7.1 14.5 6.5L14 5.5C12.7 3 10.5 1.5 8 1.5Z" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.2"/></svg>
                           </button>
                           <button
                               title='Diff: 元テキストとマスク後の違いを並べて比較'
                               aria-label='Diff: 元テキストとマスク後の違いを並べて比較'
                               onClick={() => setViewMode('diff')}
+                              className={s['ed-view-tab']}
                               style={{
-                                  padding: '5px 10px',
-                                  border: 'none',
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  fontFamily: T.font,
-                                  background:
-                                      viewMode === 'diff'
-                                          ? T.amberDim
-                                          : 'transparent',
-                                  color:
-                                      viewMode === 'diff' ? T.amber : T.text3,
+                                  background: viewMode === 'diff' ? T.amberDim : 'transparent',
+                                  color: viewMode === 'diff' ? T.amber : T.text3,
                               }}
                           >
-                              Diff
+                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5 3v10M11 3v10M5 8h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M3 5L5 3l2 2M13 11l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                           </button>
                           {!isLite && hasRawText && (
                               <>
@@ -7522,47 +5798,25 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                       title='Raw: ファイルから抽出した生テキストを表示'
                                       aria-label='Raw: ファイルから抽出した生テキストを表示'
                                       onClick={() => setViewMode('raw')}
+                                      className={s['ed-view-tab']}
                                       style={{
-                                          padding: '5px 10px',
-                                          border: 'none',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          fontFamily: T.font,
-                                          background:
-                                              viewMode === 'raw'
-                                                  ? T.redDim
-                                                  : 'transparent',
-                                          color:
-                                              viewMode === 'raw'
-                                                  ? T.red
-                                                  : T.text3,
+                                          background: viewMode === 'raw' ? T.redDim : 'transparent',
+                                          color: viewMode === 'raw' ? T.red : T.text3,
                                       }}
                                   >
-                                      Raw
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 1.5h5l4 4v9H4a1 1 0 01-1-1v-11a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M9 1.5v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
                                   </button>
                                   <button
                                       title='Raw Diff: 生テキストとAI整形後の違いを比較'
                                       aria-label='Raw Diff: 生テキストとAI整形後の違いを比較'
                                       onClick={() => setViewMode('raw-diff')}
+                                      className={s['ed-view-tab']}
                                       style={{
-                                          padding: '5px 10px',
-                                          border: 'none',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          fontFamily: T.font,
-                                          background:
-                                              viewMode === 'raw-diff'
-                                                  ? 'rgba(240,86,86,0.15)'
-                                                  : 'transparent',
-                                          color:
-                                              viewMode === 'raw-diff'
-                                                  ? T.red
-                                                  : T.text3,
+                                          background: viewMode === 'raw-diff' ? 'rgba(240,86,86,0.15)' : 'transparent',
+                                          color: viewMode === 'raw-diff' ? T.red : T.text3,
                                       }}
                                   >
-                                      Raw Diff
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 1.5h4l3 3v4H3a1 1 0 01-1-1v-5a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M7 1.5v3h3" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M11 8v5a1 1 0 01-1 1H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M13 10l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                   </button>
                               </>
                           )}
@@ -7572,70 +5826,53 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                       title='AI整形: AIが読みやすく整形したテキストを表示'
                                       aria-label='AI整形: AIが読みやすく整形したテキストを表示'
                                       onClick={() => setViewMode('ai')}
+                                      className={s['ed-view-tab']}
                                       style={{
-                                          padding: '5px 10px',
-                                          border: 'none',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          fontFamily: T.font,
-                                          background:
-                                              viewMode === 'ai'
-                                                  ? T.purpleDim
-                                                  : 'transparent',
-                                          color:
-                                              viewMode === 'ai'
-                                                  ? T.purple
-                                                  : T.text3,
+                                          background: viewMode === 'ai' ? T.purpleDim : 'transparent',
+                                          color: viewMode === 'ai' ? T.purple : T.text3,
                                       }}
                                   >
-                                      AI整形
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
                                   </button>
                                   <button
                                       title='AI Diff: マスク結果とAI整形後の違いを比較'
                                       aria-label='AI Diff: マスク結果とAI整形後の違いを比較'
                                       onClick={() => setViewMode('ai-diff')}
+                                      className={s['ed-view-tab']}
                                       style={{
-                                          padding: '5px 10px',
-                                          border: 'none',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          fontFamily: T.font,
-                                          background:
-                                              viewMode === 'ai-diff'
-                                                  ? T.cyanDim
-                                                  : 'transparent',
-                                          color:
-                                              viewMode === 'ai-diff'
-                                                  ? T.cyan
-                                                  : T.text3,
+                                          background: viewMode === 'ai-diff' ? T.cyanDim : 'transparent',
+                                          color: viewMode === 'ai-diff' ? T.cyan : T.text3,
                                       }}
                                   >
-                                      AI Diff
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 2l1 3L10 6l-3 1L6 10 5 7 2 6l3-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M11 8v5a1 1 0 01-1 1H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M13 10l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                   </button>
                               </>
                           )}
                       </div>
                       {!isLite && !showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
-                          <Btn
+                          <button
                               data-intro="mask-toggle"
                               title={showRedacted ? 'マスク済みテキストを表示中（クリックで元文に切替）' : '元のテキストを表示中（クリックでマスク表示に切替）'}
-                              variant={showRedacted ? 'danger' : 'ghost'}
+                              aria-label={showRedacted ? 'マスク済みテキスト表示中' : '元テキスト表示中'}
                               onClick={() => setShowRedacted(!showRedacted)}
+                              className={s['ed-view-tab']}
                               style={{
-                                  padding: '6px 12px',
-                                  fontSize: 12,
+                                  background: showRedacted ? T.redDim : 'transparent',
+                                  color: showRedacted ? T.red : T.text3,
                                   borderRadius: 8,
+                                  border: `1px solid ${T.border}`,
                               }}
                           >
-                              {showRedacted ? 'マスク' : '元文'}
-                          </Btn>
+                              {showRedacted
+                                ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M6.5 6.5a2.5 2.5 0 003 3" stroke="currentColor" strokeWidth="1.2"/><path d="M2 7.5C3.3 5 5.5 3.5 8 3.5c1 0 1.9.2 2.8.6M14 7.5c-.6 1.2-1.4 2.2-2.4 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+                                : <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 3.5C5.5 3.5 3.3 5 2 7.5c1.3 2.5 3.5 4 6 4s4.7-1.5 6-4c-1.3-2.5-3.5-4-6-4z" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.2"/></svg>
+                              }
+                          </button>
                       )}
-                      {!isLite && <Btn
+                      {!isLite && <button
                           data-intro="edit-button"
                           title='編集: テキストを直接編集してA4プレビューに即反映'
-                          variant={editMode ? 'primary' : 'ghost'}
+                          aria-label={editMode ? '編集完了' : '編集'}
                           onClick={() => {
                               if(!editMode){
                                   setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
@@ -7646,14 +5883,16 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   setEditedText(null);
                               }
                           }}
+                          className={s['ed-view-tab']}
                           style={{
-                              padding: '6px 12px',
-                              fontSize: 12,
+                              background: editMode ? T.accentDim : 'transparent',
+                              color: editMode ? T.accent : T.text3,
                               borderRadius: 8,
+                              border: `1px solid ${editMode ? T.accent : T.border}`,
                           }}
                       >
-                          {editMode ? '編集完了' : '編集'}
-                      </Btn>}
+                          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L5 13H3v-2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M9.5 4.5l2 2" stroke="currentColor" strokeWidth="1.2"/></svg>
+                      </button>}
                       {!isLite && <>
                       <div style={{width:1,height:20,background:T.border,marginLeft:4,marginRight:2,flexShrink:0}}/>
                       <div style={{display:'flex',gap:2,alignItems:'center'}}>
@@ -7751,12 +5990,12 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       label='AI整形変更'
                   />
               ) : editMode ? (
-                  <div style={{flex:1,overflow:"auto",padding:0,background:T.bg,display:"flex",flexDirection:"column",minHeight:0}}>
-                      <div style={{padding:"6px 14px",borderBottom:`1px solid ${T.border}`,fontSize:12,color:T.text3,lineHeight:1.6,flexShrink:0,background:T.bg2}}>
+                  <div className={s['ed-edit-wrap']}>
+                      <div className={s['ed-edit-hint']}>
                           <span style={{fontWeight:600,color:T.text2}}>記法: </span>
-                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono}}>**太字**</code>
-                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono,marginLeft:6}}># 見出し</code>
-                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono,marginLeft:6}}>## 小見出し</code>
+                          <code className={s['ed-edit-code']}>**太字**</code>
+                          <code className={s['ed-edit-code']} style={{marginLeft:6}}># 見出し</code>
+                          <code className={s['ed-edit-code']} style={{marginLeft:6}}>## 小見出し</code>
                           <span style={{opacity:0.6,marginLeft:8}}>Markdown記法でA4プレビューに反映</span>
                       </div>
                       <textarea
@@ -7764,35 +6003,12 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           value={editedText??""}
                           onChange={(e)=>setEditedText(e.target.value)}
                           spellCheck={false}
-                          style={{
-                              flex:1,padding:"14px 16px",border:"none",outline:"none",resize:"none",
-                              fontFamily:T.mono,fontSize:12,lineHeight:1.8,color:T.text,
-                              background:T.bg,whiteSpace:"pre-wrap",wordBreak:"break-word",
-                          }}
+                          className={s['ed-edit-textarea']}
                       />
                   </div>
               ) : (
-                  <div
-                      style={{
-                          flex: 1,
-                          overflow: 'auto',
-                          padding: 24,
-                          background: T.bg,
-                          minHeight: 0,
-                      }}
-                  >
-                      <pre
-                          style={{
-                              fontFamily: T.mono,
-                              fontSize: 13,
-                              lineHeight: 1.9,
-                              color: T.text,
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-word',
-                              margin: 0,
-                              maxWidth: 740,
-                          }}
-                      >
+                  <div className={s['ed-text-view']}>
+                      <pre className={s['ed-text-pre']}>
                           {viewMode === 'original'
                               ? renderTextWithDetectionAnchors(
                                     data.text_preview,
@@ -7813,9 +6029,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   onMouseDown={startDrag('left')}
                   role="separator" aria-label="ドラッグでパネル幅を調整"
                   title="ドラッグでパネル幅を調整"
-                  style={{...dividerStyle,borderLeft:`1px solid ${T.border}`}}
-                  onMouseEnter={(e)=>{e.currentTarget.style.background=T.accentDim;}}
-                  onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
+                  className={s['ed-divider']}
               />
           )}
           {/* Center: A4 Preview Panel */}
@@ -7825,63 +6039,51 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   background:"#e5e7eb",minHeight:0,overflow:"hidden",
               }}>
                   {/* Preview toolbar */}
-                  <div style={{
-                      padding:"6px 12px",display:"flex",alignItems:"center",gap:6,
-                      borderBottom:`1px solid ${T.border}`,background:T.bg2,flexShrink:0,flexWrap:"wrap",
-                  }}>
-                      <span style={{fontSize:12,fontWeight:700,color:T.text}}>A4</span>
+                  <div className={s['ed-preview-toolbar']}>
+                      <span className={s['ed-preview-label']}>A4</span>
                       {editMode && (
                           <>
-                              <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" aria-label="ゴシック体に切替" style={{
-                                  padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
-                                  border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
-                                  background:previewFontType==="gothic"?T.accentDim:"transparent",
-                                  color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
-                              }}>ゴシック</button>
-                              <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" aria-label="明朝体に切替" style={{
-                                  padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
-                                  border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
-                                  background:previewFontType==="mincho"?T.accentDim:"transparent",
-                                  color:previewFontType==="mincho"?T.accent:T.text3,fontWeight:previewFontType==="mincho"?600:400,
-                              }}>明朝</button>
+                              <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" aria-label="ゴシック体に切替" className={s['ed-small-btn']}
+                                  style={{
+                                      border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
+                                      background:previewFontType==="gothic"?T.accentDim:"transparent",
+                                      color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
+                                  }}>ゴシック</button>
+                              <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" aria-label="明朝体に切替" className={s['ed-small-btn']}
+                                  style={{
+                                      border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
+                                      background:previewFontType==="mincho"?T.accentDim:"transparent",
+                                      color:previewFontType==="mincho"?T.accent:T.text3,fontWeight:previewFontType==="mincho"?600:400,
+                                  }}>明朝</button>
                           </>
                       )}
                       <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:4}}>
-                          <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小" aria-label="縮小"
-                              style={{width:22,height:22,borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font}}>
+                          <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小" aria-label="縮小" className={s['ed-zoom-btn']}>
                               &minus;
                           </button>
-                          <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット" aria-label="ズームをリセット"
-                              style={{padding:"2px 6px",borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text3,cursor:"pointer",fontSize:10,fontFamily:T.mono,fontWeight:600,minWidth:40,textAlign:"center"}}>
+                          <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット" aria-label="ズームをリセット" className={s['ed-zoom-label']}>
                               {Math.round(previewZoom*100)}%
                           </button>
-                          <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大" aria-label="拡大"
-                              style={{width:22,height:22,borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font}}>
+                          <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大" aria-label="拡大" className={s['ed-zoom-btn']}>
                               +
                           </button>
                       </div>
                       <span style={{flex:1}}/>
                       {editMode && (
                           <div style={{display:"flex",gap:4}}>
-                              <button onClick={exportPrintPDF} title="PDFとして印刷" aria-label="PDFとして印刷" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportPrintPDF} title="PDFとして印刷" aria-label="PDFとして印刷" className={s['ed-small-btn']}>
                                   PDF印刷
                               </button>
-                              <button onClick={exportHTML} title="HTML形式でダウンロード" aria-label="HTML形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportHTML} title="HTML形式でダウンロード" aria-label="HTML形式でダウンロード" className={s['ed-small-btn']}>
                                   HTML
                               </button>
-                              <button onClick={exportWord} title="Word形式でダウンロード" aria-label="Word形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportWord} title="Word形式でダウンロード" aria-label="Word形式でダウンロード" className={s['ed-small-btn']}>
                                   Word
                               </button>
                           </div>
                       )}
-                      <button onClick={()=>setShowDesign(true)} title="全画面編集" aria-label="全画面編集" style={{
-                          padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
-                          border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
-                      }}>&#x2197;</button>
-                      <button onClick={()=>{setPreviewVisible(false);setLeftPct(null);setRightPct(null);}} title="プレビューを閉じる" aria-label="プレビューを閉じる" style={{
-                          padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
-                          border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
-                      }}>&#x276F;</button>
+                      <button onClick={()=>setShowDesign(true)} title="全画面編集" aria-label="全画面編集" className={s['ed-small-icon-btn']}>&#x2197;</button>
+                      <button onClick={()=>{setPreviewVisible(false);setLeftPct(null);setRightPct(null);}} title="プレビューを閉じる" aria-label="プレビューを閉じる" className={s['ed-small-icon-btn']}>&#x276F;</button>
                   </div>
                   {/* Preview content */}
                   {editMode ? (
@@ -7915,15 +6117,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   role="button" tabIndex={0} aria-label="A4プレビューを表示"
                   onClick={()=>{setPreviewVisible(true);setLeftPct(null);setRightPct(null);}}
                   onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPreviewVisible(true);setLeftPct(null);setRightPct(null);}}}
-                  style={{
-                      display:"flex",flexDirection:"column",
-                      alignItems:"center",justifyContent:"center",gap:8,
-                      background:T.bg2,borderRight:`1px solid ${T.border}`,
-                      cursor:"pointer",padding:"12px 0",transition:"background .15s",
-                  }}
+                  className={s['ed-collapsed-btn']}
+                  style={{borderRight:`1px solid ${T.border}`}}
                   title="A4プレビューを表示"
               >
-                  <span style={{writingMode:"vertical-rl",fontSize:12,fontWeight:600,color:T.text2,letterSpacing:1}}>A4</span>
+                  <span className={s['ed-collapsed-label']}>A4</span>
                   <span style={{fontSize:14,color:T.text3,marginTop:4}}>&#x276E;</span>
               </div>
           ))}
@@ -7933,9 +6131,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   onMouseDown={startDrag('right')}
                   role="separator" aria-label="ドラッグでパネル幅を調整"
                   title="ドラッグでパネル幅を調整"
-                  style={{...dividerStyle,borderLeft:`1px solid ${T.border}`}}
-                  onMouseEnter={(e)=>{e.currentTarget.style.background=T.accentDim;}}
-                  onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
+                  className={s['ed-divider']}
               />
           )}
           {/* Collapsed sidebar indicator */}
@@ -7944,16 +6140,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   role="button" tabIndex={0} aria-label="サイドバーを展開"
                   onClick={()=>{setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}
                   onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}}
-                  style={{
-                      display:"flex",flexDirection:"column",
-                      alignItems:"center",justifyContent:"center",gap:8,
-                      background:T.bg2,borderLeft:`1px solid ${T.border}`,
-                      cursor:"pointer",padding:"12px 0",
-                      transition:"background .15s",
-                  }}
+                  className={s['ed-collapsed-btn']}
+                  style={{borderLeft:`1px solid ${T.border}`}}
                   title="サイドバーを展開"
               >
-                  <span style={{writingMode:"vertical-rl",fontSize:12,fontWeight:600,color:T.text2,letterSpacing:1}}>検出結果</span>
+                  <span className={s['ed-collapsed-label']}>検出結果</span>
                   <Badge color={enabledCount>0?T.green:T.amber} bg={enabledCount>0?T.greenDim:T.amberDim} style={{writingMode:"horizontal-tb",fontSize:11,padding:"2px 6px"}}>
                       {enabledCount}/{detections.length}
                   </Badge>
@@ -7961,15 +6152,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               </div>
           )}
           <div
-              className='rp-editor-right'
-              style={{
-                  display: sidebarCollapsed?'none':'flex',
-                  flexDirection: 'column',
-                  minWidth: 0,
-                  minHeight: 0,
-                  overflow: 'hidden',
-                  background: T.bg2,
-              }}
+              className={`rp-editor-right ${s['ed-sidebar']}`}
+              style={{ display: sidebarCollapsed?'none':'flex' }}
           >
               {/* タブバー（Pro版: 検出結果 / アドバイザー） */}
               {!isLite && (
@@ -7977,13 +6161,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   {[{id:'detections',label:'検出結果',icon:'\u{1F4CB}',badge:`${enabledCount}/${detections.length}`},{id:'advisor',label:'アドバイザー',icon:'\u{1F4AC}',badge:advisorMessages.length>0?`${advisorMessages.filter(m=>m.role==='assistant').length}`:''}].map(tab=>(
                       <button key={tab.id} data-intro={tab.id==='advisor'?'advisor-tab':undefined}
                           onClick={()=>setRightTab(tab.id)}
-                          style={{flex:1,padding:'10px 8px',fontSize:13,fontWeight:rightTab===tab.id?700:500,
-                              color:rightTab===tab.id?T.text:T.text3,background:'transparent',border:'none',
-                              borderBottom:rightTab===tab.id?`2px solid ${T.accent}`:'2px solid transparent',
-                              cursor:'pointer',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                          className={s['ed-right-tab']}
+                          data-active={rightTab===tab.id?'true':'false'}
                       >
                           <span style={{fontSize:14}}>{tab.icon}</span>{tab.label}
-                          {tab.badge&&<span style={{fontSize:11,padding:'1px 6px',borderRadius:8,background:rightTab===tab.id?T.accentDim:T.surface,color:rightTab===tab.id?T.accent:T.text3}}>{tab.badge}</span>}
+                          {tab.badge&&<span className={s['ed-right-tab-badge']} style={{background:rightTab===tab.id?T.accentDim:T.surface,color:rightTab===tab.id?T.accent:T.text3}}>{tab.badge}</span>}
                       </button>
                   ))}
                   {!isLite && <button
@@ -7995,19 +6177,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               )}
               {/* 検出結果タブ */}
               <div style={{display:rightTab==='detections'||isLite?'flex':'none',flexDirection:'column',flex:1,overflow:'hidden'}}>
-              <div
-                  style={{
-                      padding: '14px 18px',
-                      borderBottom: `1px solid ${T.border}`,
-                  }}
-              >
+              <div className={s['ed-det-header']}>
                   <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: isLite?12:8,
-                      }}
+                      className={s['ed-det-top']}
+                      style={{ marginBottom: isLite?12:8 }}
                   >
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                           <div>
@@ -8260,15 +6433,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       ):null})()}
                   </div>}
               </div>
-              <div data-intro="detection-list" style={{ flex: 1, overflow: 'auto', padding: '6px 12px' }}>
+              <div data-intro="detection-list" className={s['ed-det-list']}>
                   {filtered.length === 0 ? (
-                      <div
-                          style={{
-                              textAlign: 'center',
-                              padding: '36px 20px',
-                              color: T.text3,
-                          }}
-                      >
+                      <div className={s['ed-det-empty']}>
                           <p style={{ fontSize: 12 }}>
                               該当する検出結果がありません
                           </p>
@@ -8292,30 +6459,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                       role="button" tabIndex={0}
                                       onClick={()=>toggleCatAccordion(cat)}
                                       onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleCatAccordion(cat);}}}
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 700,
-                                          color: meta.color,
-                                          padding: '8px 8px 3px',
-                                          letterSpacing: 0.5,
-                                          textTransform: 'uppercase',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 6,
-                                          cursor: 'pointer',
-                                          userSelect: 'none',
-                                      }}
+                                      className={s['ed-cat-header']}
+                                      style={{ color: meta.color }}
                                   >
                                       <span style={{fontSize:14,transition:'transform .15s',transform:catOpen?'rotate(90deg)':'rotate(0deg)',display:'inline-block',lineHeight:1}}>&#9654;</span>
-                                      <span
-                                          style={{
-                                              width: 6,
-                                              height: 6,
-                                              borderRadius: 3,
-                                              background: meta.color,
-                                              display: 'inline-block',
-                                          }}
-                                      />
+                                      <span className={s['ed-cat-dot']} style={{ background: meta.color }}/>
                                       {meta.label} ({items.length})
                                   </div>
                                   {catOpen && items.map((item) => (
@@ -8326,23 +6474,13 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                           onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();focusDetection(item.id);}}}
                                           aria-label={`${item.value} - 本文の該当箇所へジャンプ`}
                                           title='クリックで本文の該当箇所へジャンプ'
+                                          className={s['ed-det-item']}
                                           style={{
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: 10,
-                                              padding: '7px 10px',
-                                              marginBottom: 1,
-                                              borderRadius: 9,
-                                              background: item.enabled
-                                                  ? `${meta.color}0D`
-                                                  : 'transparent',
+                                              background: item.enabled ? `${meta.color}0D` : 'transparent',
                                               border: `1px solid ${item.enabled ? `${meta.color}1A` : 'transparent'}`,
-                                              boxShadow:
-                                                  focusDetId === item.id
-                                                      ? '0 0 0 2px rgba(76,133,246,.35), 0 0 0 8px rgba(76,133,246,.10)'
-                                                      : 'none',
-                                              cursor: 'pointer',
-                                              transition: 'all .2s',
+                                              boxShadow: focusDetId === item.id
+                                                  ? '0 0 0 2px rgba(76,133,246,.35), 0 0 0 8px rgba(76,133,246,.10)'
+                                                  : 'none',
                                           }}
                                       >
                                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -8419,24 +6557,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                                       )}
                                               </div>
                                               <div
-                                                  style={{
-                                                      fontSize: 12,
-                                                      fontWeight: 500,
-                                                      color: item.enabled
-                                                          ? T.text
-                                                          : T.text3,
-                                                      fontFamily: T.mono,
-                                                      overflow: 'hidden',
-                                                      textOverflow: 'ellipsis',
-                                                      whiteSpace: 'nowrap',
-                                                      textDecoration:
-                                                          item.enabled
-                                                              ? 'none'
-                                                              : 'line-through',
-                                                      opacity: item.enabled
-                                                          ? 1
-                                                          : 0.5,
-                                                  }}
+                                                  className={s['ed-det-value']}
+                                                  data-enabled={item.enabled?'true':'false'}
+                                                  style={{ color: item.enabled ? T.text : T.text3 }}
                                               >
                                                   {item.value}
                                               </div>
@@ -8456,14 +6579,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               </div>
               <div
                   data-intro="export-buttons"
-                  style={{
-                      padding: '10px 16px 16px',
-                      borderTop: `1px solid ${T.border}`,
-                      background: T.bg2,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 7,
-                  }}
+                  className={s['ed-footer']}
               >
                   {!isLite && <Btn
                       data-intro="ai-reformat"
@@ -8502,7 +6618,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   >
                       {editMode ? '編集完了 / プレビューを閉じる' : 'PDF プレビュー・編集'}
                   </Btn>}
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className={s['ed-btn-row']}>
                       <Btn
                           title='マスキング結果をプレビュー'
                           variant='ghost'
@@ -8536,7 +6652,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           {copied ? '\u2713' : 'Copy'}
                       </Btn>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className={s['ed-btn-row']}>
                       {!isLite && <Btn
                           data-intro="detection-report"
                           title='検出結果の詳細レポートを表示'
@@ -8720,56 +6836,73 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   )}
                   <div ref={advisorEndRef}/>
               </div>
-              {/* アクションボタン（入力欄の上に固定） */}
-              <div style={{flexShrink:0,padding:'8px 14px',borderTop:`1px solid ${T.border}`,display:'flex',gap:4}}>
-                  <button
-                      onClick={()=>setShowJobInput(p=>!p)}
-                      style={{flex:1,padding:'8px 10px',fontSize:12,fontWeight:600,
-                          color:T.bg,background:T.accent,
-                          border:'none',borderRadius:8,cursor:'pointer',transition:'opacity .15s',
-                          opacity:advisorLoading?0.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
-                      disabled={advisorLoading}
-                      title='求人票テキストを貼り付けて経歴書との適合度を分析'
-                  >
-                      <span style={{fontSize:14}}>&#x21C4;</span> 求人票
-                  </button>
-                  <button
-                      onClick={handleAdvisorRewriteFull}
-                      disabled={advisorDraftLoading||advisorLoading}
-                      title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
-                      style={{flex:1,padding:'8px 10px',fontSize:12,fontWeight:600,
-                          color:'#fff',background:'#15803d',
-                          border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
-                          transition:'opacity .15s',opacity:advisorDraftLoading||advisorLoading?0.5:1,
-                          display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
-                  >
-                      <span style={{fontSize:13}}>&#x21BB;</span> {advisorDraftLoading?'生成中...':'改善テキスト生成'}
-                  </button>
-              </div>
-              {advisorDraft&&<div style={{fontSize:10,color:'#22c55e',fontWeight:500,textAlign:'center',padding:'0 14px 4px'}}>差分プレビューを左パネルに表示中</div>}
-              {/* 入力欄 */}
-              <div style={{padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
-                  <textarea
-                      rows={2}
-                      value={advisorInput}
-                      onChange={e=>setAdvisorInput(e.target.value)}
-                      onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();handleAdvisorSend();}}}
-                      placeholder="質問を入力..."
-                      disabled={advisorLoading}
-                      style={{flex:1,padding:'8px 12px',fontSize:13,color:T.text,background:T.surface,
-                          border:`1px solid ${T.border}`,borderRadius:8,outline:'none',fontFamily:'inherit',
-                          resize:'vertical',minHeight:48,lineHeight:1.5}}
-                  />
-                  <button
-                      onClick={handleAdvisorSend}
-                      disabled={advisorLoading||!advisorInput.trim()}
-                      title="送信"
-                      style={{padding:'8px 14px',fontSize:13,fontWeight:600,color:'#fff',
-                          background:!advisorInput.trim()||advisorLoading?T.text3:T.accent,
-                          border:'none',borderRadius:8,cursor:!advisorInput.trim()||advisorLoading?'not-allowed':'pointer'}}
-                  >
-                      送信
-                  </button>
+              {advisorDraft&&<div style={{fontSize:10,color:'#22c55e',fontWeight:500,textAlign:'center',padding:'0 14px 4px',borderTop:`1px solid ${T.border}`}}>差分プレビューを左パネルに表示中</div>}
+              {/* モード切替タブ + 入力欄 */}
+              <div style={{flexShrink:0,borderTop:`1px solid ${T.border}`,background:T.bg2}}>
+                  <div style={{display:'flex',borderBottom:`1px solid ${T.border}`}}>
+                      {[
+                        {id:'question',label:'質問',icon:'\u{1F4AC}',desc:'AIアドバイザーに相談（経歴書は変更されません）'},
+                        {id:'rewrite',label:'指示 → 経歴書に反映',icon:'\u270F\uFE0F',desc:'指示を元にAIが経歴書を改善 → 差分プレビューで確認'},
+                      ].map(tab=>(
+                        <button key={tab.id} title={tab.desc}
+                          onClick={()=>setAdvisorInputMode(tab.id)}
+                          style={{flex:1,padding:'6px 8px',fontSize:11,fontWeight:advisorInputMode===tab.id?700:500,
+                            color:advisorInputMode===tab.id?(tab.id==='rewrite'?'#22c55e':T.accent):T.text3,
+                            background:advisorInputMode===tab.id?T.bg:'transparent',
+                            border:'none',borderBottom:advisorInputMode===tab.id?`2px solid ${tab.id==='rewrite'?'#22c55e':T.accent}`:'2px solid transparent',
+                            cursor:'pointer',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                        >
+                          <span style={{fontSize:12}}>{tab.icon}</span>{tab.label}
+                        </button>
+                      ))}
+                  </div>
+                  <div style={{padding:'10px 14px',display:'flex',gap:8,alignItems:'flex-end'}}>
+                      <textarea
+                          rows={2}
+                          value={advisorInput}
+                          onChange={e=>setAdvisorInput(e.target.value)}
+                          onKeyDown={e=>{
+                            if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){
+                              e.preventDefault();
+                              if(advisorInputMode==='rewrite'){
+                                handleAdvisorRewriteFull(advisorInput.trim()||undefined);
+                                setAdvisorInput("");
+                              }else{
+                                handleAdvisorSend();
+                              }
+                            }
+                          }}
+                          placeholder={advisorInputMode==='rewrite'
+                            ?'改善の指示を入力...（例: 技術スタックを最新に絞る）'
+                            :'質問を入力...（例: この経歴書の強みは？）'}
+                          disabled={advisorLoading||advisorDraftLoading}
+                          style={{flex:1,padding:'8px 12px',fontSize:13,color:T.text,background:T.surface,
+                              border:`1px solid ${advisorInputMode==='rewrite'?'#22c55e40':T.border}`,borderRadius:8,outline:'none',fontFamily:'inherit',
+                              resize:'vertical',minHeight:48,lineHeight:1.5}}
+                      />
+                      <button
+                          onClick={()=>{
+                            if(advisorInputMode==='rewrite'){
+                              handleAdvisorRewriteFull(advisorInput.trim()||undefined);
+                              setAdvisorInput("");
+                            }else{
+                              handleAdvisorSend();
+                            }
+                          }}
+                          disabled={advisorInputMode==='rewrite'?(advisorDraftLoading):(advisorLoading||!advisorInput.trim())}
+                          title={advisorInputMode==='rewrite'?'経歴書を改善（差分プレビューで確認）':'質問を送信'}
+                          style={{padding:'8px 14px',fontSize:13,fontWeight:600,color:'#fff',
+                              background:advisorInputMode==='rewrite'
+                                ?(advisorDraftLoading?T.text3:'#15803d')
+                                :(!advisorInput.trim()||advisorLoading?T.text3:C.green),
+                              border:'none',borderRadius:8,
+                              cursor:(advisorInputMode==='rewrite'?advisorDraftLoading:(advisorLoading||!advisorInput.trim()))?'not-allowed':'pointer'}}
+                      >
+                          {advisorInputMode==='rewrite'
+                            ?(advisorDraftLoading?'生成中...':'改善')
+                            :'送信'}
+                      </button>
+                  </div>
               </div>
           </div>
           )}
@@ -8837,6 +6970,7 @@ export default function App(){
   const batchAddRef=useRef(null);
   const[showSettings,setShowSettings]=useState(false);
   const[showHelp,setShowHelp]=useState(false);
+  const[showShortcuts,setShowShortcuts]=useState(false);
   const[edition,setEdition]=useState('lite');
   const isLite=edition==='lite';
   const switchEdition=useCallback((id)=>{
@@ -8911,6 +7045,39 @@ export default function App(){
     try{localStorage.setItem('rp_onboarding_done','1')}catch{}
     startTour();
   },[startTour]);
+
+  // グローバルキーボードショートカット
+  useEffect(()=>{
+    const handler=(e)=>{
+      // 入力要素フォーカス中は無効
+      const tag=document.activeElement?.tagName;
+      if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||document.activeElement?.isContentEditable)return;
+      // モーダル表示中はEsc以外無効
+      if(e.key==='Escape')return; // Escは各モーダルの独自ハンドラーに任せる
+      if(showSettings||showHelp||showWelcome||showShortcuts)return;
+      // 修飾キー付きはブラウザのデフォルトに任せる
+      if(e.metaKey||e.ctrlKey||e.altKey)return;
+
+      switch(e.key){
+        case 'd':case 'D':
+          e.preventDefault();
+          setIsDark(p=>{const next=!p;storage.set('rp_theme',next?'dark':'light');return next;});
+          break;
+        case '?':
+          e.preventDefault();setShowHelp(true);break;
+        case ',':
+          e.preventDefault();setShowSettings(true);break;
+        case 'k':case 'K':
+          e.preventDefault();setShowShortcuts(true);break;
+        case 'e':case 'E':
+          e.preventDefault();
+          switchEdition(edition==='lite'?'pro':'lite');
+          break;
+      }
+    };
+    window.addEventListener('keydown',handler);
+    return()=>window.removeEventListener('keydown',handler);
+  },[showSettings,showHelp,showWelcome,showShortcuts,edition,switchEdition]);
 
   const curProv=AI_PROVIDERS.find(p=>p.id===settings.provider)||AI_PROVIDERS[0];
   const curModel=curProv.models.find(m=>m.id===settings.model)||curProv.models[0];
@@ -9007,91 +7174,47 @@ export default function App(){
   return (
       <div
           data-theme={isDark ? 'dark' : 'light'}
-          style={{
-              fontFamily: T.font,
-              background: T.bg,
-              color: T.text,
-              minHeight: '100vh',
-          }}
+          className={s['app-root']}
+          style={{ fontFamily: T.font, background: T.bg, color: T.text }}
       >
-          <style>{CSS}</style>
-          <header
-              className='rp-header'
-              style={{
-                  height: 52,
-                  padding: '0 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderBottom: `1px solid ${T.border}`,
-                  background: T.bg2,
-              }}
-          >
+          <header className={`rp-header ${s['app-header']}`}>
               <nav
                   aria-label='グローバルナビゲーション'
-                  style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                  className={s['app-nav']}
               >
                   <a
                       href='./'
                       aria-label='トップページへ戻る'
-                      style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          textDecoration: 'none',
-                          color: 'inherit',
-                      }}
+                      className={s['app-logo-link']}
                   >
-                      <div
-                          style={{
-                              width: 24,
-                              height: 24,
-                              borderRadius: 5,
-                              background: T.text,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'flex-start',
-                              justifyContent: 'center',
-                              padding: '0 5px',
-                              gap: 3,
-                          }}
-                      >
-                          <div style={{width:14,height:3,borderRadius:1,background:T.bg}} />
-                          <div style={{width:10,height:3,borderRadius:1,background:T.bg}} />
+                      <div className={s['app-logo-icon']}>
+                          <div className={s['app-logo-bar1']} />
+                          <div className={s['app-logo-bar2']} />
                       </div>
-                      <span
-                          style={{
-                              fontSize: 16,
-                              fontWeight: 700,
-                              letterSpacing: 0.5,
-                          }}
-                      >
+                      <span className={s['app-logo-text']}>
                           Sumi
                       </span>
                   </a>
-                  <div data-intro="header-edition-toggle" role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
+                  <div data-intro="header-edition-toggle" role="radiogroup" aria-label="エディション切替" className={s['app-edition-toggle']}>
                       {[{id:'lite',label:'Lite',sub:'シンプル'},{id:'pro',label:'Pro',sub:'全機能'}].map(ed=>(
                         <button key={ed.id} role="radio" aria-checked={edition===ed.id}
                           onClick={()=>switchEdition(ed.id)}
                           onMouseEnter={e=>{if(edition!==ed.id)e.currentTarget.style.background=T.surfaceAlt}}
                           onMouseLeave={e=>{if(edition!==ed.id)e.currentTarget.style.background='transparent'}}
+                          className={s['app-edition-btn']}
                           style={{
-                          padding:'5px 14px',border:'none',cursor:'pointer',
                           background:edition===ed.id?(ed.id==='pro'?C.accent:T.text3):'transparent',
                           color:edition===ed.id?'#fff':T.text2,
-                          transition:'background .2s ease-out, color .2s ease-out',
-                          display:'flex',alignItems:'center',gap:4,
                         }}>
                           {ed.label}
-                          <span style={{fontSize:10,fontWeight:400,opacity:edition===ed.id?0.85:0.6}}>{ed.sub}</span>
+                          <span className={s['app-edition-sub']} style={{opacity:edition===ed.id?0.85:0.6}}>{ed.sub}</span>
                         </button>
                       ))}
                   </div>
               </nav>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className={s['app-header-right']}>
                   <div
-                      className='rp-header-badges'
-                      style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+                      className={`rp-header-badges ${s['app-header-badges']}`}
                   >
                       {(data||batchMode) && (
                           <Badge color={T.accent} bg={T.accentDim}>
@@ -9118,40 +7241,26 @@ export default function App(){
                       title='ダークモード切替'
                       aria-label='ダークモード切替'
                       onClick={() => { const next = !isDark; setIsDark(next); storage.set('rp_theme', next ? 'dark' : 'light') }}
-                      style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 8,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: T.text2,
-                          fontSize: 18,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                      }}
+                      className={s['app-icon-btn']}
+                      data-type='theme'
                   >
                       {isDark ? '☀️' : '🌙'}
+                  </button>
+                  <button
+                      title='キーボードショートカット'
+                      aria-label='キーボードショートカット一覧'
+                      onClick={() => setShowShortcuts(true)}
+                      className={s['app-icon-btn']}
+                      data-type='kbd'
+                  >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M8 16h8"/></svg>
                   </button>
                   <button
                       title='ヘルプ'
                       aria-label='ヘルプを表示'
                       onClick={() => setShowHelp(true)}
-                      style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 8,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: T.text2,
-                          fontSize: 15,
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                      }}
+                      className={s['app-icon-btn']}
+                      data-type='help'
                   >
                       ?
                   </button>
@@ -9160,30 +7269,11 @@ export default function App(){
                       title='設定'
                       aria-label='設定'
                       onClick={() => setShowSettings(true)}
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          height: 36,
-                          padding: '0 12px',
-                          borderRadius: 8,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: T.text2,
-                          fontSize: 13,
-                          fontFamily: T.font,
-                          fontWeight: 500,
-                      }}
+                      className={s['app-settings-btn']}
                   >
                       <span
-                          style={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: 4,
-                              background: curProv.color,
-                              flexShrink: 0,
-                          }}
+                          className={s['app-settings-dot']}
+                          style={{ background: curProv.color }}
                       />
                       <span>{settings.aiProfile==='balanced'?'Auto':curModel?.label || '設定'}</span>
                       <svg
@@ -9260,13 +7350,16 @@ export default function App(){
           {showHelp && (
               <HelpModal onClose={() => setShowHelp(false)} onStartTour={()=>{setShowHelp(false);startTour();}} onShowVideo={()=>{setShowHelp(false);setShowWelcome(true);}} />
           )}
+          {showShortcuts && (
+              <ShortcutsModal onClose={() => setShowShortcuts(false)} hasEditorContext={!!data||batchMode} />
+          )}
           {!isLite && !data && !batchMode && <ChatWidget />}
           {showWelcome && <WelcomeVideoModalWrapper onClose={handleWelcomeClose} onStartTour={handleWelcomeStartTour} />}
-          <footer style={{position:'fixed',bottom:0,left:0,right:0,display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'6px 16px',fontSize:11,color:T.text3,background:T.bg,borderTop:`1px solid ${T.border}`,zIndex:10}}>
+          <footer className={s['app-footer']}>
             <span>© {new Date().getFullYear()} Sumi</span>
-            <span style={{color:T.text3}}>|</span>
-            <span style={{cursor:'help',display:'flex',alignItems:'center',gap:4}} title="個人情報はブラウザの外に出ません。サーバーやDBへの保存・送信は一切行いません。AI機能利用時のみAPIに送信されますが、各社のAPI利用規約によりトレーニングには使用されません。"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>個人情報はブラウザの外に出ません</span>
-            <a href="https://github.com/BoxPistols/sumi" target="_blank" rel="noopener noreferrer" style={{color:T.text3,textDecoration:'none',display:'flex',alignItems:'center',gap:4,transition:'color .15s'}} onMouseEnter={e=>e.currentTarget.style.color=T.text} onMouseLeave={e=>e.currentTarget.style.color=T.text3}>
+            <span>|</span>
+            <span className={s['app-footer-privacy']} title="個人情報はブラウザの外に出ません。サーバーやDBへの保存・送信は一切行いません。AI機能利用時のみAPIに送信されますが、各社のAPI利用規約によりトレーニングには使用されません。"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>個人情報はブラウザの外に出ません</span>
+            <a href="https://github.com/BoxPistols/sumi" target="_blank" rel="noopener noreferrer" className={s['app-footer-link']}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
               GitHub
             </a>
