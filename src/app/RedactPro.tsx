@@ -163,24 +163,7 @@ const EXPORT_FORMATS=[
   {id:"docx",label:"Word",ext:".docx",icon:"W"},
 ];
 
-const CSS = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-[data-theme="dark"]{--rp-accent:#E7E5E4;--rp-accentDim:rgba(231,229,228,0.1);--rp-bg:#1C1917;--rp-bg2:#292524;--rp-surface:#292524;--rp-surfaceAlt:#44403C;--rp-border:#57534E;--rp-text:#E7E5E4;--rp-text2:#A8A29E;--rp-text3:#78716C;--rp-diffAdd:#1B3326;--rp-diffDel:#331B1B;--rp-diffAddBorder:#2A5A3A;--rp-diffDelBorder:#5A2A2A;--rp-scrollThumb:#57534E}
-[data-theme="light"]{--rp-accent:#1C1917;--rp-accentDim:rgba(28,25,23,0.06);--rp-bg:#FAF9F6;--rp-bg2:#FFFFFF;--rp-surface:#FFFFFF;--rp-surfaceAlt:#F5F5F4;--rp-border:#D6D3D1;--rp-text:#1C1917;--rp-text2:#57534E;--rp-text3:#78716C;--rp-diffAdd:#E8F5E9;--rp-diffDel:#FEE2E2;--rp-diffAddBorder:#A5D6A7;--rp-diffDelBorder:#FECACA;--rp-scrollThumb:#A8A29E}
-body{background:var(--rp-bg);font-size:14px}
-:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:2px;border-radius:4px}
-input:focus-visible,textarea:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:0}
-[role="button"]:focus-visible{outline:2px solid var(--rp-accent)!important;outline-offset:2px;border-radius:4px}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--rp-scrollThumb);border-radius:3px}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@keyframes slideIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
-@keyframes detFlashA{0%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(120,113,108,.45),0 0 0 10px rgba(120,113,108,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(120,113,108,.28),0 0 0 14px rgba(120,113,108,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}}
-@keyframes detFlashB{0%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}20%{box-shadow:0 0 0 2px rgba(120,113,108,.45),0 0 0 10px rgba(120,113,108,.12);filter:saturate(1.2)}60%{box-shadow:0 0 0 2px rgba(120,113,108,.28),0 0 0 14px rgba(120,113,108,.06);filter:saturate(1.15)}100%{box-shadow:0 0 0 0 rgba(120,113,108,0);filter:saturate(1)}}
-@media(max-width:768px){.rp-header-badges{display:none!important}.rp-editor-wrap{flex-direction:column!important}.rp-editor-left{border-right:none!important;border-bottom:1px solid var(--rp-border)!important;max-height:45vh!important}.rp-editor-right{max-width:none!important;min-width:0!important}.rp-upload-grid{grid-template-columns:1fr!important}.rp-upload-main{grid-template-columns:1fr!important}.rp-modal-inner{max-width:100%!important;max-height:100vh!important;border-radius:0!important}.rp-settings-models{grid-template-columns:1fr!important}.rp-view-tabs{flex-wrap:wrap!important}.rp-cat-grid{grid-template-columns:1fr!important}.rp-input-tabs button{font-size:12px!important;padding:10px 4px!important}.rp-design-controls{width:100%!important;max-height:40vh!important;border-right:none!important;border-bottom:1px solid var(--rp-border)!important}}
-@media(max-width:480px){.rp-header{padding:0 12px!important}.rp-header h1{font-size:14px!important}}`
+// CSS定数は src/styles/globals.css に外部化済み
 
 // ═══ Unified AI Call (via server-side proxy) ═══
 // 最新のレートリミット情報を保持（コンポーネントから参照）
@@ -9014,7 +8997,6 @@ export default function App(){
               minHeight: '100vh',
           }}
       >
-          <style>{CSS}</style>
           <header
               className='rp-header'
               style={{
