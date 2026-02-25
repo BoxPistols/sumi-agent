@@ -4469,16 +4469,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
               </div>
           </div>
           <div
-              className='rp-upload-main'
-              style={{
-                  display: isLite ? 'flex' : 'grid',
-                  flexDirection: isLite ? 'column' : undefined,
-                  gridTemplateColumns: isLite ? undefined : '1fr 1fr',
-                  gap: 24,
-                  maxWidth: isLite ? 720 : 1200,
-                  margin: '0 auto',
-                  alignItems: isLite ? 'stretch' : 'start',
-              }}
+              className={isLite ? s['up-main-lite'] : s['up-main-pro']}
           >
               <div className={s['up-card']}>
                   <div className={s['up-card-title']}>

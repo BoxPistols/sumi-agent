@@ -1846,6 +1846,36 @@
   animation: fadeUp 0.5s ease;
 }
 
+@media (max-width: 640px) {
+  .up-root {
+    padding: 20px 16px;
+  }
+}
+
+.up-main-lite {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 24px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.up-main-pro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+  .up-main-pro {
+    grid-template-columns: 1fr;
+  }
+}
+
 .up-hero {
   text-align: center;
 }
@@ -2951,6 +2981,7 @@
 
 .app-root {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .app-header {
@@ -3103,6 +3134,7 @@
   bottom: 0;
   left: 0;
   right: 0;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3113,6 +3145,15 @@
   background: var(--rp-bg);
   border-top: 1px solid var(--rp-border);
   z-index: 10;
+}
+
+@media (max-width: 640px) {
+  .app-footer {
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 10px;
+    flex-wrap: wrap;
+  }
 }
 
 .app-footer-privacy {
