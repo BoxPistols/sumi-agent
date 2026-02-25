@@ -4982,95 +4982,30 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
   const curModel=AI_MODELS.find(m=>m.id===model)||AI_MODELS[1];
   return (
       <>
-          <div
-              style={{
-                  position: 'fixed',
-                  inset: 0,
-                  background: 'rgba(0,0,0,.7)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 100,
-                  padding: 20,
-                  animation: 'fadeIn .2s',
-              }}
-          >
-              <div
-                  style={{
-                      width: '100%',
-                      maxWidth: 720,
-                      maxHeight: '90vh',
-                      background: T.bg2,
-                      borderRadius: 16,
-                      border: `1px solid ${T.border}`,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      overflow: 'hidden',
-                      animation: 'fadeUp .3s ease',
-                  }}
-              >
-                  <div
-                      style={{
-                          padding: '14px 22px',
-                          borderBottom: `1px solid ${T.border}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                      }}
-                  >
+          <div className={s['ai-overlay']}>
+              <div className={s['ai-dialog']}>
+                  <div className={s['ai-header']}>
                       <div>
-                          <div
-                              style={{
-                                  fontSize: 15,
-                                  fontWeight: 700,
-                                  color: T.text,
-                              }}
-                          >
+                          <div className={s['ai-title']}>
                               AI 再フォーマット
                           </div>
-                          <div style={{ fontSize: 12, color: T.text3 }}>
+                          <div className={s['ai-model-info']}>
                               Model: {curModel.label} --
                               マスキング維持のまま形式変換
                           </div>
                       </div>
                       <button
                           onClick={onClose}
-                          style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 7,
-                              border: `1px solid ${T.border}`,
-                              background: 'transparent',
-                              color: T.text2,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                          }}
+                          className={s['modal-close-btn']}
                       >
                           x
                       </button>
                   </div>
-                  <div style={{ flex: 1, overflow: 'auto', padding: 22 }}>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
+                  <div className={s['ai-body']}>
+                      <div className={s['ai-label']}>
                           プリセット
                       </div>
-                      <div
-                          style={{
-                              display: 'flex',
-                              gap: 8,
-                              flexWrap: 'wrap',
-                              marginBottom: 18,
-                          }}
-                      >
+                      <div className={s['ai-presets']}>
                           {PRESETS.map((p, i) => (
                               <button
                                   key={i}
@@ -5078,53 +5013,22 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
                                       setInstruction(p.prompt)
                                       gen(p.prompt)
                                   }}
-                                  style={{
-                                      padding: '8px 14px',
-                                      borderRadius: 9,
-                                      border: `1px solid ${T.border}`,
-                                      background: T.surface,
-                                      color: T.text,
-                                      fontSize: 12,
-                                      fontWeight: 500,
-                                      cursor: 'pointer',
-                                      fontFamily: T.font,
-                                  }}
+                                  className={s['ai-preset-btn']}
                               >
                                   {p.label}
                               </button>
                           ))}
                       </div>
-                      <div
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text2,
-                              marginBottom: 8,
-                          }}
-                      >
+                      <div className={s['ai-label']}>
                           カスタム指示
                       </div>
-                      <div
-                          style={{ display: 'flex', gap: 8, marginBottom: 18 }}
-                      >
+                      <div className={s['ai-custom-row']}>
                           <textarea
                               aria-label="カスタム指示"
                               value={instruction}
                               onChange={(e) => setInstruction(e.target.value)}
                               placeholder='例: 箇条書きで技術スキルを整理し...'
-                              style={{
-                                  flex: 1,
-                                  padding: '10px 14px',
-                                  borderRadius: 10,
-                                  border: `1px solid ${T.border}`,
-                                  background: T.surface,
-                                  color: T.text,
-                                  fontSize: 13,
-                                  fontFamily: T.font,
-                                  resize: 'vertical',
-                                  minHeight: 54,
-                                  outline: 'none',
-                              }}
+                              className={s['ai-textarea']}
                           />
                           <Btn
                               onClick={() => gen()}
@@ -5138,59 +5042,22 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
                           </Btn>
                       </div>
                       {error && (
-                          <div
-                              style={{
-                                  padding: '10px 14px',
-                                  borderRadius: 10,
-                                  background: T.redDim,
-                                  color: T.red,
-                                  fontSize: 12,
-                                  marginBottom: 14,
-                              }}
-                          >
+                          <div className={s['ai-error']}>
                               ! {error}
                           </div>
                       )}
                       {loading && (
-                          <div
-                              style={{
-                                  textAlign: 'center',
-                                  padding: '32px 20px',
-                              }}
-                          >
-                              <div
-                                  style={{
-                                      width: 36,
-                                      height: 36,
-                                      borderRadius: 18,
-                                      border: `3px solid ${T.border}`,
-                                      borderTopColor: T.accent,
-                                      animation: 'spin .8s linear infinite',
-                                      margin: '0 auto 14px',
-                                  }}
-                              />
-                              <p style={{ fontSize: 13, color: T.text2 }}>
+                          <div className={s['ai-loading']}>
+                              <div className={s['ai-loading-spinner']} />
+                              <p className={s['ai-loading-text']}>
                                   AIが再フォーマット中... ({curModel.label})
                               </p>
                           </div>
                       )}
                       {result && !loading && (
                           <div>
-                              <div
-                                  style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      marginBottom: 8,
-                                  }}
-                              >
-                                  <span
-                                      style={{
-                                          fontSize: 13,
-                                          fontWeight: 600,
-                                          color: T.text,
-                                      }}
-                                  >
+                              <div className={s['ai-result-header']}>
+                                  <span className={s['ai-result-title']}>
                                       生成結果
                                   </span>
                                   <div style={{ display: 'flex', gap: 6 }}>
@@ -5218,22 +5085,7 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
                                       </Btn>
                                   </div>
                               </div>
-                              <pre
-                                  style={{
-                                      padding: 18,
-                                      borderRadius: 12,
-                                      background: T.surface,
-                                      border: `1px solid ${T.border}`,
-                                      fontFamily: T.mono,
-                                      fontSize: 12,
-                                      lineHeight: 1.8,
-                                      color: T.text,
-                                      whiteSpace: 'pre-wrap',
-                                      wordBreak: 'break-word',
-                                      maxHeight: 300,
-                                      overflow: 'auto',
-                                  }}
-                              >
+                              <pre className={s['ai-result-pre']}>
                                   {result}
                               </pre>
                           </div>
@@ -5540,14 +5392,6 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     document.addEventListener('mouseup',onUp);
   },[]);
 
-  const dividerStyle={
-    cursor:'col-resize',
-    background:'transparent',
-    position:'relative',
-    zIndex:5,
-    transition:'background .15s',
-  };
-
   // CSS Grid列定義: 左パネルは常に1fr（残りスペースすべて）
   const centerCol=`minmax(280px,min(${Math.round(595*previewZoom)+48}px,42%))`;
   const gridCols=useMemo(()=>{
@@ -5594,34 +5438,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   overflow: 'hidden',
               }}
           >
-              <div
-                  style={{
-                      padding: '8px 14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      borderBottom: `1px solid ${T.border}`,
-                      background: T.bg2,
-                      flexWrap: 'wrap',
-                      gap: 6,
-                      flexShrink: 0,
-                  }}
-              >
-                  <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          flexWrap: 'wrap',
-                      }}
-                  >
-                      <span
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text,
-                          }}
-                      >
+              <div className={s['ed-toolbar']}>
+                  <div className={s['ed-file-info']}>
+                      <span className={s['ed-file-name']}>
                           {data.file_name}
                       </span>
                       <Badge color={T.text3} bg={T.surfaceAlt}>
@@ -5673,21 +5492,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               title='マスク: 個人情報を隠した結果を表示'
                               aria-label='マスク: 個人情報を隠した結果を表示'
                               onClick={() => setViewMode('original')}
+                              className={s['ed-view-tab']}
                               style={{
-                                  padding: '5px 10px',
-                                  border: 'none',
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  fontFamily: T.font,
-                                  background:
-                                      viewMode === 'original'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  color:
-                                      viewMode === 'original'
-                                          ? T.accent
-                                          : T.text3,
+                                  background: viewMode === 'original' ? T.accentDim : 'transparent',
+                                  color: viewMode === 'original' ? T.accent : T.text3,
                               }}
                           >
                               マスク
@@ -5696,19 +5504,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               title='Diff: 元テキストとマスク後の違いを並べて比較'
                               aria-label='Diff: 元テキストとマスク後の違いを並べて比較'
                               onClick={() => setViewMode('diff')}
+                              className={s['ed-view-tab']}
                               style={{
-                                  padding: '5px 10px',
-                                  border: 'none',
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  fontFamily: T.font,
-                                  background:
-                                      viewMode === 'diff'
-                                          ? T.amberDim
-                                          : 'transparent',
-                                  color:
-                                      viewMode === 'diff' ? T.amber : T.text3,
+                                  background: viewMode === 'diff' ? T.amberDim : 'transparent',
+                                  color: viewMode === 'diff' ? T.amber : T.text3,
                               }}
                           >
                               Diff
@@ -5719,21 +5518,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                       title='Raw: ファイルから抽出した生テキストを表示'
                                       aria-label='Raw: ファイルから抽出した生テキストを表示'
                                       onClick={() => setViewMode('raw')}
+                                      className={s['ed-view-tab']}
                                       style={{
-                                          padding: '5px 10px',
-                                          border: 'none',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          fontFamily: T.font,
-                                          background:
-                                              viewMode === 'raw'
-                                                  ? T.redDim
-                                                  : 'transparent',
-                                          color:
-                                              viewMode === 'raw'
-                                                  ? T.red
-                                                  : T.text3,
+                                          background: viewMode === 'raw' ? T.redDim : 'transparent',
+                                          color: viewMode === 'raw' ? T.red : T.text3,
                                       }}
                                   >
                                       Raw
@@ -5742,21 +5530,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                       title='Raw Diff: 生テキストとAI整形後の違いを比較'
                                       aria-label='Raw Diff: 生テキストとAI整形後の違いを比較'
                                       onClick={() => setViewMode('raw-diff')}
+                                      className={s['ed-view-tab']}
                                       style={{
-                                          padding: '5px 10px',
-                                          border: 'none',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          fontFamily: T.font,
-                                          background:
-                                              viewMode === 'raw-diff'
-                                                  ? 'rgba(240,86,86,0.15)'
-                                                  : 'transparent',
-                                          color:
-                                              viewMode === 'raw-diff'
-                                                  ? T.red
-                                                  : T.text3,
+                                          background: viewMode === 'raw-diff' ? 'rgba(240,86,86,0.15)' : 'transparent',
+                                          color: viewMode === 'raw-diff' ? T.red : T.text3,
                                       }}
                                   >
                                       Raw Diff
@@ -5769,21 +5546,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                       title='AI整形: AIが読みやすく整形したテキストを表示'
                                       aria-label='AI整形: AIが読みやすく整形したテキストを表示'
                                       onClick={() => setViewMode('ai')}
+                                      className={s['ed-view-tab']}
                                       style={{
-                                          padding: '5px 10px',
-                                          border: 'none',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          fontFamily: T.font,
-                                          background:
-                                              viewMode === 'ai'
-                                                  ? T.purpleDim
-                                                  : 'transparent',
-                                          color:
-                                              viewMode === 'ai'
-                                                  ? T.purple
-                                                  : T.text3,
+                                          background: viewMode === 'ai' ? T.purpleDim : 'transparent',
+                                          color: viewMode === 'ai' ? T.purple : T.text3,
                                       }}
                                   >
                                       AI整形
@@ -5792,21 +5558,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                       title='AI Diff: マスク結果とAI整形後の違いを比較'
                                       aria-label='AI Diff: マスク結果とAI整形後の違いを比較'
                                       onClick={() => setViewMode('ai-diff')}
+                                      className={s['ed-view-tab']}
                                       style={{
-                                          padding: '5px 10px',
-                                          border: 'none',
-                                          fontSize: 12,
-                                          fontWeight: 600,
-                                          cursor: 'pointer',
-                                          fontFamily: T.font,
-                                          background:
-                                              viewMode === 'ai-diff'
-                                                  ? T.cyanDim
-                                                  : 'transparent',
-                                          color:
-                                              viewMode === 'ai-diff'
-                                                  ? T.cyan
-                                                  : T.text3,
+                                          background: viewMode === 'ai-diff' ? T.cyanDim : 'transparent',
+                                          color: viewMode === 'ai-diff' ? T.cyan : T.text3,
                                       }}
                                   >
                                       AI Diff
@@ -5948,12 +5703,12 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       label='AI整形変更'
                   />
               ) : editMode ? (
-                  <div style={{flex:1,overflow:"auto",padding:0,background:T.bg,display:"flex",flexDirection:"column",minHeight:0}}>
-                      <div style={{padding:"6px 14px",borderBottom:`1px solid ${T.border}`,fontSize:12,color:T.text3,lineHeight:1.6,flexShrink:0,background:T.bg2}}>
+                  <div className={s['ed-edit-wrap']}>
+                      <div className={s['ed-edit-hint']}>
                           <span style={{fontWeight:600,color:T.text2}}>記法: </span>
-                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono}}>**太字**</code>
-                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono,marginLeft:6}}># 見出し</code>
-                          <code style={{background:T.surface,padding:"1px 4px",borderRadius:3,fontFamily:T.mono,marginLeft:6}}>## 小見出し</code>
+                          <code className={s['ed-edit-code']}>**太字**</code>
+                          <code className={s['ed-edit-code']} style={{marginLeft:6}}># 見出し</code>
+                          <code className={s['ed-edit-code']} style={{marginLeft:6}}>## 小見出し</code>
                           <span style={{opacity:0.6,marginLeft:8}}>Markdown記法でA4プレビューに反映</span>
                       </div>
                       <textarea
@@ -5961,35 +5716,12 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           value={editedText??""}
                           onChange={(e)=>setEditedText(e.target.value)}
                           spellCheck={false}
-                          style={{
-                              flex:1,padding:"14px 16px",border:"none",outline:"none",resize:"none",
-                              fontFamily:T.mono,fontSize:12,lineHeight:1.8,color:T.text,
-                              background:T.bg,whiteSpace:"pre-wrap",wordBreak:"break-word",
-                          }}
+                          className={s['ed-edit-textarea']}
                       />
                   </div>
               ) : (
-                  <div
-                      style={{
-                          flex: 1,
-                          overflow: 'auto',
-                          padding: 24,
-                          background: T.bg,
-                          minHeight: 0,
-                      }}
-                  >
-                      <pre
-                          style={{
-                              fontFamily: T.mono,
-                              fontSize: 13,
-                              lineHeight: 1.9,
-                              color: T.text,
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-word',
-                              margin: 0,
-                              maxWidth: 740,
-                          }}
-                      >
+                  <div className={s['ed-text-view']}>
+                      <pre className={s['ed-text-pre']}>
                           {viewMode === 'original'
                               ? renderTextWithDetectionAnchors(
                                     data.text_preview,
@@ -6010,9 +5742,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   onMouseDown={startDrag('left')}
                   role="separator" aria-label="ドラッグでパネル幅を調整"
                   title="ドラッグでパネル幅を調整"
-                  style={{...dividerStyle,borderLeft:`1px solid ${T.border}`}}
-                  onMouseEnter={(e)=>{e.currentTarget.style.background=T.accentDim;}}
-                  onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
+                  className={s['ed-divider']}
               />
           )}
           {/* Center: A4 Preview Panel */}
@@ -6022,63 +5752,51 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   background:"#e5e7eb",minHeight:0,overflow:"hidden",
               }}>
                   {/* Preview toolbar */}
-                  <div style={{
-                      padding:"6px 12px",display:"flex",alignItems:"center",gap:6,
-                      borderBottom:`1px solid ${T.border}`,background:T.bg2,flexShrink:0,flexWrap:"wrap",
-                  }}>
-                      <span style={{fontSize:12,fontWeight:700,color:T.text}}>A4</span>
+                  <div className={s['ed-preview-toolbar']}>
+                      <span className={s['ed-preview-label']}>A4</span>
                       {editMode && (
                           <>
-                              <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" aria-label="ゴシック体に切替" style={{
-                                  padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
-                                  border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
-                                  background:previewFontType==="gothic"?T.accentDim:"transparent",
-                                  color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
-                              }}>ゴシック</button>
-                              <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" aria-label="明朝体に切替" style={{
-                                  padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,
-                                  border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
-                                  background:previewFontType==="mincho"?T.accentDim:"transparent",
-                                  color:previewFontType==="mincho"?T.accent:T.text3,fontWeight:previewFontType==="mincho"?600:400,
-                              }}>明朝</button>
+                              <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" aria-label="ゴシック体に切替" className={s['ed-small-btn']}
+                                  style={{
+                                      border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
+                                      background:previewFontType==="gothic"?T.accentDim:"transparent",
+                                      color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
+                                  }}>ゴシック</button>
+                              <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" aria-label="明朝体に切替" className={s['ed-small-btn']}
+                                  style={{
+                                      border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
+                                      background:previewFontType==="mincho"?T.accentDim:"transparent",
+                                      color:previewFontType==="mincho"?T.accent:T.text3,fontWeight:previewFontType==="mincho"?600:400,
+                                  }}>明朝</button>
                           </>
                       )}
                       <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:4}}>
-                          <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小" aria-label="縮小"
-                              style={{width:22,height:22,borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font}}>
+                          <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小" aria-label="縮小" className={s['ed-zoom-btn']}>
                               &minus;
                           </button>
-                          <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット" aria-label="ズームをリセット"
-                              style={{padding:"2px 6px",borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text3,cursor:"pointer",fontSize:10,fontFamily:T.mono,fontWeight:600,minWidth:40,textAlign:"center"}}>
+                          <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット" aria-label="ズームをリセット" className={s['ed-zoom-label']}>
                               {Math.round(previewZoom*100)}%
                           </button>
-                          <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大" aria-label="拡大"
-                              style={{width:22,height:22,borderRadius:4,border:`1px solid ${T.border}`,background:"transparent",color:T.text2,cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:T.font}}>
+                          <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大" aria-label="拡大" className={s['ed-zoom-btn']}>
                               +
                           </button>
                       </div>
                       <span style={{flex:1}}/>
                       {editMode && (
                           <div style={{display:"flex",gap:4}}>
-                              <button onClick={exportPrintPDF} title="PDFとして印刷" aria-label="PDFとして印刷" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportPrintPDF} title="PDFとして印刷" aria-label="PDFとして印刷" className={s['ed-small-btn']}>
                                   PDF印刷
                               </button>
-                              <button onClick={exportHTML} title="HTML形式でダウンロード" aria-label="HTML形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportHTML} title="HTML形式でダウンロード" aria-label="HTML形式でダウンロード" className={s['ed-small-btn']}>
                                   HTML
                               </button>
-                              <button onClick={exportWord} title="Word形式でダウンロード" aria-label="Word形式でダウンロード" style={{padding:"3px 8px",borderRadius:5,fontSize:11,cursor:"pointer",fontFamily:T.font,border:`1px solid ${T.border}`,background:"transparent",color:T.text2}}>
+                              <button onClick={exportWord} title="Word形式でダウンロード" aria-label="Word形式でダウンロード" className={s['ed-small-btn']}>
                                   Word
                               </button>
                           </div>
                       )}
-                      <button onClick={()=>setShowDesign(true)} title="全画面編集" aria-label="全画面編集" style={{
-                          padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
-                          border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
-                      }}>&#x2197;</button>
-                      <button onClick={()=>{setPreviewVisible(false);setLeftPct(null);setRightPct(null);}} title="プレビューを閉じる" aria-label="プレビューを閉じる" style={{
-                          padding:"3px 6px",borderRadius:5,fontSize:13,cursor:"pointer",
-                          border:`1px solid ${T.border}`,background:"transparent",color:T.text3,
-                      }}>&#x276F;</button>
+                      <button onClick={()=>setShowDesign(true)} title="全画面編集" aria-label="全画面編集" className={s['ed-small-icon-btn']}>&#x2197;</button>
+                      <button onClick={()=>{setPreviewVisible(false);setLeftPct(null);setRightPct(null);}} title="プレビューを閉じる" aria-label="プレビューを閉じる" className={s['ed-small-icon-btn']}>&#x276F;</button>
                   </div>
                   {/* Preview content */}
                   {editMode ? (
@@ -6112,15 +5830,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   role="button" tabIndex={0} aria-label="A4プレビューを表示"
                   onClick={()=>{setPreviewVisible(true);setLeftPct(null);setRightPct(null);}}
                   onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setPreviewVisible(true);setLeftPct(null);setRightPct(null);}}}
-                  style={{
-                      display:"flex",flexDirection:"column",
-                      alignItems:"center",justifyContent:"center",gap:8,
-                      background:T.bg2,borderRight:`1px solid ${T.border}`,
-                      cursor:"pointer",padding:"12px 0",transition:"background .15s",
-                  }}
+                  className={s['ed-collapsed-btn']}
+                  style={{borderRight:`1px solid ${T.border}`}}
                   title="A4プレビューを表示"
               >
-                  <span style={{writingMode:"vertical-rl",fontSize:12,fontWeight:600,color:T.text2,letterSpacing:1}}>A4</span>
+                  <span className={s['ed-collapsed-label']}>A4</span>
                   <span style={{fontSize:14,color:T.text3,marginTop:4}}>&#x276E;</span>
               </div>
           ))}
@@ -6130,9 +5844,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   onMouseDown={startDrag('right')}
                   role="separator" aria-label="ドラッグでパネル幅を調整"
                   title="ドラッグでパネル幅を調整"
-                  style={{...dividerStyle,borderLeft:`1px solid ${T.border}`}}
-                  onMouseEnter={(e)=>{e.currentTarget.style.background=T.accentDim;}}
-                  onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
+                  className={s['ed-divider']}
               />
           )}
           {/* Collapsed sidebar indicator */}
@@ -6141,16 +5853,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   role="button" tabIndex={0} aria-label="サイドバーを展開"
                   onClick={()=>{setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}
                   onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}}
-                  style={{
-                      display:"flex",flexDirection:"column",
-                      alignItems:"center",justifyContent:"center",gap:8,
-                      background:T.bg2,borderLeft:`1px solid ${T.border}`,
-                      cursor:"pointer",padding:"12px 0",
-                      transition:"background .15s",
-                  }}
+                  className={s['ed-collapsed-btn']}
+                  style={{borderLeft:`1px solid ${T.border}`}}
                   title="サイドバーを展開"
               >
-                  <span style={{writingMode:"vertical-rl",fontSize:12,fontWeight:600,color:T.text2,letterSpacing:1}}>検出結果</span>
+                  <span className={s['ed-collapsed-label']}>検出結果</span>
                   <Badge color={enabledCount>0?T.green:T.amber} bg={enabledCount>0?T.greenDim:T.amberDim} style={{writingMode:"horizontal-tb",fontSize:11,padding:"2px 6px"}}>
                       {enabledCount}/{detections.length}
                   </Badge>
@@ -6158,15 +5865,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               </div>
           )}
           <div
-              className='rp-editor-right'
-              style={{
-                  display: sidebarCollapsed?'none':'flex',
-                  flexDirection: 'column',
-                  minWidth: 0,
-                  minHeight: 0,
-                  overflow: 'hidden',
-                  background: T.bg2,
-              }}
+              className={`rp-editor-right ${s['ed-sidebar']}`}
+              style={{ display: sidebarCollapsed?'none':'flex' }}
           >
               {/* タブバー（Pro版: 検出結果 / アドバイザー） */}
               {!isLite && (
@@ -6174,13 +5874,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   {[{id:'detections',label:'検出結果',icon:'\u{1F4CB}',badge:`${enabledCount}/${detections.length}`},{id:'advisor',label:'アドバイザー',icon:'\u{1F4AC}',badge:advisorMessages.length>0?`${advisorMessages.filter(m=>m.role==='assistant').length}`:''}].map(tab=>(
                       <button key={tab.id} data-intro={tab.id==='advisor'?'advisor-tab':undefined}
                           onClick={()=>setRightTab(tab.id)}
-                          style={{flex:1,padding:'10px 8px',fontSize:13,fontWeight:rightTab===tab.id?700:500,
-                              color:rightTab===tab.id?T.text:T.text3,background:'transparent',border:'none',
-                              borderBottom:rightTab===tab.id?`2px solid ${T.accent}`:'2px solid transparent',
-                              cursor:'pointer',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                          className={s['ed-right-tab']}
+                          data-active={rightTab===tab.id?'true':'false'}
                       >
                           <span style={{fontSize:14}}>{tab.icon}</span>{tab.label}
-                          {tab.badge&&<span style={{fontSize:11,padding:'1px 6px',borderRadius:8,background:rightTab===tab.id?T.accentDim:T.surface,color:rightTab===tab.id?T.accent:T.text3}}>{tab.badge}</span>}
+                          {tab.badge&&<span className={s['ed-right-tab-badge']} style={{background:rightTab===tab.id?T.accentDim:T.surface,color:rightTab===tab.id?T.accent:T.text3}}>{tab.badge}</span>}
                       </button>
                   ))}
                   {!isLite && <button
@@ -6192,19 +5890,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               )}
               {/* 検出結果タブ */}
               <div style={{display:rightTab==='detections'||isLite?'flex':'none',flexDirection:'column',flex:1,overflow:'hidden'}}>
-              <div
-                  style={{
-                      padding: '14px 18px',
-                      borderBottom: `1px solid ${T.border}`,
-                  }}
-              >
+              <div className={s['ed-det-header']}>
                   <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          marginBottom: isLite?12:8,
-                      }}
+                      className={s['ed-det-top']}
+                      style={{ marginBottom: isLite?12:8 }}
                   >
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                           <div>
@@ -6457,15 +6146,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       ):null})()}
                   </div>}
               </div>
-              <div data-intro="detection-list" style={{ flex: 1, overflow: 'auto', padding: '6px 12px' }}>
+              <div data-intro="detection-list" className={s['ed-det-list']}>
                   {filtered.length === 0 ? (
-                      <div
-                          style={{
-                              textAlign: 'center',
-                              padding: '36px 20px',
-                              color: T.text3,
-                          }}
-                      >
+                      <div className={s['ed-det-empty']}>
                           <p style={{ fontSize: 12 }}>
                               該当する検出結果がありません
                           </p>
@@ -6489,30 +6172,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                       role="button" tabIndex={0}
                                       onClick={()=>toggleCatAccordion(cat)}
                                       onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleCatAccordion(cat);}}}
-                                      style={{
-                                          fontSize: 12,
-                                          fontWeight: 700,
-                                          color: meta.color,
-                                          padding: '8px 8px 3px',
-                                          letterSpacing: 0.5,
-                                          textTransform: 'uppercase',
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 6,
-                                          cursor: 'pointer',
-                                          userSelect: 'none',
-                                      }}
+                                      className={s['ed-cat-header']}
+                                      style={{ color: meta.color }}
                                   >
                                       <span style={{fontSize:14,transition:'transform .15s',transform:catOpen?'rotate(90deg)':'rotate(0deg)',display:'inline-block',lineHeight:1}}>&#9654;</span>
-                                      <span
-                                          style={{
-                                              width: 6,
-                                              height: 6,
-                                              borderRadius: 3,
-                                              background: meta.color,
-                                              display: 'inline-block',
-                                          }}
-                                      />
+                                      <span className={s['ed-cat-dot']} style={{ background: meta.color }}/>
                                       {meta.label} ({items.length})
                                   </div>
                                   {catOpen && items.map((item) => (
@@ -6523,23 +6187,13 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                           onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();focusDetection(item.id);}}}
                                           aria-label={`${item.value} - 本文の該当箇所へジャンプ`}
                                           title='クリックで本文の該当箇所へジャンプ'
+                                          className={s['ed-det-item']}
                                           style={{
-                                              display: 'flex',
-                                              alignItems: 'center',
-                                              gap: 10,
-                                              padding: '7px 10px',
-                                              marginBottom: 1,
-                                              borderRadius: 9,
-                                              background: item.enabled
-                                                  ? `${meta.color}0D`
-                                                  : 'transparent',
+                                              background: item.enabled ? `${meta.color}0D` : 'transparent',
                                               border: `1px solid ${item.enabled ? `${meta.color}1A` : 'transparent'}`,
-                                              boxShadow:
-                                                  focusDetId === item.id
-                                                      ? '0 0 0 2px rgba(76,133,246,.35), 0 0 0 8px rgba(76,133,246,.10)'
-                                                      : 'none',
-                                              cursor: 'pointer',
-                                              transition: 'all .2s',
+                                              boxShadow: focusDetId === item.id
+                                                  ? '0 0 0 2px rgba(76,133,246,.35), 0 0 0 8px rgba(76,133,246,.10)'
+                                                  : 'none',
                                           }}
                                       >
                                           <div style={{ flex: 1, minWidth: 0 }}>
@@ -6616,24 +6270,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                                       )}
                                               </div>
                                               <div
-                                                  style={{
-                                                      fontSize: 12,
-                                                      fontWeight: 500,
-                                                      color: item.enabled
-                                                          ? T.text
-                                                          : T.text3,
-                                                      fontFamily: T.mono,
-                                                      overflow: 'hidden',
-                                                      textOverflow: 'ellipsis',
-                                                      whiteSpace: 'nowrap',
-                                                      textDecoration:
-                                                          item.enabled
-                                                              ? 'none'
-                                                              : 'line-through',
-                                                      opacity: item.enabled
-                                                          ? 1
-                                                          : 0.5,
-                                                  }}
+                                                  className={s['ed-det-value']}
+                                                  data-enabled={item.enabled?'true':'false'}
+                                                  style={{ color: item.enabled ? T.text : T.text3 }}
                                               >
                                                   {item.value}
                                               </div>
@@ -6653,14 +6292,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               </div>
               <div
                   data-intro="export-buttons"
-                  style={{
-                      padding: '10px 16px 16px',
-                      borderTop: `1px solid ${T.border}`,
-                      background: T.bg2,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 7,
-                  }}
+                  className={s['ed-footer']}
               >
                   {!isLite && <Btn
                       data-intro="ai-reformat"
@@ -6699,7 +6331,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   >
                       {editMode ? '編集完了 / プレビューを閉じる' : 'PDF プレビュー・編集'}
                   </Btn>}
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className={s['ed-btn-row']}>
                       <Btn
                           title='マスキング結果をプレビュー'
                           variant='ghost'
@@ -6733,7 +6365,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           {copied ? '\u2713' : 'Copy'}
                       </Btn>
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div className={s['ed-btn-row']}>
                       {!isLite && <Btn
                           data-intro="detection-report"
                           title='検出結果の詳細レポートを表示'
@@ -7204,90 +6836,47 @@ export default function App(){
   return (
       <div
           data-theme={isDark ? 'dark' : 'light'}
-          style={{
-              fontFamily: T.font,
-              background: T.bg,
-              color: T.text,
-              minHeight: '100vh',
-          }}
+          className={s['app-root']}
+          style={{ fontFamily: T.font, background: T.bg, color: T.text }}
       >
-          <header
-              className='rp-header'
-              style={{
-                  height: 52,
-                  padding: '0 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderBottom: `1px solid ${T.border}`,
-                  background: T.bg2,
-              }}
-          >
+          <header className={`rp-header ${s['app-header']}`}>
               <nav
                   aria-label='グローバルナビゲーション'
-                  style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                  className={s['app-nav']}
               >
                   <a
                       href='./'
                       aria-label='トップページへ戻る'
-                      style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          textDecoration: 'none',
-                          color: 'inherit',
-                      }}
+                      className={s['app-logo-link']}
                   >
-                      <div
-                          style={{
-                              width: 24,
-                              height: 24,
-                              borderRadius: 5,
-                              background: T.text,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'flex-start',
-                              justifyContent: 'center',
-                              padding: '0 5px',
-                              gap: 3,
-                          }}
-                      >
-                          <div style={{width:14,height:3,borderRadius:1,background:T.bg}} />
-                          <div style={{width:10,height:3,borderRadius:1,background:T.bg}} />
+                      <div className={s['app-logo-icon']}>
+                          <div className={s['app-logo-bar1']} />
+                          <div className={s['app-logo-bar2']} />
                       </div>
-                      <span
-                          style={{
-                              fontSize: 16,
-                              fontWeight: 700,
-                              letterSpacing: 0.5,
-                          }}
-                      >
+                      <span className={s['app-logo-text']}>
                           Sumi
                       </span>
                   </a>
-                  <div data-intro="header-edition-toggle" role="radiogroup" aria-label="エディション切替" style={{display:'flex',borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`,fontSize:12,fontWeight:600,background:T.bg2||T.bg}}>
+                  <div data-intro="header-edition-toggle" role="radiogroup" aria-label="エディション切替" className={s['app-edition-toggle']}>
                       {[{id:'lite',label:'Lite',sub:'シンプル'},{id:'pro',label:'Pro',sub:'全機能'}].map(ed=>(
                         <button key={ed.id} role="radio" aria-checked={edition===ed.id}
                           onClick={()=>switchEdition(ed.id)}
                           onMouseEnter={e=>{if(edition!==ed.id)e.currentTarget.style.background=T.surfaceAlt}}
                           onMouseLeave={e=>{if(edition!==ed.id)e.currentTarget.style.background='transparent'}}
+                          className={s['app-edition-btn']}
                           style={{
-                          padding:'5px 14px',border:'none',cursor:'pointer',
                           background:edition===ed.id?(ed.id==='pro'?C.accent:T.text3):'transparent',
                           color:edition===ed.id?'#fff':T.text2,
-                          transition:'background .2s ease-out, color .2s ease-out',
-                          display:'flex',alignItems:'center',gap:4,
                         }}>
                           {ed.label}
-                          <span style={{fontSize:10,fontWeight:400,opacity:edition===ed.id?0.85:0.6}}>{ed.sub}</span>
+                          <span className={s['app-edition-sub']} style={{opacity:edition===ed.id?0.85:0.6}}>{ed.sub}</span>
                         </button>
                       ))}
                   </div>
               </nav>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className={s['app-header-right']}>
                   <div
-                      className='rp-header-badges'
-                      style={{ display: 'flex', gap: 8, alignItems: 'center' }}
+                      className={`rp-header-badges ${s['app-header-badges']}`}
                   >
                       {(data||batchMode) && (
                           <Badge color={T.accent} bg={T.accentDim}>
@@ -7314,19 +6903,8 @@ export default function App(){
                       title='ダークモード切替'
                       aria-label='ダークモード切替'
                       onClick={() => { const next = !isDark; setIsDark(next); storage.set('rp_theme', next ? 'dark' : 'light') }}
-                      style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 8,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: T.text2,
-                          fontSize: 18,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                      }}
+                      className={s['app-icon-btn']}
+                      data-type='theme'
                   >
                       {isDark ? '☀️' : '🌙'}
                   </button>
@@ -7334,20 +6912,8 @@ export default function App(){
                       title='ヘルプ'
                       aria-label='ヘルプを表示'
                       onClick={() => setShowHelp(true)}
-                      style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 8,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: T.text2,
-                          fontSize: 15,
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                      }}
+                      className={s['app-icon-btn']}
+                      data-type='help'
                   >
                       ?
                   </button>
@@ -7356,30 +6922,11 @@ export default function App(){
                       title='設定'
                       aria-label='設定'
                       onClick={() => setShowSettings(true)}
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          height: 36,
-                          padding: '0 12px',
-                          borderRadius: 8,
-                          border: `1px solid ${T.border}`,
-                          background: 'transparent',
-                          cursor: 'pointer',
-                          color: T.text2,
-                          fontSize: 13,
-                          fontFamily: T.font,
-                          fontWeight: 500,
-                      }}
+                      className={s['app-settings-btn']}
                   >
                       <span
-                          style={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: 4,
-                              background: curProv.color,
-                              flexShrink: 0,
-                          }}
+                          className={s['app-settings-dot']}
+                          style={{ background: curProv.color }}
                       />
                       <span>{settings.aiProfile==='balanced'?'Auto':curModel?.label || '設定'}</span>
                       <svg
@@ -7458,11 +7005,11 @@ export default function App(){
           )}
           {!isLite && !data && !batchMode && <ChatWidget />}
           {showWelcome && <WelcomeVideoModalWrapper onClose={handleWelcomeClose} onStartTour={handleWelcomeStartTour} />}
-          <footer style={{position:'fixed',bottom:0,left:0,right:0,display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'6px 16px',fontSize:11,color:T.text3,background:T.bg,borderTop:`1px solid ${T.border}`,zIndex:10}}>
+          <footer className={s['app-footer']}>
             <span>© {new Date().getFullYear()} Sumi</span>
-            <span style={{color:T.text3}}>|</span>
-            <span style={{cursor:'help',display:'flex',alignItems:'center',gap:4}} title="個人情報はブラウザの外に出ません。サーバーやDBへの保存・送信は一切行いません。AI機能利用時のみAPIに送信されますが、各社のAPI利用規約によりトレーニングには使用されません。"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>個人情報はブラウザの外に出ません</span>
-            <a href="https://github.com/BoxPistols/sumi" target="_blank" rel="noopener noreferrer" style={{color:T.text3,textDecoration:'none',display:'flex',alignItems:'center',gap:4,transition:'color .15s'}} onMouseEnter={e=>e.currentTarget.style.color=T.text} onMouseLeave={e=>e.currentTarget.style.color=T.text3}>
+            <span>|</span>
+            <span className={s['app-footer-privacy']} title="個人情報はブラウザの外に出ません。サーバーやDBへの保存・送信は一切行いません。AI機能利用時のみAPIに送信されますが、各社のAPI利用規約によりトレーニングには使用されません。"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>個人情報はブラウザの外に出ません</span>
+            <a href="https://github.com/BoxPistols/sumi" target="_blank" rel="noopener noreferrer" className={s['app-footer-link']}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
               GitHub
             </a>
