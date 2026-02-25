@@ -8694,53 +8694,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   </div>
                   )}
               </div>
-              {/* アクションボタン（下部固定） */}
-              <div style={{flexShrink:0,padding:'8px 14px',borderTop:`1px solid ${T.border}`,display:'flex',flexDirection:'column',gap:4}}>
-                  <button
-                      onClick={()=>setShowJobInput(p=>!p)}
-                      style={{width:'100%',padding:'8px 10px',fontSize:12,fontWeight:600,
-                          color:T.bg,background:T.accent,
-                          border:'none',borderRadius:8,cursor:'pointer',transition:'opacity .15s',
-                          opacity:advisorLoading?0.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
-                      disabled={advisorLoading}
-                  >
-                      <span style={{fontSize:14}}>&#x21C4;</span> 求人票マッチング
-                  </button>
-                  <button
-                      onClick={handleAdvisorRewriteFull}
-                      disabled={advisorDraftLoading||advisorLoading}
-                      title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
-                      style={{width:'100%',padding:'8px 10px',fontSize:12,fontWeight:600,
-                          color:'#fff',background:'#15803d',
-                          border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
-                          transition:'opacity .15s',opacity:advisorDraftLoading?0.5:1,
-                          display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
-                  >
-                      <span style={{fontSize:13}}>&#x21BB;</span> {advisorDraftLoading?'生成中...':'改善テキストを生成'}
-                  </button>
-                  {advisorDraft&&<div style={{fontSize:10,color:T.green||'#22c55e',fontWeight:500,textAlign:'center'}}>差分プレビューを左パネルに表示中</div>}
-              </div>
               </>)}
-              {/* チャット後もアクションボタンを表示 */}
-              {advisorMessages.length>0 && (
-              <div style={{flexShrink:0,padding:'6px 14px',borderTop:`1px solid ${T.border}`,display:'flex',gap:4}}>
-                  <button
-                      onClick={handleAdvisorRewriteFull}
-                      disabled={advisorDraftLoading||advisorLoading}
-                      title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
-                      style={{flex:1,padding:'8px 10px',fontSize:12,fontWeight:600,
-                          color:'#fff',background:'#15803d',
-                          border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
-                          transition:'opacity .15s',opacity:advisorDraftLoading||advisorLoading?0.5:1,
-                          display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
-                  >
-                      <span style={{fontSize:13}}>&#x21BB;</span> {advisorDraftLoading?'生成中...':'改善テキストを生成'}
-                  </button>
-                  {advisorDraft&&<div style={{fontSize:10,color:T.green||'#22c55e',fontWeight:500,alignSelf:'center'}}>差分プレビュー表示中</div>}
-              </div>
-              )}
               {/* チャット履歴 */}
-              <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
+              <div style={{flex:advisorMessages.length>0||advisorLoading?1:0,overflowY:'auto',padding:advisorMessages.length>0||advisorLoading?'12px 14px':'0 14px',display:'flex',flexDirection:'column',gap:10}}>
                   {advisorMessages.map((msg,i)=>(
                       <div key={i} style={{
                           padding:'10px 12px',borderRadius:10,fontSize:13,lineHeight:1.7,
@@ -8764,6 +8720,33 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   )}
                   <div ref={advisorEndRef}/>
               </div>
+              {/* アクションボタン（入力欄の上に固定） */}
+              <div style={{flexShrink:0,padding:'8px 14px',borderTop:`1px solid ${T.border}`,display:'flex',gap:4}}>
+                  <button
+                      onClick={()=>setShowJobInput(p=>!p)}
+                      style={{flex:1,padding:'8px 10px',fontSize:12,fontWeight:600,
+                          color:T.bg,background:T.accent,
+                          border:'none',borderRadius:8,cursor:'pointer',transition:'opacity .15s',
+                          opacity:advisorLoading?0.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
+                      disabled={advisorLoading}
+                      title='求人票テキストを貼り付けて経歴書との適合度を分析'
+                  >
+                      <span style={{fontSize:14}}>&#x21C4;</span> 求人票
+                  </button>
+                  <button
+                      onClick={handleAdvisorRewriteFull}
+                      disabled={advisorDraftLoading||advisorLoading}
+                      title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
+                      style={{flex:1,padding:'8px 10px',fontSize:12,fontWeight:600,
+                          color:'#fff',background:'#15803d',
+                          border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
+                          transition:'opacity .15s',opacity:advisorDraftLoading||advisorLoading?0.5:1,
+                          display:'flex',alignItems:'center',justifyContent:'center',gap:5}}
+                  >
+                      <span style={{fontSize:13}}>&#x21BB;</span> {advisorDraftLoading?'生成中...':'改善テキスト生成'}
+                  </button>
+              </div>
+              {advisorDraft&&<div style={{fontSize:10,color:'#22c55e',fontWeight:500,textAlign:'center',padding:'0 14px 4px'}}>差分プレビューを左パネルに表示中</div>}
               {/* 入力欄 */}
               <div style={{padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,display:'flex',gap:8,alignItems:'flex-end',flexShrink:0}}>
                   <textarea
