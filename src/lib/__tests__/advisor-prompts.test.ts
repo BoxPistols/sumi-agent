@@ -16,8 +16,8 @@ describe('ADVISOR_SYSTEM_PROMPT', () => {
 })
 
 describe('ADVISOR_PRESETS', () => {
-  it('6つのプリセットがある', () => {
-    expect(ADVISOR_PRESETS).toHaveLength(6)
+  it('7つのプリセットがある', () => {
+    expect(ADVISOR_PRESETS).toHaveLength(7)
   })
 
   it('各プリセットにid, label, prompt, descがある', () => {
