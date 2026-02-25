@@ -7177,8 +7177,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     try{
       const{callAdvisor}=await import('@/lib/advisor/call');
       const ctx=await buildCtx();
-      let allMsgs;
-      setAdvisorMessages(prev=>{allMsgs=[...prev];return prev;});
+      const allMsgs=await new Promise(resolve=>setAdvisorMessages(prev=>{resolve([...prev]);return prev;}));
       const result=await callAdvisor({messages:allMsgs,context:ctx,apiKey,model,modelMode:advisorModelMode,presetId,jobDescription:jobDescription.trim()||undefined});
       setAdvisorLastModel(result.modelLabel);
       setAdvisorMessages(prev=>[...prev,{role:'assistant',content:result.text,timestamp:Date.now()}]);

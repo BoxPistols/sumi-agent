@@ -40,6 +40,13 @@ next-env.d.ts
 # Vercel
 .vercel
 
+# Playwright
+playwright-report/
+test-results/
+
 # Claude Code
 .claude/settings.local.json
 .claude/todos/
+
+*storybook.log
+storybook-static
