@@ -3100,44 +3100,30 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
     return {type:"body"};
   }
 
-  const pageStyle={
-    maxWidth:595,margin:"0 auto",padding:"26px 30px",
-    fontFamily:"'Noto Sans JP',sans-serif",color:"#111827",
-    fontSize:"10.2pt",lineHeight:1.75,background:"#fff",
-    minHeight:842,
-  };
-  const h2Style={fontSize:"14pt",fontWeight:700,color:"#0f172a",margin:"18px 0 8px",paddingBottom:7,borderBottom:"1px solid #d1d5db",letterSpacing:0.2};
-  const h3Style={fontSize:"11.5pt",fontWeight:700,color:"#111827",margin:"14px 0 6px"};
-  const kvStyle={display:"grid",gridTemplateColumns:"minmax(110px,160px) 1fr",gap:12,padding:"2.5px 0"};
-  const kvKeyStyle={color:"#475569",fontWeight:700};
-  const kvValStyle={color:"#0f172a"};
-  const liStyle={paddingLeft:"1em",textIndent:"-1em",lineHeight:1.75,margin:"1px 0"};
-  const hrStyle={border:0,borderTop:"1px solid #e5e7eb",margin:"12px 0"};
-
   return (
-    <div style={{flex:1,overflow:"auto",background:"#e5e7eb",padding:"24px 16px",display:"flex",justifyContent:"center"}}>
+    <div className={s['a4-wrap']}>
       <div style={{width:Math.round(595*zoom),flexShrink:0}}>
-        <div style={{width:595,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${zoom})`,transformOrigin:"top left"}}>
-        <div style={pageStyle}>
+        <div className={s['a4-shadow']} style={{transform:`scale(${zoom})`}}>
+        <div className={s['a4-page']}>
           {lines.map(({line,raw},li)=>{
             const cls=classifyLine(raw);
             const segs=line.map((seg,si)=>renderSegment(seg,`${li}_${si}`));
 
             if(cls.type==="blank")return <br key={li} style={{display:"block",marginTop:8}}/>;
-            if(cls.type==="hr")return <hr key={li} style={hrStyle}/>;
+            if(cls.type==="hr")return <hr key={li} className={s['a4-hr']}/>;
             if(cls.type==="heading"){
-              const style=cls.level<=2?h2Style:h3Style;
+              const hCls=cls.level<=2?s['a4-h2']:s['a4-h3'];
               // 見出しマーカーを除去して表示
               const cleaned=raw.trim().replace(/^#{1,3}\s+/,"").replace(/^[■●◆◇▶▷☆★]+\s*/,"").replace(/^【(.+?)】$/,"$1");
               // セグメント内の検出値はそのまま表示
               const hasDetection=line.some(s=>s.type==="det");
               if(hasDetection){
-                return <div key={li} style={style}>{segs}</div>;
+                return <div key={li} className={hCls}>{segs}</div>;
               }
-              return <div key={li} style={style}>{cleaned}</div>;
+              return <div key={li} className={hCls}>{cleaned}</div>;
             }
             if(cls.type==="list"){
-              return <div key={li} style={liStyle}>・{segs}</div>;
+              return <div key={li} className={s['a4-li']}>・{segs}</div>;
             }
             if(cls.type==="kv"){
               const kvMatch=raw.trim().match(/^(.{1,30}?)[：:]\s*(.+)$/);
@@ -3164,9 +3150,9 @@ function A4PreviewPanel({text,detections,maskOpts,focusDetId,focusPulse,onFocusD
                   charCount+=segLen;
                 }
                 return (
-                  <div key={li} style={kvStyle}>
-                    <div style={kvKeyStyle}>{keySegs}</div>
-                    <div style={kvValStyle}>{valSegs}</div>
+                  <div key={li} className={s['a4-kv']}>
+                    <div className={s['a4-kv-key']}>{keySegs}</div>
+                    <div className={s['a4-kv-val']}>{valSegs}</div>
                   </div>
                 );
               }
@@ -3239,17 +3225,7 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
 
   return (
       <div
-          style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 1000,
-              background: 'rgba(0,0,0,.65)',
-              backdropFilter: 'blur(8px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 16,
-          }}
+          className={s['design-overlay']}
           onClick={(e) => e.target === e.currentTarget && onClose()}
       >
           <div
@@ -3257,218 +3233,46 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
               role="dialog"
               aria-modal="true"
               aria-label="PDF プレビュー・編集"
-              style={{
-                  width: '95vw',
-                  maxWidth: 1300,
-                  height: '92vh',
-                  background: T.bg2,
-                  borderRadius: 16,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  border: `1px solid ${T.border}`,
-              }}
+              className={s['design-dialog']}
           >
               {/* Header */}
-              <div
-                  style={{
-                      padding: '12px 20px',
-                      borderBottom: `1px solid ${T.border}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: T.bg,
-                      flexShrink: 0,
-                  }}
-              >
-                  <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 10 }}
-                  >
+              <div className={s['design-header']}>
+                  <div className={s['design-header-left']}>
                       <span style={{ fontSize: 16 }}>📄</span>
                       <div>
-                          <div
-                              style={{
-                                  fontSize: 14,
-                                  fontWeight: 700,
-                                  color: T.text,
-                              }}
-                          >
-                              PDF プレビュー・編集
-                          </div>
-                          <div style={{ fontSize: 12, color: T.text3 }}>
-                              最終確認 → テキスト編集 → 出力
-                          </div>
+                          <div className={s['design-header-title']}>PDF プレビュー・編集</div>
+                          <div className={s['settings-sublabel']}>最終確認 → テキスト編集 → 出力</div>
                       </div>
                   </div>
-                  <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 8 }}
-                  >
-                      <span
-                          style={{
-                              fontSize: 12,
-                              color: T.text3,
-                              fontFamily: T.mono,
-                          }}
-                      >
+                  <div className={s['design-header-right']}>
+                      <span className={s['settings-sublabel']} style={{fontFamily:T.mono}}>
                           {lineCount}行 / {charCount}文字
                       </span>
-                      <button
-                          onClick={onClose}
-                          aria-label="閉じる"
-                          style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: T.text3,
-                              fontSize: 18,
-                              cursor: 'pointer',
-                              padding: 4,
-                          }}
-                      >
-                          ✕
-                      </button>
+                      <button onClick={onClose} aria-label="閉じる" className={s['design-close-btn']}>✕</button>
                   </div>
               </div>
 
               {/* Body */}
-              <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+              <div className={s['design-body']}>
                   {/* Left: Editor */}
-                  <div
-                      className='rp-design-controls'
-                      style={{
-                          width: '45%',
-                          minWidth: 300,
-                          borderRight: `1px solid ${T.border}`,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          overflow: 'hidden',
-                      }}
-                  >
+                  <div className={`rp-design-controls ${s['design-editor']}`}>
                       {/* Toolbar */}
-                      <div
-                          style={{
-                              padding: '8px 14px',
-                              borderBottom: `1px solid ${T.border}`,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 8,
-                              flexShrink: 0,
-                              flexWrap: 'wrap',
-                          }}
-                      >
-                          <span
-                              style={{
-                                  fontSize: 12,
-                                  fontWeight: 600,
-                                  color: T.text2,
-                              }}
-                          >
-                              フォント
-                          </span>
-                          <button
-                              onClick={() => setFontType('gothic')}
-                              style={{
-                                  padding: '4px 10px',
-                                  borderRadius: 6,
-                                  border: `1.5px solid ${fontType === 'gothic' ? T.accent : T.border}`,
-                                  background:
-                                      fontType === 'gothic'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  fontWeight: fontType === 'gothic' ? 600 : 400,
-                                  color:
-                                      fontType === 'gothic' ? T.accent : T.text,
-                              }}
-                          >
-                              ゴシック
-                          </button>
-                          <button
-                              onClick={() => setFontType('mincho')}
-                              style={{
-                                  padding: '4px 10px',
-                                  borderRadius: 6,
-                                  border: `1.5px solid ${fontType === 'mincho' ? T.accent : T.border}`,
-                                  background:
-                                      fontType === 'mincho'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  fontWeight: fontType === 'mincho' ? 600 : 400,
-                                  color:
-                                      fontType === 'mincho' ? T.accent : T.text,
-                              }}
-                          >
-                              明朝
-                          </button>
+                      <div className={s['design-toolbar']}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: T.text2 }}>フォント</span>
+                          <button onClick={() => setFontType('gothic')} className={s['design-font-btn']} data-active={fontType === 'gothic'}>ゴシック</button>
+                          <button onClick={() => setFontType('mincho')} className={s['design-font-btn']} data-active={fontType === 'mincho'}>明朝</button>
                           <div style={{ flex: 1 }} />
-                          <button
-                              onClick={handleCopyText}
-                              aria-live="polite"
-                              style={{
-                                  padding: '4px 10px',
-                                  borderRadius: 6,
-                                  border: `1px solid ${T.border}`,
-                                  background: 'transparent',
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  color: saved ? T.green : T.text3,
-                              }}
-                          >
+                          <button onClick={handleCopyText} aria-live="polite" className={s['design-copy-btn']} style={{color: saved ? T.green : T.text3}}>
                               {saved ? '✓ コピー済' : '📋 コピー'}
                           </button>
                       </div>
                       {/* Tips */}
-                      <div
-                          style={{
-                              padding: '6px 14px',
-                              borderBottom: `1px solid ${T.border}`,
-                              fontSize: 12,
-                              color: T.text3,
-                              lineHeight: 1.6,
-                              flexShrink: 0,
-                          }}
-                      >
-                          <span style={{ fontWeight: 600, color: T.text2 }}>
-                              記法:{' '}
-                          </span>
-                          <code
-                              style={{
-                                  background: T.surface,
-                                  padding: '1px 4px',
-                                  borderRadius: 3,
-                                  fontFamily: T.mono,
-                              }}
-                          >
-                              **太字**
-                          </code>
-                          <code
-                              style={{
-                                  background: T.surface,
-                                  padding: '1px 4px',
-                                  borderRadius: 3,
-                                  fontFamily: T.mono,
-                                  marginLeft: 6,
-                              }}
-                          >
-                              # 見出し
-                          </code>
-                          <code
-                              style={{
-                                  background: T.surface,
-                                  padding: '1px 4px',
-                                  borderRadius: 3,
-                                  fontFamily: T.mono,
-                                  marginLeft: 6,
-                              }}
-                          >
-                              ## 小見出し
-                          </code>
-                          　
-                          <span style={{ opacity: 0.6 }}>
-                              非公開タグは自動除去
-                          </span>
+                      <div className={s['design-tips']}>
+                          <span style={{ fontWeight: 600, color: T.text2 }}>記法: </span>
+                          <code style={{background:T.surface,padding:'1px 4px',borderRadius:3,fontFamily:T.mono}}>**太字**</code>
+                          <code style={{background:T.surface,padding:'1px 4px',borderRadius:3,fontFamily:T.mono,marginLeft:6}}># 見出し</code>
+                          <code style={{background:T.surface,padding:'1px 4px',borderRadius:3,fontFamily:T.mono,marginLeft:6}}>## 小見出し</code>
+                          　<span style={{ opacity: 0.6 }}>非公開タグは自動除去</span>
                       </div>
                       {/* Textarea */}
                       <textarea
@@ -3476,95 +3280,21 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                           value={editText}
                           onChange={(e) => setEditText(e.target.value)}
                           spellCheck={false}
-                          style={{
-                              flex: 1,
-                              padding: '14px 16px',
-                              border: 'none',
-                              outline: 'none',
-                              resize: 'none',
-                              fontFamily: T.mono,
-                              fontSize: 12,
-                              lineHeight: 1.8,
-                              color: T.text,
-                              background: T.bg2,
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-word',
-                          }}
+                          className={s['design-textarea']}
                       />
                       {/* Actions */}
-                      <div
-                          style={{
-                              padding: 12,
-                              borderTop: `1px solid ${T.border}`,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 6,
-                              flexShrink: 0,
-                          }}
-                      >
-                          <Btn
-                              onClick={handleExport}
-                              style={{
-                                  width: '100%',
-                                  borderRadius: 10,
-                                  fontSize: 13,
-                                  background: '#222',
-                                  gap: 6,
-                              }}
-                          >
+                      <div className={s['design-actions']}>
+                          <Btn onClick={handleExport} style={{ width: '100%', borderRadius: 10, fontSize: 13, background: '#222', gap: 6 }}>
                               🖨️ PDFとして印刷・保存
                           </Btn>
-                          <div
-                              style={{
-                                  fontSize: 12,
-                                  color: T.text3,
-                                  textAlign: 'center',
-                                  lineHeight: 1.4,
-                                  padding: '0 4px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  gap: 4,
-                              }}
-                          >
+                          <div className={s['design-actions-hint']}>
                               <span>🖨️</span>{' '}
                               別タブで開き、ブラウザの印刷ダイアログから「PDFとして保存」を選択してください
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
-                              <Btn
-                                  variant='ghost'
-                                  onClick={handleDownloadWord}
-                                  style={{
-                                      flex: 1,
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      padding: '9px 8px',
-                                  }}
-                              >
-                                  Word (.docx)
-                              </Btn>
-                              <Btn
-                                  variant='ghost'
-                                  onClick={handleDownloadHTML}
-                                  style={{
-                                      flex: 1,
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      padding: '9px 8px',
-                                  }}
-                              >
-                                  HTML
-                              </Btn>
-                              <Btn
-                                  variant='ghost'
-                                  onClick={handleCopyText}
-                                  style={{
-                                      flex: 1,
-                                      borderRadius: 8,
-                                      fontSize: 12,
-                                      padding: '9px 8px',
-                                  }}
-                              >
+                              <Btn variant='ghost' onClick={handleDownloadWord} style={{ flex: 1, borderRadius: 8, fontSize: 12, padding: '9px 8px' }}>Word (.docx)</Btn>
+                              <Btn variant='ghost' onClick={handleDownloadHTML} style={{ flex: 1, borderRadius: 8, fontSize: 12, padding: '9px 8px' }}>HTML</Btn>
+                              <Btn variant='ghost' onClick={handleCopyText} style={{ flex: 1, borderRadius: 8, fontSize: 12, padding: '9px 8px' }}>
                                   {saved ? '✓ コピー済' : '📋 テキスト'}
                               </Btn>
                           </div>
@@ -3572,29 +3302,8 @@ function DesignExportModal({text,apiKey,model,onClose,baseName:baseNameProp}){
                   </div>
 
                   {/* Right: Live Preview */}
-                  <div
-                      style={{
-                          flex: 1,
-                          background: '#e5e7eb',
-                          overflow: 'auto',
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          justifyContent: 'center',
-                          padding: 24,
-                      }}
-                  >
-                      <div
-                          style={{
-                              width: 595,
-                              minHeight: 842,
-                              background: '#fff',
-                              boxShadow: '0 4px 24px rgba(0,0,0,.12)',
-                              borderRadius: 4,
-                              overflow: 'hidden',
-                              transform: 'scale(0.88)',
-                              transformOrigin: 'top center',
-                          }}
-                      >
+                  <div className={s['design-preview-area']}>
+                      <div className={s['design-preview-page']}>
                           <iframe
                               srcDoc={htmlContent}
                               sandbox="allow-same-origin"
@@ -3810,62 +3519,26 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
   const finalHtml=useMemo(()=>layoutHtml.replace('</head>',ruleOverride+'</head>'),[layoutHtml,ruleOverride]);
   return (
       <div
-          style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,.7)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 110,
-              padding: 20,
-              animation: 'fadeIn .2s',
-          }}
+          className={s['preview-overlay']}
           onClick={(e) => {
               if (e.target === e.currentTarget) onClose()
           }}
       >
           <div
               ref={trapRef}
-              className='rp-modal-inner'
+              className={`rp-modal-inner ${s['preview-dialog']}`}
               role="dialog"
               aria-modal="true"
               aria-label={title}
               style={{
-                  width: '100%',
                   maxWidth: expanded ? '96vw' : 820,
                   maxHeight: expanded ? '96vh' : '92vh',
-                  background: T.bg2,
-                  borderRadius: 16,
-                  border: `1px solid ${T.border}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden',
-                  animation: 'fadeUp .3s ease',
-                  transition: 'max-width .25s ease, max-height .25s ease',
               }}
           >
-              <div
-                  style={{
-                      padding: '14px 22px',
-                      borderBottom: `1px solid ${T.border}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      flexShrink: 0,
-                  }}
-              >
+              <div className={s['preview-header']}>
                   <div>
-                      <div
-                          style={{
-                              fontSize: 14,
-                              fontWeight: 700,
-                              color: T.text,
-                          }}
-                      >
-                          {title}
-                      </div>
-                      <div style={{ fontSize: 12, color: T.text3, display:'flex', alignItems:'center', gap:8 }}>
+                      <div className={s['preview-title']}>{title}</div>
+                      <div className={s['preview-meta']}>
                           {lines} 行 / {chars.toLocaleString()} 文字
                           {meta && (
                             <span style={{fontSize:11,color:T.text3,opacity:.8}}>
@@ -3874,75 +3547,13 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           )}
                       </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div
-                          data-intro="preview-tabs"
-                          style={{
-                              display: 'flex',
-                              border: `1px solid ${T.border}`,
-                              borderRadius: 10,
-                              overflow: 'hidden',
-                          }}
-                      >
-                          <button
-                              onClick={() => setView('layout')}
-                              title='書式付きプレビュー'
-                              aria-label='書式付きプレビュー'
-                              style={{
-                                  padding: '6px 10px',
-                                  border: 'none',
-                                  background:
-                                      view === 'layout'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  color: view === 'layout' ? T.accent : T.text3,
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                              }}
-                          >
-                              レイアウト
-                          </button>
-                          <button
-                              onClick={() => setView('text')}
-                              title='プレーンテキスト表示'
-                              aria-label='プレーンテキスト表示'
-                              style={{
-                                  padding: '6px 10px',
-                                  border: 'none',
-                                  background:
-                                      view === 'text'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  color: view === 'text' ? T.accent : T.text3,
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                              }}
-                          >
-                              テキスト
-                          </button>
+                  <div className={s['preview-header-right']}>
+                      <div data-intro="preview-tabs" className={s['preview-tabs']}>
+                          <button onClick={() => setView('layout')} title='書式付きプレビュー' aria-label='書式付きプレビュー' className={s['preview-tab']} data-active={view === 'layout'}>レイアウト</button>
+                          <button onClick={() => setView('text')} title='プレーンテキスト表示' aria-label='プレーンテキスト表示' className={s['preview-tab']} data-active={view === 'text'}>テキスト</button>
                           {editable!==false&&onContentChange&&(<>
                           <span style={{width:1,alignSelf:'stretch',background:T.border}} />
-                          <button
-                              onClick={() => setView('edit')}
-                              title='テキストを編集'
-                              aria-label='テキストを編集'
-                              style={{
-                                  padding: '6px 10px',
-                                  border: 'none',
-                                  background:
-                                      view === 'edit'
-                                          ? T.accentDim
-                                          : 'transparent',
-                                  color: view === 'edit' ? T.accent : T.text3,
-                                  fontSize: 11,
-                                  fontWeight: 700,
-                                  cursor: 'pointer',
-                              }}
-                          >
-                              編集
-                          </button>
+                          <button onClick={() => setView('edit')} title='テキストを編集' aria-label='テキストを編集' className={s['preview-tab']} data-active={view === 'edit'}>編集</button>
                           </>)}
                       </div>
                       {view==='layout'&&fmt!=='csv'&&fmt!=='xlsx'&&(
@@ -3950,35 +3561,14 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           onClick={()=>{const next=!headingRule;setHeadingRule(next);try{localStorage.setItem('rp_heading_rule',next?'on':'off')}catch{}}}
                           title={headingRule?'見出し罫線を非表示':'見出し罫線を表示'}
                           aria-label='見出し罫線の切替'
-                          style={{
-                            padding:'5px 8px',border:`1px solid ${T.border}`,borderRadius:7,
-                            background:headingRule?T.accentDim:'transparent',
-                            color:headingRule?T.accent:T.text3,cursor:'pointer',fontSize:11,fontWeight:600,
-                            display:'flex',alignItems:'center',gap:4,transition:'all .15s',
-                          }}
+                          className={s['preview-rule-btn']}
+                          data-active={headingRule}
                         >
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="12" x2="21" y2="12"/></svg>
                           罫線
                         </button>
                       )}
-                      <button
-                          onClick={()=>setExpanded(v=>!v)}
-                          title={expanded?'縮小':'最大化'}
-                          aria-label={expanded?'縮小':'最大化'}
-                          style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 7,
-                              border: `1px solid ${T.border}`,
-                              background: 'transparent',
-                              color: T.text2,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                          }}
-                      >
+                      <button onClick={()=>setExpanded(v=>!v)} title={expanded?'縮小':'最大化'} aria-label={expanded?'縮小':'最大化'} className={s['modal-close-btn']}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             {expanded?(
                               <>{/* 縮小アイコン */}<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></>
@@ -3987,47 +3577,21 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                             )}
                           </svg>
                       </button>
-                      <button
-                          onClick={onClose}
-                          title='閉じる'
-                          aria-label='閉じる'
-                          style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 7,
-                              border: `1px solid ${T.border}`,
-                              background: 'transparent',
-                              color: T.text2,
-                              cursor: 'pointer',
-                              fontSize: 13,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                          }}
-                      >
-                          x
-                      </button>
+                      <button onClick={onClose} title='閉じる' aria-label='閉じる' className={s['modal-close-btn']}>x</button>
                   </div>
               </div>
               <div style={{ flex: 1, overflow: 'auto', padding: 0 }}>
                   {view === 'edit' ? (
-                      <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+                      <div className={s['preview-edit-area']}>
                           <textarea
                               aria-label="テキストを編集"
                               value={editedContent}
                               onChange={(e)=>{setEditedContent(e.target.value);setHasChanges(e.target.value!==content);}}
-                              style={{
-                                  width:'100%',flex:1,minHeight:400,
-                                  padding:'16px 24px',fontFamily:T.mono,fontSize:12,
-                                  lineHeight:1.8,color:T.text,background:T.bg,
-                                  border:'none',resize:'none',
-                                  outline:`2px solid ${T.accent}`,outlineOffset:-2,
-                                  borderRadius:0,
-                              }}
+                              className={s['preview-edit-textarea']}
                               spellCheck={false}
                               autoFocus
                           />
-                          <div style={{padding:'10px 22px',display:'flex',justifyContent:'flex-end',gap:8,alignItems:'center',borderTop:`1px solid ${T.border}`,background:T.bg2}}>
+                          <div className={s['preview-edit-bar']}>
                               {hasChanges&&<span style={{fontSize:11,color:T.amber,marginRight:'auto'}}>未保存の変更があります</span>}
                               <Btn variant='ghost' onClick={handleCancelEdit} style={{padding:'6px 14px',fontSize:12,borderRadius:8}}>キャンセル</Btn>
                               <Btn onClick={handleSave} disabled={!hasChanges} style={{padding:'6px 14px',fontSize:12,borderRadius:8,opacity:hasChanges?1:.5}}>保存 (Ctrl+S)</Btn>
@@ -4121,18 +3685,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                           )}
                       </div>
                   ) : (
-                      <pre
-                          style={{
-                              padding: '16px 24px',
-                              fontFamily: T.mono,
-                              fontSize: 12,
-                              lineHeight: 1.8,
-                              color: T.text,
-                              whiteSpace: 'pre-wrap',
-                              wordBreak: 'break-word',
-                              margin: 0,
-                          }}
-                      >
+                      <pre className={s['preview-text-view']}>
                           {content.split('\n').map((line, i) => {
                               const re = new RegExp(PH_RE.source, 'g')
                               const parts = []
@@ -4146,16 +3699,7 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                                           </span>,
                                       )
                                   parts.push(
-                                      <span
-                                          key={`r${i}-${m.index}`}
-                                          style={{
-                                              background: T.redDim,
-                                              color: T.red,
-                                              padding: '0 4px',
-                                              borderRadius: 3,
-                                              fontWeight: 600,
-                                          }}
-                                      >
+                                      <span key={`r${i}-${m.index}`} className={s['preview-redact-tag']}>
                                           {m[0]}
                                       </span>,
                                   )
@@ -4168,22 +3712,8 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                                       </span>,
                                   )
                               return (
-                                  <div
-                                      key={i}
-                                      style={{ display: 'flex', minHeight: 20 }}
-                                  >
-                                      <span
-                                          style={{
-                                              width: 36,
-                                              flexShrink: 0,
-                                              textAlign: 'right',
-                                              paddingRight: 10,
-                                              color: T.text3,
-                                              fontSize: 12,
-                                              userSelect: 'none',
-                                              lineHeight: '20px',
-                                          }}
-                                      >
+                                  <div key={i} className={s['preview-line']}>
+                                      <span className={s['preview-line-num']}>
                                           {i + 1}
                                       </span>
                                       <span style={{ flex: 1 }}>
@@ -4197,168 +3727,47 @@ h4{font-size:10.5pt;font-weight:700;margin:12px 0 4px}
                       </pre>
                   )}
               </div>
-              <div
-                  style={{
-                      padding: '12px 22px',
-                      borderTop: `1px solid ${T.border}`,
-                      flexShrink: 0,
-                  }}
-              >
-                  <div
-                      style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          flexWrap: 'wrap',
-                          marginBottom: 10,
-                      }}
-                  >
-                      <span
-                          style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text3,
-                              flexShrink: 0,
-                          }}
-                      >
-                          出力形式:
-                      </span>
-                      <div
-                          data-intro="export-formats"
-                          style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}
-                      >
+              <div className={s['preview-footer']}>
+                  <div className={s['preview-formats']}>
+                      <span className={s['preview-formats-label']}>出力形式:</span>
+                      <div data-intro="export-formats" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                           {EXPORT_FORMATS.map((f) => (
                               <button
                                   key={f.id}
                                   onClick={() => setFmt(f.id)}
                                   title={`${f.label}形式`}
                                   aria-label={`${f.label}形式`}
-                                  style={{
-                                      padding: '5px 12px',
-                                      borderRadius: 7,
-                                      border: `1px solid ${fmt === f.id ? T.accent : T.border}`,
-                                      background:
-                                          fmt === f.id
-                                              ? T.accentDim
-                                              : 'transparent',
-                                      color: fmt === f.id ? T.accent : T.text3,
-                                      fontSize: 12,
-                                      fontWeight: fmt === f.id ? 600 : 400,
-                                      cursor: 'pointer',
-                                      fontFamily: T.font,
-                                      transition: 'all .15s',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 4,
-                                  }}
+                                  className={s['preview-fmt-btn']}
+                                  data-active={fmt === f.id}
                               >
-                                  <span
-                                      style={{
-                                          width: 16,
-                                          height: 16,
-                                          borderRadius: 4,
-                                          background:
-                                              fmt === f.id
-                                                  ? T.accent
-                                                  : T.border,
-                                          color:
-                                              fmt === f.id ? '#fff' : T.text3,
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          fontSize: 12,
-                                          fontWeight: 700,
-                                      }}
-                                  >
+                                  <span className={s['preview-fmt-icon']} data-active={fmt === f.id}>
                                       {f.icon}
                                   </span>
                                   {f.label}
                                   {f.id === 'pdf' && (
-                                      <span
-                                          title='ブラウザの印刷機能を使用してPDFを生成します'
-                                          style={{
-                                              fontSize: 12,
-                                              marginLeft: -2,
-                                              opacity: 0.8,
-                                          }}
-                                      >
-                                          🖨️
-                                      </span>
+                                      <span title='ブラウザの印刷機能を使用してPDFを生成します' style={{ fontSize: 12, marginLeft: -2, opacity: 0.8 }}>🖨️</span>
                                   )}
                               </button>
                           ))}
                       </div>
                   </div>
-                  <div
-                      data-intro="export-actions"
-                      style={{
-                          display: 'flex',
-                          gap: 8,
-                          justifyContent: 'flex-end',
-                          alignItems: 'center',
-                      }}
-                  >
+                  <div data-intro="export-actions" className={s['preview-export-row']}>
                       {fmt === 'pdf' && (
-                          <span
-                              style={{
-                                  fontSize: 12,
-                                  color: T.amber,
-                                  marginRight: 'auto',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 4,
-                              }}
-                          >
+                          <span style={{ fontSize: 12, color: T.amber, marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
                               <span style={{ fontSize: 12 }}>🖨️</span>{' '}
                               印刷ダイアログから「PDFとして保存」を選択してください
                           </span>
                       )}
-                      <Btn
-                          variant='ghost'
-                          onClick={onClose}
-                          title='閉じる'
-                          style={{
-                              padding: '7px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                          }}
-                      >
-                          閉じる
-                      </Btn>
-                      <Btn
-                          variant='ghost'
-                          onClick={handleCopy}
-                          title='クリップボードにコピー'
-                          aria-live="polite"
-                          style={{
-                              padding: '7px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                          }}
-                      >
+                      <Btn variant='ghost' onClick={onClose} title='閉じる' style={{ padding: '7px 16px', fontSize: 12, borderRadius: 8 }}>閉じる</Btn>
+                      <Btn variant='ghost' onClick={handleCopy} title='クリップボードにコピー' aria-live="polite" style={{ padding: '7px 16px', fontSize: 12, borderRadius: 8 }}>
                           {copied ? '\u2713 コピー済' : 'コピー'}
                       </Btn>
-                      <Btn
-                          onClick={handleDownload}
-                          title={`${curFmt?.label}形式でダウンロード`}
-                          style={{
-                              padding: '7px 16px',
-                              fontSize: 12,
-                              borderRadius: 8,
-                          }}
-                      >
+                      <Btn onClick={handleDownload} title={`${curFmt?.label}形式でダウンロード`} style={{ padding: '7px 16px', fontSize: 12, borderRadius: 8 }}>
                           {curFmt?.label} で保存
                       </Btn>
                   </div>
                   {view === 'layout' && (
-                      <div
-                          style={{
-                              marginTop: 10,
-                              fontSize: 10,
-                              color: T.text3,
-                              lineHeight: 1.5,
-                          }}
-                      >
+                      <div className={s['preview-format-hint']}>
                           {fmt==='csv'||fmt==='xlsx' ? 'テーブルプレビューはCSV/Excel出力のイメージです。'
                            : fmt==='txt' ? 'プレーンテキスト表示です。'
                            : fmt==='md' ? 'Markdownをレンダリングしたプレビューです。'
@@ -4385,113 +3794,35 @@ function DiffView({original,modified,label,modifiedLabel}){
   }
   const changeCount=diffs.filter(d=>d.type==="changed").length;
   return (
-      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <div
-              style={{
-                  padding: '8px 16px',
-                  borderBottom: `1px solid ${T.border}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  background: T.bg2,
-                  flexShrink: 0,
-              }}
-          >
-              <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
+      <div className={s['diff-wrap']}>
+          <div className={s['diff-header']}>
+              <span className={s['diff-header-label']}>
                   Diff: {label || '変更箇所'}
-              </div>
+              </span>
               <Badge color={T.amber} bg={T.amberDim}>
                   {changeCount} 行変更
               </Badge>
           </div>
-          <div style={{ flex: 1, overflow: 'auto' }}>
-              <div
-                  style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      minWidth: 0,
-                  }}
-              >
-                  <div
-                      style={{
-                          borderRight: `1px solid ${T.border}`,
-                          padding: '4px 0',
-                      }}
-                  >
-                      <div
-                          style={{
-                              padding: '4px 12px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text3,
-                              borderBottom: `1px solid ${T.border}`,
-                              marginBottom: 4,
-                          }}
-                      >
-                          元テキスト
-                      </div>
+          <div className={s['diff-scroll']}>
+              <div className={s['diff-grid']}>
+                  <div className={s['diff-col-left']}>
+                      <div className={s['diff-col-label']}>元テキスト</div>
                       {diffs.map((d, i) => (
                           <div
                               key={i}
-                              style={{
-                                  display: 'flex',
-                                  minHeight: 22,
-                                  padding: '1px 0',
-                                  background:
-                                      d.type === 'changed'
-                                          ? T.diffDel
-                                          : 'transparent',
-                                  borderLeft:
-                                      d.type === 'changed'
-                                          ? `3px solid ${T.red}`
-                                          : '3px solid transparent',
-                              }}
+                              className={s['diff-line']}
+                              data-changed={d.type === 'changed'}
+                              data-side="del"
                           >
-                              <span
-                                  style={{
-                                      width: 32,
-                                      flexShrink: 0,
-                                      textAlign: 'right',
-                                      paddingRight: 8,
-                                      color: T.text3,
-                                      fontSize: 12,
-                                      userSelect: 'none',
-                                      lineHeight: '22px',
-                                  }}
-                              >
-                                  {i + 1}
-                              </span>
-                              <span
-                                  style={{
-                                      flex: 1,
-                                      fontSize: 12,
-                                      fontFamily: T.mono,
-                                      lineHeight: '22px',
-                                      color:
-                                          d.type === 'changed' ? T.red : T.text,
-                                      whiteSpace: 'pre-wrap',
-                                      wordBreak: 'break-word',
-                                      paddingRight: 8,
-                                  }}
-                              >
+                              <span className={s['diff-line-num']}>{i + 1}</span>
+                              <span className={s['diff-line-text']}>
                                   {d.orig || '\u00A0'}
                               </span>
                           </div>
                       ))}
                   </div>
-                  <div style={{ padding: '4px 0' }}>
-                      <div
-                          style={{
-                              padding: '4px 12px',
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: T.text3,
-                              borderBottom: `1px solid ${T.border}`,
-                              marginBottom: 4,
-                          }}
-                      >
-                          {modifiedLabel || 'マスキング済み'}
-                      </div>
+                  <div className={s['diff-col-right']}>
+                      <div className={s['diff-col-label']}>{modifiedLabel || 'マスキング済み'}</div>
                       {diffs.map((d, i) => {
                           const re = new RegExp(PH_RE.source, 'g')
                           const parts = []
@@ -4508,13 +3839,7 @@ function DiffView({original,modified,label,modifiedLabel}){
                               parts.push(
                                   <span
                                       key={`r${m.index}`}
-                                      style={{
-                                          background: T.greenDim,
-                                          color: T.green,
-                                          padding: '0 3px',
-                                          borderRadius: 3,
-                                          fontWeight: 600,
-                                      }}
+                                      className={s['diff-redact-tag']}
                                   >
                                       {m[0]}
                                   </span>,
@@ -4530,49 +3855,12 @@ function DiffView({original,modified,label,modifiedLabel}){
                           return (
                               <div
                                   key={i}
-                                  style={{
-                                      display: 'flex',
-                                      minHeight: 22,
-                                      padding: '1px 0',
-                                      background:
-                                          d.type === 'changed'
-                                              ? T.diffAdd
-                                              : 'transparent',
-                                      borderLeft:
-                                          d.type === 'changed'
-                                              ? `3px solid ${T.green}`
-                                              : '3px solid transparent',
-                                  }}
+                                  className={s['diff-line']}
+                                  data-changed={d.type === 'changed'}
+                                  data-side="add"
                               >
-                                  <span
-                                      style={{
-                                          width: 32,
-                                          flexShrink: 0,
-                                          textAlign: 'right',
-                                          paddingRight: 8,
-                                          color: T.text3,
-                                          fontSize: 12,
-                                          userSelect: 'none',
-                                          lineHeight: '22px',
-                                      }}
-                                  >
-                                      {i + 1}
-                                  </span>
-                                  <span
-                                      style={{
-                                          flex: 1,
-                                          fontSize: 12,
-                                          fontFamily: T.mono,
-                                          lineHeight: '22px',
-                                          color:
-                                              d.type === 'changed'
-                                                  ? T.green
-                                                  : T.text,
-                                          whiteSpace: 'pre-wrap',
-                                          wordBreak: 'break-word',
-                                          paddingRight: 8,
-                                      }}
-                                  >
+                                  <span className={s['diff-line-num']}>{i + 1}</span>
+                                  <span className={s['diff-line-text']}>
                                       {parts.length ? parts : line || '\u00A0'}
                                   </span>
                               </div>
