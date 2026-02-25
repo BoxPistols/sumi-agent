@@ -4202,7 +4202,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
               className={s['up-hero']}
               style={{
                   maxWidth: isLite ? 820 : 1200,
-                  margin: isLite ? '0 auto 36px' : '0 auto 28px',
+                  margin: isLite ? '0 auto 20px' : '0 auto 16px',
               }}
           >
               <div className={s['up-logo']}>
@@ -4214,7 +4214,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
               </div>
               <h1
                   className={s['up-title']}
-                  style={{ fontSize: isLite ? 32 : 28 }}
+                  style={{ fontSize: isLite ? 24 : 22 }}
               >
                   {isLite ? <>経歴書の個人情報を<span className={s['up-title-accent']}>自動マスキング</span></> : <>経歴書の個人情報を<span className={s['up-title-accent']}>自動検出・マスキング</span></>}
               </h1>

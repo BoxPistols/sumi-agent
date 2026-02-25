@@ -1676,40 +1676,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 4px;
+  gap: 8px;
+  margin-bottom: 2px;
 }
 
 .up-logo-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
   background: var(--rp-text);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding: 0 8px;
-  gap: 4px;
+  padding: 0 6px;
+  gap: 3px;
   flex-shrink: 0;
 }
 
 .up-logo-bar1 {
-  width: 22px;
-  height: 4px;
+  width: 18px;
+  height: 3px;
   border-radius: 2px;
   background: var(--rp-bg);
 }
 
 .up-logo-bar2 {
-  width: 16px;
-  height: 4px;
+  width: 13px;
+  height: 3px;
   border-radius: 2px;
   background: var(--rp-bg);
 }
 
 .up-logo-text {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--rp-text);
   letter-spacing: 1px;
@@ -1728,7 +1728,7 @@
 .up-subtitle {
   font-size: 13px;
   color: var(--rp-text2);
-  margin-top: 8px;
+  margin-top: 4px;
   line-height: 1.7;
 }
 
@@ -1736,7 +1736,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .up-trust-badge {
