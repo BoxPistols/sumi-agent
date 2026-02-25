@@ -7357,6 +7357,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     const d='5px';
     if(isLite){
       // Lite: テキスト + サイドバー の2カラム（子要素2つ）
+      if(sidebarCollapsed) return '1fr 40px';
       const r=rightPct?`${rightPct}%`:'280px';
       return `1fr ${r}`;
     }
@@ -7937,8 +7938,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   onMouseLeave={(e)=>{e.currentTarget.style.background='transparent';}}
               />
           )}
-          {/* Collapsed sidebar indicator (Pro only) */}
-          {!isLite && sidebarCollapsed && (
+          {/* Collapsed sidebar indicator */}
+          {sidebarCollapsed && (
               <div
                   role="button" tabIndex={0} aria-label="サイドバーを展開"
                   onClick={()=>{setSidebarCollapsed(false);setLeftPct(null);setRightPct(null);}}
