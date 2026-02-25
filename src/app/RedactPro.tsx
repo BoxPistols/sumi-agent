@@ -1966,7 +1966,7 @@ function FileTabBar({files,activeIdx,onSelect,onRemove,onBatchExport,onAddFiles}
               <span style={{width:7,height:7,borderRadius:'50%',background:statusDot,flexShrink:0}}/>
               <span style={{overflow:'hidden',textOverflow:'ellipsis'}}>{f.fileName}</span>
               {f.status==='processing'&&(
-                <span style={{position:'absolute',bottom:0,left:0,height:2,background:`linear-gradient(90deg,${T.accent},${C.purple})`,
+                <span style={{position:'absolute',bottom:0,left:0,height:2,background:T.accent,
                   width:`${f.progress||0}%`,transition:'width .3s',borderRadius:1}}/>
               )}
             </button>
@@ -2004,7 +2004,7 @@ function BatchProcessingView({file}){
       <div style={{fontSize:16,fontWeight:600,color:T.text}}>{file.fileName}</div>
       <div style={{fontSize:13,color:T.text3}}>{file.stage||'処理待機中...'}</div>
       <div style={{width:240,height:6,borderRadius:3,background:T.surfaceAlt,overflow:'hidden'}}>
-        <div style={{height:'100%',borderRadius:3,background:`linear-gradient(90deg,${T.accent},${C.purple})`,
+        <div style={{height:'100%',borderRadius:3,background:T.accent,
           width:`${file.progress||0}%`,transition:'width .3s'}}/>
       </div>
       <div style={{fontSize:11,color:T.text3}}>{file.progress||0}%</div>
@@ -2304,7 +2304,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                       紹介動画を見る
                     </button>}
-                    {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:`linear-gradient(135deg,${C.accent},${C.purple})`,color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                    {onStartTour&&<button onClick={()=>{onClose();onStartTour();}} style={{flex:1,padding:'10px 14px',borderRadius:10,border:'none',background:C.accent,color:'#fff',fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                       ガイドツアー
                     </button>}
@@ -5449,7 +5449,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                               style={{
                                   height: '100%',
                                   width: `${progressPct}%`,
-                                  background: `linear-gradient(90deg,${T.accent},${T.purple})`,
+                                  background: T.accent,
                                   transition: 'width .25s ease',
                               }}
                           />
@@ -5573,6 +5573,13 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   margin: isLite ? '0 auto 36px' : '0 auto 28px',
               }}
           >
+              <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,marginBottom:4}}>
+                  <div style={{width:40,height:40,borderRadius:8,background:T.text,display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center',padding:'0 8px',gap:4,flexShrink:0}}>
+                      <div style={{width:22,height:4,borderRadius:2,background:T.bg}} />
+                      <div style={{width:16,height:4,borderRadius:2,background:T.bg}} />
+                  </div>
+                  <span style={{fontSize:28,fontWeight:800,color:T.text,letterSpacing:1}}>Sumi</span>
+              </div>
               <h1
                   style={{
                       fontSize: isLite ? 32 : 28,
@@ -5915,7 +5922,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&onSwitchPro){e.preventDefault();onSwitchPro();}}}
                       style={{
                         marginTop:12,padding:'12px 16px',borderRadius:10,
-                        background:`linear-gradient(135deg,${C.accent}10,${C.purple}10)`,
+                        background:`${C.accent}10`,
                         border:`1px solid ${C.accent}20`,
                         cursor:'pointer',display:'flex',alignItems:'center',gap:10,
                         transition:'all .2s',
@@ -8464,7 +8471,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       style={{
                           width: '100%',
                           borderRadius: 10,
-                          background: `linear-gradient(135deg,${T.accent},${T.purple})`,
+                          background: T.accent,
                           fontSize: 13,
                       }}
                   >
@@ -8613,102 +8620,104 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   )}
               </div>
               {/* プリセット質問 */}
-              {advisorMessages.length===0 && (
-              <div style={{padding:'12px 14px',borderBottom:`1px solid ${T.border}`,display:'flex',flexDirection:'column',gap:6}}>
+              {advisorMessages.length===0 && (<>
+              {/* クイック分析（スクロール領域） */}
+              <div style={{flex:1,overflowY:'auto',padding:'10px 14px',display:'flex',flexDirection:'column',gap:4}}>
                   {/* マスク済み送信トグル */}
-                  <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'6px 0'}}>
-                      <span style={{position:'relative',display:'inline-block',width:36,height:20,borderRadius:10,background:advisorUseRedacted?T.green||'#059669':T.surfaceAlt,transition:'background .2s',flexShrink:0}}
+                  <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'4px 0'}}>
+                      <span style={{position:'relative',display:'inline-block',width:32,height:18,borderRadius:9,background:advisorUseRedacted?T.green||'#059669':T.surfaceAlt,transition:'background .2s',flexShrink:0}}
                           onClick={e=>{e.preventDefault();setAdvisorUseRedacted(p=>!p);}}
                       >
-                          <span style={{position:'absolute',top:2,left:advisorUseRedacted?18:2,width:16,height:16,borderRadius:8,background:'#fff',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.2)'}} />
+                          <span style={{position:'absolute',top:2,left:advisorUseRedacted?16:2,width:14,height:14,borderRadius:7,background:'#fff',transition:'left .2s',boxShadow:'0 1px 3px rgba(0,0,0,.2)'}} />
                       </span>
-                      <span style={{fontSize:12,fontWeight:600,color:T.text}}>マスク済みテキストで分析</span>
+                      <span style={{fontSize:11,fontWeight:600,color:T.text}}>マスク済みテキストで分析</span>
                   </label>
-                  <div style={{fontSize:11,color:T.text3,lineHeight:1.5,marginTop:-4}}>
+                  <div style={{fontSize:10,color:T.text3,lineHeight:1.4}}>
                       {advisorUseRedacted
-                          ? 'ON: 個人情報をマスクした状態でAIに送信します（フリーランス向け）'
-                          : 'OFF: 元テキストで精度の高い分析を行います（正社員紹介向け）'}
+                          ? 'ON: 個人情報をマスクしてAIに送信（フリーランス向け）'
+                          : 'OFF: 元テキストで高精度分析（正社員紹介向け）'}
                   </div>
-                  <div style={{fontSize:13,fontWeight:700,color:T.text,marginBottom:2,marginTop:4}}>クイック分析</div>
-                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                  <div style={{fontSize:12,fontWeight:700,color:T.text,marginTop:4,marginBottom:2}}>クイック分析</div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4}}>
                       {(advisorPresets||[]).filter(p=>p.id!=='job-match'&&p.id!=='rewrite-full').map(p=>(
                           <button key={p.id} disabled={advisorLoading}
                               onClick={()=>handleAdvisorPreset(p)}
                               title={p.desc}
-                              style={{padding:'8px 10px',fontSize:12,fontWeight:500,color:T.text,background:T.surface,
-                                  border:`1px solid ${T.border}`,borderRadius:8,cursor:advisorLoading?'wait':'pointer',
-                                  textAlign:'left',transition:'all .15s',opacity:advisorLoading?0.5:1}}
+                              style={{padding:'6px 8px',fontSize:11,fontWeight:500,color:T.text,background:T.surface,
+                                  border:`1px solid ${T.border}`,borderRadius:6,cursor:advisorLoading?'wait':'pointer',
+                                  textAlign:'left',transition:'all .15s',opacity:advisorLoading?0.5:1,
+                                  display:'flex',alignItems:'center',gap:5}}
                               onMouseEnter={e=>{if(!advisorLoading)e.currentTarget.style.borderColor=T.accent}}
                               onMouseLeave={e=>{e.currentTarget.style.borderColor=T.border}}
                           >
+                              {p.icon&&<span style={{fontSize:13,opacity:0.7,flexShrink:0}}>{p.icon}</span>}
                               {p.label}
                           </button>
                       ))}
                   </div>
-                  {/* 求人票マッチング */}
+                  {/* 求人票マッチング展開 */}
+                  {showJobInput && (
                   <div style={{marginTop:4}}>
-                      <button
-                          onClick={()=>setShowJobInput(p=>!p)}
-                          style={{width:'100%',padding:'8px 10px',fontSize:12,fontWeight:600,
-                              color:'#fff',background:`linear-gradient(135deg,${T.accent},${T.purple})`,
-                              border:'none',borderRadius:8,cursor:'pointer',transition:'opacity .15s',
-                              opacity:advisorLoading?0.5:1}}
-                          disabled={advisorLoading}
-                      >
-                          求人票マッチング
-                      </button>
-                      {showJobInput && (
-                      <div style={{marginTop:8}}>
-                          <div style={{fontSize:11,color:T.text3,lineHeight:1.5,marginBottom:6}}>
-                              求人票のテキストを貼り付けて、経歴書との適合度・ギャップを分析します。
-                          </div>
-                          <textarea
-                              value={jobDescription}
-                              onChange={e=>setJobDescription(e.target.value)}
-                              placeholder="求人票のテキストを貼り付けてください..."
-                              style={{width:'100%',minHeight:80,maxHeight:160,padding:'8px 10px',fontSize:12,
-                                  color:T.text,background:T.surface,border:`1px solid ${T.border}`,borderRadius:8,
-                                  resize:'vertical',fontFamily:'inherit',lineHeight:1.6}}
-                          />
-                          <button
-                              onClick={()=>{
-                                  const jm=(advisorPresets||[]).find(p=>p.id==='job-match');
-                                  if(jm)handleAdvisorPreset(jm);
-                              }}
-                              disabled={advisorLoading||!jobDescription.trim()}
-                              style={{marginTop:6,width:'100%',padding:'7px 10px',fontSize:12,fontWeight:600,
-                                  color:!jobDescription.trim()?T.text3:'#fff',
-                                  background:!jobDescription.trim()?T.surface:T.accent,
-                                  border:`1px solid ${!jobDescription.trim()?T.border:T.accent}`,borderRadius:8,
-                                  cursor:!jobDescription.trim()||advisorLoading?'not-allowed':'pointer'}}
-                          >
-                              マッチング分析を実行
-                          </button>
-                          <div style={{fontSize:10,color:T.text3,lineHeight:1.5,marginTop:6,padding:'4px 0'}}>
-                              {advisorUseRedacted
-                                  ? '経歴書の個人情報はマスク済みの状態でAIに送信されます。求人票テキストはそのまま送信されます。'
-                                  : '経歴書は元テキストのままAIに送信されます。個人情報を保護する場合は上部の「マスク済みテキストで分析」をONにしてください。'}
-                          </div>
+                      <div style={{fontSize:10,color:T.text3,lineHeight:1.4,marginBottom:4}}>
+                          求人票テキストを貼り付けて、経歴書との適合度を分析します。
                       </div>
-                      )}
-                  </div>
-                  {/* 改善テキスト生成 */}
-                  <div style={{marginTop:4}}>
+                      <textarea
+                          value={jobDescription}
+                          onChange={e=>setJobDescription(e.target.value)}
+                          placeholder="求人票のテキストを貼り付け..."
+                          style={{width:'100%',minHeight:60,maxHeight:120,padding:'6px 8px',fontSize:11,
+                              color:T.text,background:T.surface,border:`1px solid ${T.border}`,borderRadius:6,
+                              resize:'vertical',fontFamily:'inherit',lineHeight:1.5}}
+                      />
                       <button
-                          onClick={handleAdvisorRewriteFull}
-                          disabled={advisorDraftLoading||advisorLoading}
-                          title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
-                          style={{width:'100%',padding:'8px 10px',fontSize:12,fontWeight:600,
-                              color:'#fff',background:`linear-gradient(135deg,${T.green||'#22c55e'},${T.accent})`,
-                              border:'none',borderRadius:8,cursor:advisorDraftLoading?'wait':'pointer',
-                              transition:'opacity .15s',opacity:advisorDraftLoading?0.5:1}}
+                          onClick={()=>{
+                              const jm=(advisorPresets||[]).find(p=>p.id==='job-match');
+                              if(jm)handleAdvisorPreset(jm);
+                          }}
+                          disabled={advisorLoading||!jobDescription.trim()}
+                          style={{marginTop:4,width:'100%',padding:'5px 8px',fontSize:11,fontWeight:600,
+                              color:!jobDescription.trim()?T.text3:'#fff',
+                              background:!jobDescription.trim()?T.surface:T.accent,
+                              border:`1px solid ${!jobDescription.trim()?T.border:T.accent}`,borderRadius:6,
+                              cursor:!jobDescription.trim()||advisorLoading?'not-allowed':'pointer'}}
                       >
-                          {advisorDraftLoading?'改善テキスト生成中...':'改善テキストを生成'}
+                          マッチング分析を実行
                       </button>
-                      {advisorDraft&&<div style={{marginTop:6,fontSize:11,color:T.green||'#22c55e',fontWeight:500}}>差分プレビューを左パネルに表示中</div>}
+                      <div style={{fontSize:9,color:T.text3,lineHeight:1.4,marginTop:4}}>
+                          {advisorUseRedacted
+                              ? '個人情報はマスク済みでAIに送信されます。求人票はそのまま送信されます。'
+                              : '経歴書は元テキストのまま送信されます。個人情報を保護する場合は上のトグルをONに。'}
+                      </div>
                   </div>
+                  )}
               </div>
-              )}
+              {/* アクションボタン（下部固定） */}
+              <div style={{flexShrink:0,padding:'8px 14px',borderTop:`1px solid ${T.border}`,display:'flex',flexDirection:'column',gap:4}}>
+                  <button
+                      onClick={()=>setShowJobInput(p=>!p)}
+                      style={{width:'100%',padding:'6px 8px',fontSize:11,fontWeight:600,
+                          color:'#fff',background:T.accent,
+                          border:'none',borderRadius:6,cursor:'pointer',transition:'opacity .15s',
+                          opacity:advisorLoading?0.5:1,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                      disabled={advisorLoading}
+                  >
+                      <span style={{fontSize:13}}>&#x21C4;</span> 求人票マッチング
+                  </button>
+                  <button
+                      onClick={handleAdvisorRewriteFull}
+                      disabled={advisorDraftLoading||advisorLoading}
+                      title='AIが経歴書テキスト全文を改善。差分プレビューで確認後、取り込み/却下を選択できます。'
+                      style={{width:'100%',padding:'6px 8px',fontSize:11,fontWeight:600,
+                          color:'#fff',background:T.green||'#059669',
+                          border:'none',borderRadius:6,cursor:advisorDraftLoading?'wait':'pointer',
+                          transition:'opacity .15s',opacity:advisorDraftLoading?0.5:1,
+                          display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
+                  >
+                      <span style={{fontSize:13}}>&#x21BB;</span> {advisorDraftLoading?'生成中...':'改善テキストを生成'}
+                  </button>
+                  {advisorDraft&&<div style={{fontSize:10,color:T.green||'#22c55e',fontWeight:500,textAlign:'center'}}>差分プレビューを左パネルに表示中</div>}
+              </div>
+              </>)}
               {/* チャット履歴 */}
               <div style={{flex:1,overflowY:'auto',padding:'12px 14px',display:'flex',flexDirection:'column',gap:10}}>
                   {advisorMessages.map((msg,i)=>(

@@ -30,6 +30,7 @@ Markdown形式で回答してください。見出し・箇条書き・太字を
 export const ADVISOR_PRESETS: AdvisorPreset[] = [
   {
     id: 'review',
+    icon: '\u2611',
     label: '経歴書レビュー',
     prompt:
       'この経歴書の全体レビューをお願いします。構成の良い点と改善すべき点、記述が不足している箇所を指摘してください。',
@@ -37,6 +38,7 @@ export const ADVISOR_PRESETS: AdvisorPreset[] = [
   },
   {
     id: 'strengths',
+    icon: '\u25C6',
     label: '強みの発見',
     prompt:
       'この経歴書から読み取れる求職者の潜在的な強みを分析してください。本人が明示していないが、経歴から推測できるスキルや価値を言語化してください。',
@@ -44,6 +46,7 @@ export const ADVISOR_PRESETS: AdvisorPreset[] = [
   },
   {
     id: 'questions',
+    icon: '\u2630',
     label: '追加ヒアリング項目',
     prompt:
       'この経歴書をもとに、求職者に追加でヒアリングすべき項目を優先度付きで列挙してください。経歴書に不足している情報、曖昧な記述、深掘りすべきポイントを具体的に。',
@@ -51,6 +54,7 @@ export const ADVISOR_PRESETS: AdvisorPreset[] = [
   },
   {
     id: 'matching',
+    icon: '\u25CE',
     label: '適性ポジション分析',
     prompt:
       'この求職者が活躍できそうなポジション・業界・企業タイプを分析してください。また、マッチングの際に企業側に確認すべき要件があれば指摘してください。',
@@ -58,6 +62,7 @@ export const ADVISOR_PRESETS: AdvisorPreset[] = [
   },
   {
     id: 'rewrite',
+    icon: '\u270E',
     label: '記述改善の提案',
     prompt:
       'この経歴書で「もっと良く書ける」記述を特定し、改善案を提示してください。特に、成果・実績の定量化、技術スキルの具体性、プロジェクト説明の粒度に注目してください。',
@@ -65,6 +70,7 @@ export const ADVISOR_PRESETS: AdvisorPreset[] = [
   },
   {
     id: 'rewrite-full',
+    icon: '\u21BB',
     label: '改善テキスト生成',
     prompt:
       'この経歴書のマスキング済みテキスト全文を改善してください。成果・実績の定量化、技術スキルの具体性、プロジェクト説明の粒度を向上させてください。改善後のテキスト全文のみを返してください。見出し・説明・コメント・前置きは不要です。元テキストの構造（改行・段落）は維持してください。',
@@ -72,6 +78,7 @@ export const ADVISOR_PRESETS: AdvisorPreset[] = [
   },
   {
     id: 'job-match',
+    icon: '\u21C4',
     label: '求人票マッチング',
     prompt:
       '以下の求人票と、この求職者の経歴書を照合してください。マッチするポイント、ギャップ、エージェントとして確認・交渉すべき事項を分析してください。',

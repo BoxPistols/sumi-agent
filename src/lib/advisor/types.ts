@@ -13,4 +13,5 @@ export interface AdvisorPreset {
   label: string
   prompt: string
   desc: string
+  icon?: string
 }
