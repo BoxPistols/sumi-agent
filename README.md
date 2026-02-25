@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![CI](https://github.com/BoxPistols/sumi/actions/workflows/ci.yml/badge.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)
-![Tests](https://img.shields.io/badge/tests-359%20passed-brightgreen.svg)
+![Tests](https://img.shields.io/badge/tests-374%20passed-brightgreen.svg)
 
 [English version](docs/README_EN.md)
 
