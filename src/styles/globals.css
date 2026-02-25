@@ -193,16 +193,26 @@ textarea:focus-visible {
     display: none !important;
   }
   .rp-editor-wrap {
+    display: flex !important;
     flex-direction: column !important;
+    grid-template-columns: none !important;
+    height: auto !important;
+    min-height: calc(100vh - 52px - 36px) !important;
   }
   .rp-editor-left {
     border-right: none !important;
     border-bottom: 1px solid var(--rp-border) !important;
-    max-height: 45vh !important;
+    max-height: none !important;
+    min-height: 40vh !important;
   }
   .rp-editor-right {
     max-width: none !important;
     min-width: 0 !important;
+  }
+  /* ドラッグ用の5pxディバイダーを非表示 */
+  .rp-editor-wrap > [style*='cursor: col-resize'],
+  .rp-editor-wrap > div[style*='width: 5px'] {
+    display: none !important;
   }
   .rp-upload-grid {
     grid-template-columns: 1fr !important;

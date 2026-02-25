@@ -2779,6 +2779,20 @@
   letter-spacing: 1px;
 }
 
+@media (max-width: 768px) {
+  .ed-collapsed-btn {
+    flex-direction: row;
+    padding: 8px 16px;
+    gap: 8px;
+    border-top: 1px solid var(--rp-border);
+  }
+
+  .ed-collapsed-label {
+    writing-mode: horizontal-tb;
+    letter-spacing: normal;
+  }
+}
+
 .ed-preview-toolbar {
   padding: 6px 12px;
   display: flex;
@@ -3066,6 +3080,40 @@
 .app-edition-sub {
   font-size: 10px;
   font-weight: 400;
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 0 10px;
+    gap: 4px;
+  }
+
+  .app-edition-sub {
+    display: none;
+  }
+
+  .app-edition-btn {
+    padding: 5px 10px;
+  }
+
+  .app-icon-btn[data-type='kbd'] {
+    display: none;
+  }
+
+  .app-header-badges {
+    gap: 4px;
+  }
+
+  .app-icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .app-settings-btn {
+    height: 32px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
 }
 
 .app-header-right {
