@@ -7973,7 +7973,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               {/* タブバー（Pro版: 検出結果 / アドバイザー） */}
               {!isLite && (
               <div style={{display:'flex',borderBottom:`1px solid ${T.border}`,background:T.bg2,flexShrink:0}}>
-                  {[{id:'detections',label:'検出結果',badge:`${enabledCount}/${detections.length}`},{id:'advisor',label:'アドバイザー',badge:advisorMessages.length>0?`${advisorMessages.filter(m=>m.role==='assistant').length}`:''}].map(tab=>(
+                  {[{id:'detections',label:'検出結果',icon:'\u{1F4CB}',badge:`${enabledCount}/${detections.length}`},{id:'advisor',label:'アドバイザー',icon:'\u{1F4AC}',badge:advisorMessages.length>0?`${advisorMessages.filter(m=>m.role==='assistant').length}`:''}].map(tab=>(
                       <button key={tab.id} data-intro={tab.id==='advisor'?'advisor-tab':undefined}
                           onClick={()=>setRightTab(tab.id)}
                           style={{flex:1,padding:'10px 8px',fontSize:13,fontWeight:rightTab===tab.id?700:500,
@@ -7981,7 +7981,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               borderBottom:rightTab===tab.id?`2px solid ${T.accent}`:'2px solid transparent',
                               cursor:'pointer',transition:'all .15s',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}
                       >
-                          {tab.label}
+                          <span style={{fontSize:14}}>{tab.icon}</span>{tab.label}
                           {tab.badge&&<span style={{fontSize:11,padding:'1px 6px',borderRadius:8,background:rightTab===tab.id?T.accentDim:T.surface,color:rightTab===tab.id?T.accent:T.text3}}>{tab.badge}</span>}
                       </button>
                   ))}
@@ -8516,7 +8516,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                   },
                               })
                           }
-                          style={{ flex: 1, borderRadius: 10, fontSize: 12 }}
+                          style={{ flex: 1, borderRadius: 10, fontSize: 13 }}
                       >
                           プレビュー / 保存
                       </Btn>
@@ -8527,8 +8527,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           aria-live="polite"
                           style={{
                               borderRadius: 10,
-                              padding: '11px 16px',
-                              fontSize: 12,
+                              padding: '11px 18px',
+                              fontSize: 13,
                           }}
                       >
                           {copied ? '\u2713' : 'Copy'}
@@ -8548,8 +8548,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           }
                           style={{
                               flex: 1,
-                              fontSize: 12,
-                              padding: '7px 12px',
+                              fontSize: 13,
+                              padding: '9px 12px',
                               borderRadius: 8,
                           }}
                       >
@@ -8560,8 +8560,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           variant='ghost'
                           onClick={onReset}
                           style={{
-                              fontSize: 12,
-                              padding: '7px 12px',
+                              fontSize: 13,
+                              padding: '9px 12px',
                               borderRadius: 8,
                           }}
                       >
@@ -8599,6 +8599,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       <span>モデル:</span>
                       {['auto','manual'].map(m=>(
                           <button key={m} onClick={()=>setAdvisorModelMode(m)}
+                              title={m==='auto'?'質問内容に応じてモデルを自動選択':'使用するモデルを手動で固定'}
                               style={{padding:'2px 8px',fontSize:11,fontWeight:advisorModelMode===m?600:400,
                                   color:advisorModelMode===m?T.accent:T.text3,
                                   background:advisorModelMode===m?T.accentDim:'transparent',
