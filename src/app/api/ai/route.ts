@@ -8,9 +8,9 @@ import { NextRequest, NextResponse } from 'next/server'
  * Body: { provider, model, messages, maxTokens?, system? }
  */
 
-// Rate limiter (per-IP, 30 req/day)
+// Rate limiter (per-IP, 50 req/day)
 const rateMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT = 30
+const RATE_LIMIT = 50
 const RATE_WINDOW = 24 * 60 * 60_000 // 24h
 
 // Cleanup stale entries every 5 minutes
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          '本日のAI利用回数上限（30回）に達しました。自身のAPIキーを設定すると無制限に利用できます。',
+          '本日のAI利用回数上限（50回）に達しました。自身のAPIキーを設定すると無制限に利用できます。',
       },
       {
         status: 429,

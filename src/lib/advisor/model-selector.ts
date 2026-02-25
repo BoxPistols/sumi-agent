@@ -20,7 +20,7 @@ export const MODEL_COSTS: Record<
 export const BUDGET = {
   perRoundTrip: 1.0, // 1往復あたり上限
   perTaskCycle: 5.0, // 1タスクサイクル上限
-  perDayAlert: 30.0, // 日次アラートライン
+  perDayAlert: 50.0, // 日次アラートライン
 } as const
 
 // ── 複雑度判定 ──

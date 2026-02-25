@@ -2989,9 +2989,9 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           }}
                       >
                           {provider === 'anthropic'
-                              ? '未入力時はサーバー共用キーを使用（24時間30回まで）。自分のキーを入力すると無制限に利用できます。'
+                              ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のキーを入力すると無制限に利用できます。'
                               : provider === 'openai'
-                                ? '未入力時はサーバー共用キーを使用（24時間30回まで）。自分のAPIキーを入力すると無制限に利用できます。'
+                                ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のAPIキーを入力すると無制限に利用できます。'
                                 : 'APIキーが必須です。下のボタンで接続テストできます。'}
                       </div>
                       <div style={{ position: 'relative' }}>
@@ -3212,7 +3212,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                       </div>
                       ) : (
                       <div style={{fontSize:12,color:T.text3,lineHeight:1.6}}>
-                          APIキー未設定時: AI機能は24時間あたり30回まで（IP単位）。
+                          APIキー未設定時: AI機能は24時間あたり50回まで（IP単位）。
                       </div>
                       )}
                       {!apiKey && <div style={{fontSize:12,color:T.text3,marginTop:4,lineHeight:1.5}}>自分のAPIキーを設定すると無制限に利用できます。</div>}
@@ -8527,13 +8527,13 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               {advisorCostAlert==='daily-warn' && (
               <div style={{padding:'8px 14px',background:'#dc262618',borderBottom:`1px solid #dc262640`,fontSize:11,color:'#ef4444',display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:14}}>&#x26D4;</span>
-                  <span>本日の利用コストが{advisorCost.daily.toFixed(1)}円に達しました（上限目安: 30円）。引き続き利用する場合は設定画面で自身のAPIキーを登録してください。</span>
+                  <span>本日の利用コストが{advisorCost.daily.toFixed(1)}円に達しました（上限目安: 50円）。引き続き利用する場合は設定画面で自身のAPIキーを登録してください。</span>
               </div>
               )}
               {advisorCostAlert==='daily-alert' && (
               <div style={{padding:'8px 14px',background:'#78350f18',borderBottom:`1px solid #92400e40`,fontSize:11,color:T.amber||'#f59e0b',display:'flex',alignItems:'center',gap:6}}>
                   <span style={{fontSize:14}}>&#9888;</span>
-                  <span>本日の利用コスト: {advisorCost.daily.toFixed(1)}円 / 30円（日次上限に近づいています）</span>
+                  <span>本日の利用コスト: {advisorCost.daily.toFixed(1)}円 / 50円（日次上限に近づいています）</span>
               </div>
               )}
               {/* モデルモード切替 + コスト表示 */}
@@ -8553,7 +8553,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   </div>
                   {advisorCost.count>0&&(
                   <span style={{color:T.text3}}>
-                      {advisorCost.session.toFixed(1)}円 / {advisorCost.count}回
+                      {advisorCost.count}回 約{advisorCost.session.toFixed(1)}円
                   </span>
                   )}
                   {aiRateLimit&&!apiKey&&(
