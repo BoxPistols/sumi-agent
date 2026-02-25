@@ -145,7 +145,7 @@ function getModelsForRun(settings) {
     }
 }
 
-const CATEGORIES={name:{label:"氏名",color:C.red,bg:C.redDim},contact:{label:"連絡先",color:C.accent,bg:C.accentDim},address:{label:"住所・地名",color:C.amber,bg:C.amberDim},personal:{label:"個人情報",color:C.purple,bg:C.purpleDim},web:{label:"URL",color:C.cyan,bg:C.cyanDim},organization:{label:"組織名",color:"#8490A8",bg:"rgba(132,144,168,0.1)"},custom:{label:"カスタム",color:"#E879A8",bg:"rgba(232,121,168,0.1)"},photo:{label:"顔写真",color:C.red,bg:C.redDim}};
+const CATEGORIES={name:{label:"氏名",color:C.red,bg:C.redDim},contact:{label:"連絡先",color:T.accent,bg:T.accentDim},address:{label:"住所・地名",color:C.amber,bg:C.amberDim},personal:{label:"個人情報",color:C.purple,bg:C.purpleDim},web:{label:"URL",color:C.cyan,bg:C.cyanDim},organization:{label:"組織名",color:"#8490A8",bg:"rgba(132,144,168,0.1)"},custom:{label:"カスタム",color:"#E879A8",bg:"rgba(232,121,168,0.1)"},photo:{label:"顔写真",color:C.red,bg:C.redDim}};
 
 const DEFAULT_MASK={name:true,contact:true,address:true,personal:true,web:true,organization:false,keepPrefecture:true,nameInitial:false};
 const MASK_PRESETS=[
@@ -7076,6 +7076,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const[advisorCost,setAdvisorCost]=useState({daily:0,session:0,count:0});
   const[advisorLastModel,setAdvisorLastModel]=useState("");
   const[advisorCostAlert,setAdvisorCostAlert]=useState("none");
+  const[advisorDraft,setAdvisorDraft]=useState(null); // AI改善テキスト (string | null)
+  const[advisorDraftLoading,setAdvisorDraftLoading]=useState(false);
   const[aiRateLimit,setAiRateLimit]=useState(null); // {remaining,limit}
   useEffect(()=>onRateLimitUpdate(rl=>setAiRateLimit(rl)),[]);
   const advisorEndRef=useRef(null);
@@ -7337,7 +7339,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
           style={{
               display: 'grid',
               gridTemplateColumns: gridCols,
-              height: 'calc(100vh - 52px)',
+              height: 'calc(100vh - 52px - 36px)',
               fontFamily: T.font,
               transition: presetTransRef.current ? 'grid-template-columns .2s ease' : undefined,
           }}
@@ -8993,7 +8995,7 @@ export default function App(){
                       style={{ display: 'flex', gap: 8, alignItems: 'center' }}
                   >
                       {(data||batchMode) && (
-                          <Badge color={C.accent} bg={C.accentDim}>
+                          <Badge color={T.accent} bg={T.accentDim}>
                               検出 {batchMode
                                 ? `${batchFiles.reduce((s,f)=>s+(f.data?.detections?.filter(d=>d.enabled).length||0),0)}件 (${batchFiles.filter(f=>f.status==='done').length}/${batchFiles.length})`
                                 : `${data.detections.filter((d) => d.enabled).length}件`}
@@ -9005,7 +9007,7 @@ export default function App(){
                           </Badge>
                       )}
                       {aiUsage && !settings.apiKey && (
-                          <Badge color={aiUsage.remaining<=5?'#f59e0b':C.text3} bg={aiUsage.remaining<=5?'#f59e0b20':C.surfaceAlt}
+                          <Badge color={aiUsage.remaining<=5?'#f59e0b':T.text3} bg={aiUsage.remaining<=5?'#f59e0b20':T.surfaceAlt}
                               style={{cursor:'help'}}
                               title={`サーバー共用AI: ${aiUsage.used}/${aiUsage.limit}回使用済み${aiUsage.resetAt ? `（リセット: ${new Date(aiUsage.resetAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}）` : ''}\n自分のAPIキーを設定すると無制限に利用できます。`}>
                               AI {aiUsage.used}/{aiUsage.limit}
@@ -9159,7 +9161,7 @@ export default function App(){
           {showHelp && (
               <HelpModal onClose={() => setShowHelp(false)} onStartTour={()=>{setShowHelp(false);startTour();}} onShowVideo={()=>{setShowHelp(false);setShowWelcome(true);}} />
           )}
-          {!isLite && <ChatWidget />}
+          {!isLite && !data && !batchMode && <ChatWidget />}
           {showWelcome && <WelcomeVideoModalWrapper onClose={handleWelcomeClose} onStartTour={handleWelcomeStartTour} />}
           <footer style={{position:'fixed',bottom:0,left:0,right:0,display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'6px 16px',fontSize:11,color:T.text3,background:T.bg,borderTop:`1px solid ${T.border}`,zIndex:10}}>
             <span>© {new Date().getFullYear()} Sumi</span>

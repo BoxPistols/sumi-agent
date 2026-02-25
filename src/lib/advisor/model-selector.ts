@@ -31,6 +31,7 @@ const PRESET_COMPLEXITY: Record<string, Complexity> = {
   review: 'high', // 全体構成の分析 → 論理思考が必要
   strengths: 'high', // 潜在的な強みの発見 → 推論力が必要
   rewrite: 'high', // 記述改善 → 具体的な提案力が必要
+  'rewrite-full': 'high', // 全文リライト → 高い推論力が必要
   'job-match': 'high', // 求人票マッチング → 2文書の照合分析
   questions: 'low', // 項目列挙 → 定量的タスク
   matching: 'high', // 適性分析 → 推論力が必要

@@ -64,6 +64,15 @@ export async function callAdvisor(params: CallAdvisorParams): Promise<CallAdviso
     system += `\n\n【参考: 求人票】\n${jobDescription.slice(0, 3000)}`
   }
 
+  // rewrite-full: 全文生成用の指示を追加
+  if (presetId === 'rewrite-full') {
+    system +=
+      '\n\n【重要な指示】改善後の経歴書テキスト全文のみを出力してください。Markdown見出し・箇条書きによる説明・コメント・前置き・後書きは一切不要です。元テキストと同じ構造で、改善後のプレーンテキストのみを返してください。'
+  }
+
+  // rewrite-full の場合は maxTokens を拡張
+  const tokens = presetId === 'rewrite-full' ? 8000 : MAX_TOKENS
+
   // 会話履歴を直近N件に制限
   const recentMessages = messages.slice(-MAX_HISTORY)
   const apiMessages = recentMessages.map((m) => ({
@@ -78,7 +87,7 @@ export async function callAdvisor(params: CallAdvisorParams): Promise<CallAdviso
       provider,
       model: modelId,
       messages: apiMessages,
-      maxTokens: MAX_TOKENS,
+      maxTokens: tokens,
       system,
       apiKey,
     }),
