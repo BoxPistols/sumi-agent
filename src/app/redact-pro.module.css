@@ -1,0 +1,174 @@
+/* ═══ UI Primitives ═══ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Btn */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--rp-font);
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.btn[data-disabled='true'] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--rp-accent);
+  color: var(--rp-bg);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--rp-text2);
+  border: 1px solid var(--rp-border);
+}
+
+.btn-danger {
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+}
+
+.btn-success {
+  background: rgba(5, 150, 105, 0.1);
+  color: #059669;
+}
+
+/* Toggle */
+.toggle {
+  position: relative;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle[data-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle[data-size='md'] {
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+}
+
+.toggle[data-size='sm'] {
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+}
+
+.toggle[data-checked='true'] {
+  background: var(--rp-accent);
+}
+
+.toggle[data-checked='false'] {
+  background: #a39791;
+}
+
+.toggle-knob {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.toggle[data-size='md'] .toggle-knob {
+  width: 16px;
+  height: 16px;
+  top: 3px;
+}
+
+.toggle[data-size='md'][data-checked='true'] .toggle-knob {
+  left: 19px;
+}
+
+.toggle[data-size='md'][data-checked='false'] .toggle-knob {
+  left: 3px;
+}
+
+.toggle[data-size='sm'] .toggle-knob {
+  width: 12px;
+  height: 12px;
+  top: 3px;
+}
+
+.toggle[data-size='sm'][data-checked='true'] .toggle-knob {
+  left: 17px;
+}
+
+.toggle[data-size='sm'][data-checked='false'] .toggle-knob {
+  left: 3px;
+}
+
+/* Pill */
+.pill {
+  padding: 4px 11px;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--rp-font);
+  transition: all 0.15s;
+}
+
+.pill[data-active='false'] {
+  font-weight: 400;
+  background: var(--rp-surfaceAlt);
+  color: var(--rp-text3);
+}
+
+.pill[data-active='true'] {
+  font-weight: 600;
+  background: var(--rp-accentDim);
+  color: var(--rp-accent);
+}
+
+/* LayoutIcon */
+.layout-icon {
+  width: 28px;
+  height: 18px;
+  border-radius: 3px;
+  display: flex;
+  gap: 1px;
+  padding: 2px;
+  overflow: hidden;
+}
+
+.layout-icon[data-active='false'] {
+  border: 1.5px solid var(--rp-border);
+  background: transparent;
+}
+
+.layout-icon-bar[data-active='false'] {
+  border-radius: 1px;
+  background: var(--rp-text3);
+  opacity: 0.25;
+}
+
+.layout-icon-bar[data-active='true'] {
+  border-radius: 1px;
+  opacity: 0.7;
+}

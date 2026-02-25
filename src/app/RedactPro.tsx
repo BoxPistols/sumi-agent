@@ -7,6 +7,8 @@
  * TODO: Decompose into modules (see docs/REFACTOR_PLAN.md)
  */
 
+import s from './redact-pro.module.css'
+
 // ═══ Storage Compatibility Layer ═══
 // Artifact environment uses window.storage API, Next.js uses localStorage
 const storage = {
@@ -1844,47 +1846,20 @@ function triggerDownload(ex){try{if(ex.isPrintPdf){const blob=new Blob([ex.data]
 // ═══ UI primitives ═══
 function Badge({ children, color, bg, style: sx }) {
     return (
-        <span
-            style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '3px 10px',
-                borderRadius: 6,
-                fontSize: 12,
-                fontWeight: 600,
-                color,
-                background: bg,
-                whiteSpace: 'nowrap',
-                ...sx,
-            }}
-        >
+        <span className={s.badge} style={{ color, background: bg, ...sx }}>
             {children}
         </span>
     )
 }
-function Btn({children,variant="primary",onClick,disabled,style:sx,title,...rest}){const base={display:"inline-flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 22px",borderRadius:10,fontSize:14,fontWeight:600,fontFamily:T.font,cursor:disabled?"default":"pointer",border:"none",transition:"all .15s",opacity:disabled?.35:1};const v={primary:{background:T.accent,color:T.bg},ghost:{background:"transparent",color:T.text2,border:`1px solid ${T.border}`},danger:{background:T.redDim,color:T.red},success:{background:T.greenDim,color:T.green}};return <button onClick={disabled?undefined:onClick} title={title} aria-label={rest['aria-label']||title} {...rest} style={{...base,...v[variant],...sx}}>{children}</button>;}
-function Toggle({checked,onChange,size="md",disabled=false,title}){const w=size==="sm"?32:38,h=size==="sm"?18:22,d=size==="sm"?12:16;return <button role="switch" aria-checked={checked} aria-label={title} onClick={(e)=>{if(disabled)return;e.stopPropagation();onChange&&onChange();}} style={{width:w,height:h,borderRadius:h/2,border:"none",cursor:disabled?"not-allowed":"pointer",opacity:disabled?0.5:1,background:checked?T.accent:"#A39791",position:"relative",transition:"background .2s",flexShrink:0}}><span style={{position:"absolute",top:(h-d)/2,left:checked?w-d-3:3,width:d,height:d,borderRadius:d/2,background:"#fff",transition:"left .2s",boxShadow:"0 1px 3px rgba(0,0,0,.25)"}}/></button>;}
+function Btn({children,variant="primary",onClick,disabled,style:sx,title,...rest}){return <button onClick={disabled?undefined:onClick} title={title} aria-label={rest['aria-label']||title} {...rest} className={`${s.btn} ${s[`btn-${variant}`]||''}`} data-disabled={!!disabled} style={sx}>{children}</button>;}
+function Toggle({checked,onChange,size="md",disabled=false,title}){return <button role="switch" aria-checked={checked} aria-label={title} onClick={(e)=>{if(disabled)return;e.stopPropagation();onChange&&onChange();}} className={s.toggle} data-size={size} data-checked={checked} data-disabled={disabled}><span className={s['toggle-knob']}/></button>;}
 function Pill({ children, active, onClick, color }) {
     return (
         <button
             onClick={onClick}
-            style={{
-                padding: '4px 11px',
-                borderRadius: 7,
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: active ? 600 : 400,
-                fontFamily: T.font,
-                background: active
-                    ? color
-                        ? `${color}1A`
-                        : T.accentDim
-                    : T.surfaceAlt,
-                color: active ? color || T.accent : T.text3,
-                transition: 'all .15s',
-            }}
+            className={s.pill}
+            data-active={!!active}
+            style={color && active ? { background: `${color}1A`, color } : undefined}
         >
             {children}
         </button>
@@ -1900,19 +1875,11 @@ const LAYOUT_PRESETS=[
 ];
 function LayoutIcon({cols,active,color}){
   return (
-    <div style={{
-      width:28,height:18,borderRadius:3,
-      border:`1.5px solid ${active?color:T.border}`,
-      display:'flex',gap:1,padding:2,
-      background:active?`${color}18`:'transparent',
-      overflow:'hidden',
-    }}>
+    <div className={s['layout-icon']} data-active={!!active}
+      style={active?{border:`1.5px solid ${color}`,background:`${color}18`}:undefined}>
       {cols.map((c,i)=>(
-        <span key={i} style={{
-          flex:c.f,borderRadius:1,
-          background:active?color:T.text3,
-          opacity:active?0.7:0.25,
-        }}/>
+        <span key={i} className={s['layout-icon-bar']} data-active={!!active}
+          style={{flex:c.f,...(active?{background:color}:undefined)}}/>
       ))}
     </div>
   );
