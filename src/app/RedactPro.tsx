@@ -2181,7 +2181,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   {/* クイックスタート */}
                   <div className={s['help-section']}>
                       <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><polygon points='5 3 19 12 5 21 5 3'/></svg>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><polygon points='5 3 19 12 5 21 5 3'/></svg>
                           クイックスタート
                       </div>
                       <div className={s['help-steps-wrap']}>
@@ -2195,7 +2195,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   {/* 対応ファイル形式 */}
                   <div className={s['help-section']}>
                       <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><polyline points='14 2 14 8 20 8'/></svg>
                           対応ファイル形式
                       </div>
                       <div className={s['help-badges-wrap']}>
@@ -2209,7 +2209,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   {/* 検出カテゴリ */}
                   <div className={s['help-section']}>
                       <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>
                           検出カテゴリ
                       </div>
                       <div className={s['help-grid-2']}>
@@ -2225,7 +2225,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   {/* マスクプリセット */}
                   <div className={s['help-section']}>
                       <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0110 0v4'/></svg>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0110 0v4'/></svg>
                           マスクプリセット
                       </div>
                       <div className={s['help-presets-list']}>
@@ -2238,7 +2238,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   {/* AI機能 */}
                   <div className={s['help-section']}>
                       <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4z'/><rect x='3' y='8' width='18' height='14' rx='2'/><line x1='12' y1='12' x2='12' y2='16'/></svg>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M12 2a4 4 0 014 4v2H8V6a4 4 0 014-4z'/><rect x='3' y='8' width='18' height='14' rx='2'/><line x1='12' y1='12' x2='12' y2='16'/></svg>
                           AI機能
                       </div>
                       <ul className={s['help-list']}>
@@ -2252,7 +2252,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   {/* エクスポート */}
                   <div className={s['help-section']}>
                       <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4'/><polyline points='7 10 12 15 17 10'/><line x1='12' y1='15' x2='12' y2='3'/></svg>
                           エクスポート
                       </div>
                       <div className={s['help-badges-wrap']}>
@@ -2265,7 +2265,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                   {/* キーボードショートカット */}
                   <div className={s['help-section']}>
                       <div className={s['help-heading']}>
-                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={C.accent} strokeWidth='2'><rect x='2' y='4' width='20' height='16' rx='2'/><line x1='6' y1='8' x2='6' y2='8'/><line x1='10' y1='8' x2='10' y2='8'/><line x1='14' y1='8' x2='14' y2='8'/><line x1='18' y1='8' x2='18' y2='8'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
+                          <svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke={T.accent} strokeWidth='2'><rect x='2' y='4' width='20' height='16' rx='2'/><line x1='6' y1='8' x2='6' y2='8'/><line x1='10' y1='8' x2='10' y2='8'/><line x1='14' y1='8' x2='14' y2='8'/><line x1='18' y1='8' x2='18' y2='8'/><line x1='8' y1='12' x2='16' y2='12'/></svg>
                           キーボード操作
                       </div>
                       <div className={s['help-kbd-grid']}>
