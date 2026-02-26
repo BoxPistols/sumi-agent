@@ -749,11 +749,13 @@
 
 .settings-provider-grid {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
 .settings-provider-btn {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 100px;
   padding: 10px 8px;
   border-radius: 10px;
   cursor: pointer;
