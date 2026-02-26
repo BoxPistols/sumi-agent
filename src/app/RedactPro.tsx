@@ -70,6 +70,9 @@ const AI_PROVIDERS=[
     {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"バランス型",tier:2},
     {id:"gemini-2.5-pro",label:"2.5 Pro",desc:"高精度",tier:3},
   ],defaultModel:"gemini-2.5-flash"},
+  {id:"local",label:"ローカルAI",icon:"L",color:"#8B5CF6",needsKey:false,models:[
+    {id:"local-auto",label:"自動検出",desc:"ローカルサーバーに接続",tier:1},
+  ],defaultModel:"local-auto"},
 ];
 
 // Backward-compat flat list
@@ -2362,12 +2365,29 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                               AI検出・AI整形
                           </div>
                           <ul className={s['help-feature-desc']}>
-                              <li>設定 → プロバイダ選択（OpenAI / Claude / Gemini）</li>
+                              <li>設定 → プロバイダ選択（OpenAI / Claude / Gemini / ローカルAI）</li>
                               <li>APIキーを入力して接続テスト → AI検出をON</li>
                               <li>正規表現で見逃す文脈依存の個人情報を補完</li>
                               <li>テキスト整形: PDFやOCR由来の崩れを自動修正</li>
-                              <li>ローカルAI（Ollama等）にも対応</li>
                           </ul>
+                      </div>
+
+                      {/* ローカルAI */}
+                      <div className={s['help-feature']}>
+                          <div className={s['help-feature-title']}>
+                              <svg width='15' height='15' viewBox='0 0 16 16' fill='none'><rect x='2' y='4' width='12' height='8' rx='1.5' stroke={T.accent} strokeWidth='1.2'/><path d='M5 4V2.5a1 1 0 011-1h4a1 1 0 011 1V4' stroke={T.accent} strokeWidth='1.2'/><circle cx='8' cy='8' r='1.5' stroke={T.accent} strokeWidth='1.2'/></svg>
+                              ローカルAI（Ollama / LM Studio）
+                          </div>
+                          <ul className={s['help-feature-desc']}>
+                              <li>Ollama・LM Studio・LocalAI等のOpenAI互換ローカルLLMに対応</li>
+                              <li><strong>データが外部に一切送信されません</strong> — 社内セキュリティ要件にも適合</li>
+                              <li>利用回数の制限なし・APIキー不要・完全無料</li>
+                              <li>設定手順: 設定（<kbd className={s['help-kbd']}>,</kbd>）→ プロバイダ「ローカルAI」→ エンドポイント入力</li>
+                          </ul>
+                          <div style={{paddingLeft:22,fontSize:12,color:T.text3,lineHeight:1.7}}>
+                              Ollama: <code style={{fontFamily:'var(--rp-mono)'}}>http://localhost:11434/v1</code><br/>
+                              LM Studio: <code style={{fontFamily:'var(--rp-mono)'}}>http://localhost:1234/v1</code>
+                          </div>
                       </div>
 
                       {/* AIアドバイザー */}

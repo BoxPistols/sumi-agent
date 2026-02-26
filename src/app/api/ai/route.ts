@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAllowedLocalEndpoint, buildLocalChatUrl, buildLocalRequestBody } from '@/lib/local-ai'
 
 /**
  * Server-side AI proxy.
@@ -83,16 +84,7 @@ interface AIRequestBody {
 
 const AI_REQUEST_TIMEOUT_MS = 90_000
 
-/** ローカルAIエンドポイントのSSRF防止: localhost/127.0.0.1のみ許可 */
-function isAllowedLocalEndpoint(endpoint: string): boolean {
-  try {
-    const url = new URL(endpoint)
-    const host = url.hostname.toLowerCase()
-    return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '0.0.0.0'
-  } catch {
-    return false
-  }
-}
+// isAllowedLocalEndpoint は @/lib/local-ai からインポート
 
 interface OpenAIOutputPart {
   type?: string
@@ -399,26 +391,10 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
       }
-      const localModel = model === 'local-auto' ? undefined : model
 
-      const msgs: Array<{ role: string; content: unknown }> = []
-      if (system) msgs.push({ role: 'system', content: system })
-      for (const m of messages) {
-        if (typeof m.content === 'string') {
-          msgs.push(m)
-        } else {
-          const text = m.content
-            .filter((c: ContentBlock) => c.type === 'text')
-            .map((c: ContentBlock) => c.text)
-            .join('\n')
-          msgs.push({ role: m.role, content: text })
-        }
-      }
+      const reqBody = buildLocalRequestBody(model, messages, maxTokens, system)
 
-      const reqBody: Record<string, unknown> = { messages: msgs, max_tokens: maxTokens }
-      if (localModel) reqBody.model = localModel
-
-      const res = await fetchWithTimeout(`${endpoint.replace(/\/+$/, '')}/chat/completions`, {
+      const res = await fetchWithTimeout(buildLocalChatUrl(endpoint), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reqBody),
