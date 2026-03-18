@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
       }
       // GPT-5 family can spend the entire budget on hidden reasoning tokens,
       // yielding empty visible output for small max_completion_tokens.
-      if (model.startsWith('gpt-5')) reqBody.reasoning_effort = 'minimal'
+      if (model.startsWith('gpt-5')) reqBody.reasoning_effort = 'low'
 
       const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

@@ -60,11 +60,9 @@ const AI_PROVIDERS=[
     {id:"claude-sonnet-4-5-20250929",label:"Sonnet 4.5",desc:"高精度",tier:3},
   ],defaultModel:"claude-sonnet-4-20250514"},
   {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
-    {id:"gpt-4.1-nano",label:"GPT-4.1 Nano",desc:"旧世代・超軽量",tier:1},
-    {id:"gpt-4.1-mini",label:"GPT-4.1 Mini",desc:"旧世代・低コスト",tier:2},
-    {id:"gpt-5-nano",label:"GPT-5 Nano",desc:"最速・最安（推奨）",tier:1},
-    {id:"gpt-5-mini",label:"GPT-5 Mini",desc:"高速・高精度",tier:2},
-  ],defaultModel:"gpt-5-nano"},
+    {id:"gpt-5.4-nano",label:"GPT-5.4 Nano",desc:"最速・最安（推奨）",tier:1},
+    {id:"gpt-5.4-mini",label:"GPT-5.4 Mini",desc:"高速・高精度",tier:2},
+  ],defaultModel:"gpt-5.4-nano"},
   {id:"google",label:"Gemini",icon:"G",color:"#4285F4",needsKey:true,models:[
     {id:"gemini-2.0-flash",label:"2.0 Flash",desc:"軽量・高速",tier:1},
     {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"バランス型",tier:2},
@@ -125,7 +123,7 @@ function getModelsForRun(settings) {
     const formatModel =
         settings?.model ||
         pickFormatModelForProfile(providerId, profile) ||
-        'gpt-5-nano'
+        'gpt-5.4-nano'
     const formatTier = getModelTier(providerId, formatModel) || 1
     const formatFallbackModel =
         formatTier <= 1
@@ -536,7 +534,7 @@ ${truncated}`
         const provider = getProviderForModel(m)
         const raw = await callAI({
             provider,
-            model: m || 'gpt-5-nano',
+            model: m || 'gpt-5.4-nano',
             apiKey,
             maxTokens: 1000,
             messages: [{ role: 'user', content: prompt }],
@@ -1185,7 +1183,7 @@ async function ocrSparsePages(pdfData,sparsePages,apiKey,model,onProgress){
 7. テキストが無いページは「--- Page N ---」の後に「[画像のみ]」と記載`;
       const txt = await callAI({
           provider,
-          model: model || 'gpt-5-nano',
+          model: model || 'gpt-5.4-nano',
           apiKey,
           maxTokens: 8000,
           messages: [
@@ -1259,7 +1257,7 @@ async function aiCleanupText(
     onProgress,
     fallbackModel,
 ) {
-    const primaryModel = model || 'gpt-5-nano'
+    const primaryModel = model || 'gpt-5.4-nano'
     const fbModel =
         fallbackModel && fallbackModel !== primaryModel ? fallbackModel : null
 
@@ -1635,7 +1633,7 @@ async function aiReformat(redactedText,instruction,apiKey,model){
   const provider=getProviderForModel(model);
   return await callAI({
       provider,
-      model: model || 'gpt-5-nano',
+      model: model || 'gpt-5.4-nano',
       apiKey,
       maxTokens: 4000,
       messages: [
@@ -2512,7 +2510,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const [provider, setProvider] = useState(settings.provider || 'openai')
-  const [model, setModel] = useState(settings.model || 'gpt-5-nano')
+  const [model, setModel] = useState(settings.model || 'gpt-5.4-nano')
   const[apiKey,setApiKey]=useState(settings.apiKey||"");
   const[aiDetect,setAiDetect]=useState(settings.aiDetect!==false);
   const [aiProfile, setAiProfile] = useState(settings.aiProfile || 'balanced')
@@ -2555,7 +2553,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   // When switching provider, auto-select default model
   const switchProvider = (pid) => {
       setProvider(pid)
-      setModel(pickFormatModelForProfile(pid, aiProfile) || 'gpt-5-nano')
+      setModel(pickFormatModelForProfile(pid, aiProfile) || 'gpt-5.4-nano')
   }
   const keyPlaceholder =
       provider === 'anthropic'
@@ -2571,7 +2569,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
       // Provider list may change defaults; if current model isn't in provider, snap to profile default.
       if (!curProv.models.some((m) => m.id === model)) {
           setModel(
-              pickFormatModelForProfile(provider, aiProfile) || 'gpt-5-nano',
+              pickFormatModelForProfile(provider, aiProfile) || 'gpt-5.4-nano',
           )
       }
   }, [provider, aiProfile]) // eslint-disable-line
@@ -2934,7 +2932,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           variant='ghost'
                           onClick={() => {
                               if(!confirm('すべての設定を初期値に戻しますか？\n（テーマ・AIプロバイダー・モデル・APIキー・プロファイルをデフォルトに戻します。アップロード済みのファイルデータには影響しません）'))return;
-                              setProvider('openai');setModel('gpt-5-nano');
+                              setProvider('openai');setModel('gpt-5.4-nano');
                               setApiKey('');setAiDetect(true);
                               setAiProfile('balanced');setProxyUrl('');setLocalEndpoint('http://localhost:11434/v1');
                           }}
@@ -7007,7 +7005,7 @@ export default function App(){
   const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
-      model: pickFormatModelForProfile('openai', 'balanced') || 'gpt-5-nano',
+      model: pickFormatModelForProfile('openai', 'balanced') || 'gpt-5.4-nano',
       aiDetect: true,
       aiProfile: 'balanced',
       provider: 'openai',

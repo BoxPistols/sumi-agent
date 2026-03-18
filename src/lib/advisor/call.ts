@@ -53,7 +53,7 @@ export async function callAdvisor(params: CallAdvisorParams): Promise<CallAdviso
     })
     modelId = selectModel(complexity)
   } else {
-    modelId = model || 'gpt-5-nano'
+    modelId = model || 'gpt-5.4-nano'
   }
 
   const provider = getProviderForModel(modelId)

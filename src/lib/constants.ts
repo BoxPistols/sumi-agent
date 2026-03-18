@@ -68,12 +68,10 @@ export const AI_PROVIDERS: AIProvider[] = [
     color: '#10A37F',
     needsKey: false,
     models: [
-      { id: 'gpt-4.1-nano', label: 'GPT-4.1 Nano', desc: '旧世代・超軽量', tier: 1 },
-      { id: 'gpt-4.1-mini', label: 'GPT-4.1 Mini', desc: '旧世代・低コスト', tier: 2 },
-      { id: 'gpt-5-nano', label: 'GPT-5 Nano', desc: '最速・最安（推奨）', tier: 1 },
-      { id: 'gpt-5-mini', label: 'GPT-5 Mini', desc: '高速・高精度', tier: 2 },
+      { id: 'gpt-5.4-nano', label: 'GPT-5.4 Nano', desc: '最速・最安（推奨）', tier: 1 },
+      { id: 'gpt-5.4-mini', label: 'GPT-5.4 Mini', desc: '高速・高精度', tier: 2 },
     ],
-    defaultModel: 'gpt-5-nano',
+    defaultModel: 'gpt-5.4-nano',
   },
   {
     id: 'google',

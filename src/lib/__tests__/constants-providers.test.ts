@@ -77,9 +77,8 @@ describe('getProviderForModel', () => {
   })
 
   it('GPTモデル → openai', () => {
-    expect(getProviderForModel('gpt-5-nano')).toBe('openai')
-    expect(getProviderForModel('gpt-5-mini')).toBe('openai')
-    expect(getProviderForModel('gpt-4.1-nano')).toBe('openai')
+    expect(getProviderForModel('gpt-5.4-nano')).toBe('openai')
+    expect(getProviderForModel('gpt-5.4-mini')).toBe('openai')
   })
 
   it('Geminiモデル → google', () => {
