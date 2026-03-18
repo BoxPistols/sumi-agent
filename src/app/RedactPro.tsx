@@ -7015,7 +7015,11 @@ export default function App(){
     const safeGet=async(key)=>storage.get(key);
     const ed=await safeGet("rp_edition");if(ed)setEdition(ed);
     const k=await safeGet("rp_api_key");if(k)setSettings(p=>({...p,apiKey:k}));
-    const m=await safeGet("rp_model");if(m)setSettings(p=>({...p,model:m}));
+    const m=await safeGet("rp_model");if(m){
+      const allModels=AI_PROVIDERS.flatMap(p=>p.models.map(x=>x.id));
+      if(allModels.includes(m)){setSettings(p=>({...p,model:m}));}
+      else{await storage.set("rp_model","gpt-5.4-nano");setSettings(p=>({...p,model:"gpt-5.4-nano"}));}
+    }
     const ad=await safeGet("rp_ai_detect");if(ad)setSettings(p=>({...p,aiDetect:ad!=="false"}));
     const ap = await safeGet('rp_ai_profile')
     if (ap) setSettings((p) => ({ ...p, aiProfile: ap }))

@@ -244,14 +244,18 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // GPT-5系: max_completion_tokens を使用、temperature は指定不可
+      // nano は 4000、mini 以上は 16000 を上限とする
+      const isGpt5 = model.startsWith('gpt-5')
+      const tokenLimit = isGpt5 && model.includes('nano') ? 4000 : isGpt5 ? 16000 : maxTokens
       const reqBody: Record<string, unknown> = {
         model,
         messages: msgs,
-        max_completion_tokens: maxTokens,
+        max_completion_tokens: Math.min(maxTokens, tokenLimit),
       }
       // GPT-5 family can spend the entire budget on hidden reasoning tokens,
       // yielding empty visible output for small max_completion_tokens.
-      if (model.startsWith('gpt-5')) reqBody.reasoning_effort = 'low'
+      if (isGpt5) reqBody.reasoning_effort = 'low'
 
       const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
