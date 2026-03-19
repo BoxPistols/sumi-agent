@@ -74,10 +74,10 @@ describe('GPT-5.4 プロバイダルーティング', () => {
     expect(getProviderForModel('gpt-5.4-mini')).toBe('openai')
   })
 
-  it('旧モデル名は openai にルーティングされない（フォールバック先に落ちる）', () => {
-    // 旧モデルはどのプロバイダにも存在しないので anthropic フォールバックになる
-    expect(getProviderForModel('gpt-5-nano')).toBe('anthropic')
-    expect(getProviderForModel('gpt-4.1-nano')).toBe('anthropic')
+  it('旧モデル名は openai フォールバックに落ちる', () => {
+    // 旧モデルはどのプロバイダにも存在しないので openai フォールバックになる
+    expect(getProviderForModel('gpt-5-nano')).toBe('openai')
+    expect(getProviderForModel('gpt-4.1-nano')).toBe('openai')
   })
 })
 

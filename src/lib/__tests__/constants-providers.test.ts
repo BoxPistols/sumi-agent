@@ -95,8 +95,8 @@ describe('getProviderForModel', () => {
     expect(getProviderForModel('local-custom')).toBe('local')
   })
 
-  it('不明モデル → anthropic (フォールバック)', () => {
-    expect(getProviderForModel('unknown-model')).toBe('anthropic')
+  it('不明モデル → openai (フォールバック)', () => {
+    expect(getProviderForModel('unknown-model')).toBe('openai')
   })
 })
 

@@ -54,15 +54,15 @@ const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(
 
 // ═══ Multi-Provider AI Models ═══
 const AI_PROVIDERS=[
-  {id:"anthropic",label:"Claude",icon:"C",color:"#D97706",needsKey:false,models:[
-    {id:"claude-haiku-4-5-20251001",label:"Haiku 4.5",desc:"高速・低コスト",tier:1},
-    {id:"claude-sonnet-4-20250514",label:"Sonnet 4",desc:"バランス型（推奨）",tier:2},
-    {id:"claude-sonnet-4-5-20250929",label:"Sonnet 4.5",desc:"高精度",tier:3},
-  ],defaultModel:"claude-sonnet-4-20250514"},
   {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
     {id:"gpt-5.4-nano",label:"GPT-5.4 Nano",desc:"最速・最安（推奨）",tier:1},
     {id:"gpt-5.4-mini",label:"GPT-5.4 Mini",desc:"高速・高精度",tier:2,needsUserKey:true},
   ],defaultModel:"gpt-5.4-nano"},
+  {id:"anthropic",label:"Claude",icon:"C",color:"#D97706",needsKey:true,models:[
+    {id:"claude-haiku-4-5-20251001",label:"Haiku 4.5",desc:"高速・低コスト",tier:1},
+    {id:"claude-sonnet-4-20250514",label:"Sonnet 4",desc:"バランス型（推奨）",tier:2},
+    {id:"claude-sonnet-4-5-20250929",label:"Sonnet 4.5",desc:"高精度",tier:3},
+  ],defaultModel:"claude-sonnet-4-20250514"},
   {id:"google",label:"Gemini",icon:"G",color:"#4285F4",needsKey:true,models:[
     {id:"gemini-2.0-flash",label:"2.0 Flash",desc:"軽量・高速",tier:1},
     {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"バランス型",tier:2},

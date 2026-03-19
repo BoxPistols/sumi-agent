@@ -40,29 +40,6 @@ export interface AIProvider {
 
 export const AI_PROVIDERS: AIProvider[] = [
   {
-    id: 'anthropic',
-    label: 'Claude',
-    icon: 'C',
-    color: '#D97706',
-    needsKey: false,
-    models: [
-      { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5', desc: '高速・低コスト', tier: 1 },
-      {
-        id: 'claude-sonnet-4-20250514',
-        label: 'Sonnet 4',
-        desc: 'バランス型（推奨）',
-        tier: 2,
-      },
-      {
-        id: 'claude-sonnet-4-5-20250929',
-        label: 'Sonnet 4.5',
-        desc: '高精度',
-        tier: 3,
-      },
-    ],
-    defaultModel: 'claude-sonnet-4-20250514',
-  },
-  {
     id: 'openai',
     label: 'OpenAI',
     icon: 'O',
@@ -79,6 +56,29 @@ export const AI_PROVIDERS: AIProvider[] = [
       },
     ],
     defaultModel: 'gpt-5.4-nano',
+  },
+  {
+    id: 'anthropic',
+    label: 'Claude',
+    icon: 'C',
+    color: '#D97706',
+    needsKey: true,
+    models: [
+      { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5', desc: '高速・低コスト', tier: 1 },
+      {
+        id: 'claude-sonnet-4-20250514',
+        label: 'Sonnet 4',
+        desc: 'バランス型（推奨）',
+        tier: 2,
+      },
+      {
+        id: 'claude-sonnet-4-5-20250929',
+        label: 'Sonnet 4.5',
+        desc: '高精度',
+        tier: 3,
+      },
+    ],
+    defaultModel: 'claude-sonnet-4-20250514',
   },
   {
     id: 'google',
@@ -113,7 +113,7 @@ export function getProviderForModel(modelId: string): string {
   for (const p of AI_PROVIDERS) {
     if (p.models.some((m) => m.id === modelId)) return p.id
   }
-  return 'anthropic'
+  return 'openai'
 }
 
 export interface CategoryMeta {
