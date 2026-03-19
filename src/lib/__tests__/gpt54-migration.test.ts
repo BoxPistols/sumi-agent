@@ -8,6 +8,7 @@
  * 4. 旧モデル名がコードベースに残っていない
  * 5. API パラメータ分岐（nano: 4000, mini: 16000）
  * 6. temperature が OpenAI パスに含まれない
+ * 7. needsUserKey によるアクセス制御（mini はユーザーキー必須）
  */
 
 import { describe, it, expect } from 'vitest'
@@ -258,5 +259,77 @@ describe('旧モデル名のバリデーション', () => {
   it('他プロバイダのモデルは有効', () => {
     expect(migrateModel('claude-sonnet-4-20250514')).toBe('claude-sonnet-4-20250514')
     expect(migrateModel('gemini-2.5-flash')).toBe('gemini-2.5-flash')
+  })
+})
+
+// ── 9. needsUserKey アクセス制御 ──
+
+describe('needsUserKey アクセス制御', () => {
+  const openai = AI_PROVIDERS.find((p) => p.id === 'openai')!
+
+  it('gpt-5.4-nano は needsUserKey が未設定（無料利用可）', () => {
+    const nano = openai.models.find((m) => m.id === 'gpt-5.4-nano')!
+    expect(nano.needsUserKey).toBeFalsy()
+  })
+
+  it('gpt-5.4-mini は needsUserKey: true（APIキー必須）', () => {
+    const mini = openai.models.find((m) => m.id === 'gpt-5.4-mini')!
+    expect(mini.needsUserKey).toBe(true)
+  })
+
+  it('他プロバイダのモデルには needsUserKey が設定されていない', () => {
+    for (const p of AI_PROVIDERS) {
+      if (p.id === 'openai') continue
+      for (const m of p.models) {
+        expect(m.needsUserKey).toBeFalsy()
+      }
+    }
+  })
+
+  // サーバーサイドのモデル制限ロジック（route.ts と同等）
+  const isModelAllowedWithoutUserKey = (provider: string, model: string): boolean => {
+    if (provider === 'openai' && model !== 'gpt-5.4-nano') return false
+    return true
+  }
+
+  it('サーバーキーで gpt-5.4-nano → 許可', () => {
+    expect(isModelAllowedWithoutUserKey('openai', 'gpt-5.4-nano')).toBe(true)
+  })
+
+  it('サーバーキーで gpt-5.4-mini → 拒否', () => {
+    expect(isModelAllowedWithoutUserKey('openai', 'gpt-5.4-mini')).toBe(false)
+  })
+
+  it('他プロバイダはサーバーキーでも許可（別途 needsKey で制御）', () => {
+    expect(isModelAllowedWithoutUserKey('anthropic', 'claude-sonnet-4-20250514')).toBe(true)
+    expect(isModelAllowedWithoutUserKey('google', 'gemini-2.5-flash')).toBe(true)
+  })
+
+  // APIキー有無による UI 制御ロジック
+  const getSelectableModels = (provider: string, hasApiKey: boolean) => {
+    const prov = AI_PROVIDERS.find((p) => p.id === provider)
+    if (!prov) return []
+    return prov.models.filter((m) => !m.needsUserKey || hasApiKey)
+  }
+
+  it('APIキーなし → nano のみ選択可能', () => {
+    const models = getSelectableModels('openai', false)
+    expect(models).toHaveLength(1)
+    expect(models[0].id).toBe('gpt-5.4-nano')
+  })
+
+  it('APIキーあり → nano と mini の両方選択可能', () => {
+    const models = getSelectableModels('openai', true)
+    expect(models).toHaveLength(2)
+    expect(models.map((m) => m.id)).toContain('gpt-5.4-nano')
+    expect(models.map((m) => m.id)).toContain('gpt-5.4-mini')
+  })
+
+  it('他プロバイダはAPIキー有無に関わらず全モデル選択可能', () => {
+    const anthropic = AI_PROVIDERS.find((p) => p.id === 'anthropic')!
+    const withKey = getSelectableModels('anthropic', true)
+    const withoutKey = getSelectableModels('anthropic', false)
+    expect(withKey).toHaveLength(anthropic.models.length)
+    expect(withoutKey).toHaveLength(anthropic.models.length)
   })
 })

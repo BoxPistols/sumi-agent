@@ -213,6 +213,17 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  // サーバーキー利用時（ユーザーキー未提供）は gpt-5.4-nano のみ許可
+  // gpt-5.4-mini 等の上位モデルはユーザー自身のAPIキーが必要
+  if (!hasUserKey && provider === 'openai' && model !== 'gpt-5.4-nano') {
+    return NextResponse.json(
+      {
+        error: `${model} を使用するには自身のAPIキーを設定してください。無料版では gpt-5.4-nano のみ利用可能です。`,
+      },
+      { status: 403 },
+    )
+  }
+
   try {
     if (provider === 'openai') {
       const key = userKey || process.env.OPENAI_API_KEY

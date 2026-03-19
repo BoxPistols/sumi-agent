@@ -61,7 +61,7 @@ const AI_PROVIDERS=[
   ],defaultModel:"claude-sonnet-4-20250514"},
   {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
     {id:"gpt-5.4-nano",label:"GPT-5.4 Nano",desc:"最速・最安（推奨）",tier:1},
-    {id:"gpt-5.4-mini",label:"GPT-5.4 Mini",desc:"高速・高精度",tier:2},
+    {id:"gpt-5.4-mini",label:"GPT-5.4 Mini",desc:"高速・高精度",tier:2,needsUserKey:true},
   ],defaultModel:"gpt-5.4-nano"},
   {id:"google",label:"Gemini",icon:"G",color:"#4285F4",needsKey:true,models:[
     {id:"gemini-2.0-flash",label:"2.0 Flash",desc:"軽量・高速",tier:1},
@@ -2571,8 +2571,14 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
           setModel(
               pickFormatModelForProfile(provider, aiProfile) || 'gpt-5.4-nano',
           )
+          return
       }
-  }, [provider, aiProfile]) // eslint-disable-line
+      // APIキー未入力で needsUserKey モデルが選択中ならデフォルトにフォールバック
+      const cur = curProv.models.find((m) => m.id === model)
+      if (cur?.needsUserKey && !apiKey.trim()) {
+          setModel(curProv.defaultModel || 'gpt-5.4-nano')
+      }
+  }, [provider, aiProfile, apiKey]) // eslint-disable-line
   const testApiConnection = async () => {
       const key = apiKey.trim()
       if (requiresKey && !key) {
@@ -2724,20 +2730,25 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               gap: 6,
                           }}
                       >
-                          {curProv.models.map((m) => (
+                          {curProv.models.map((m) => {
+                              const locked = m.needsUserKey && !apiKey.trim()
+                              return (
                               <button
                                   key={m.id}
-                                  onClick={() => setModel(m.id)}
+                                  onClick={() => { if (!locked) setModel(m.id) }}
                                   className={s['settings-model-btn']}
                                   data-active={model === m.id}
-                                  style={{'--provider-color': curProv.color}}
+                                  disabled={locked}
+                                  title={locked ? 'APIキーを入力すると使用できます' : m.desc}
+                                  style={{'--provider-color': curProv.color, ...(locked ? {opacity: 0.45, cursor: 'not-allowed'} : {})}}
                               >
                                   <div className={s['settings-model-label']} data-active={model === m.id} style={model === m.id ? {color: curProv.color} : undefined}>
-                                      {m.label}
+                                      {m.label}{locked ? ' 🔒' : ''}
                                   </div>
-                                  <div className={s['settings-model-desc']}>{m.desc}</div>
+                                  <div className={s['settings-model-desc']}>{locked ? 'APIキー必須' : m.desc}</div>
                               </button>
-                          ))}
+                              )
+                          })}
                       </div>
                   </div>
                   {/* AI profile */}

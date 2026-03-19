@@ -25,6 +25,7 @@ export interface AIModel {
   label: string
   desc: string
   tier: number
+  needsUserKey?: boolean
 }
 
 export interface AIProvider {
@@ -69,7 +70,13 @@ export const AI_PROVIDERS: AIProvider[] = [
     needsKey: false,
     models: [
       { id: 'gpt-5.4-nano', label: 'GPT-5.4 Nano', desc: '最速・最安（推奨）', tier: 1 },
-      { id: 'gpt-5.4-mini', label: 'GPT-5.4 Mini', desc: '高速・高精度', tier: 2 },
+      {
+        id: 'gpt-5.4-mini',
+        label: 'GPT-5.4 Mini',
+        desc: '高速・高精度',
+        tier: 2,
+        needsUserKey: true,
+      },
     ],
     defaultModel: 'gpt-5.4-nano',
   },
