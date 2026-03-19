@@ -86,11 +86,7 @@ export const AI_PROVIDERS: AIProvider[] = [
     icon: 'G',
     color: '#4285F4',
     needsKey: true,
-    models: [
-      { id: 'gemini-2.0-flash', label: '2.0 Flash', desc: '軽量・高速', tier: 1 },
-      { id: 'gemini-2.5-flash', label: '2.5 Flash', desc: 'バランス型', tier: 2 },
-      { id: 'gemini-2.5-pro', label: '2.5 Pro', desc: '高精度', tier: 3 },
-    ],
+    models: [{ id: 'gemini-2.5-flash', label: '2.5 Flash', desc: '高速・高精度', tier: 1 }],
     defaultModel: 'gemini-2.5-flash',
   },
   {

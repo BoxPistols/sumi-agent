@@ -83,7 +83,6 @@ describe('getProviderForModel', () => {
 
   it('Geminiモデル → google', () => {
     expect(getProviderForModel('gemini-2.5-flash')).toBe('google')
-    expect(getProviderForModel('gemini-2.5-pro')).toBe('google')
   })
 
   it('local-auto → local', () => {

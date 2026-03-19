@@ -52,6 +52,10 @@ export async function callAdvisor(params: CallAdvisorParams): Promise<CallAdviso
       contextLength: context.length,
     })
     modelId = selectModel(complexity)
+    // APIキー未提供時は mini を使えないので nano にフォールバック
+    if (!apiKey && modelId !== 'gpt-5.4-nano') {
+      modelId = 'gpt-5.4-nano'
+    }
   } else {
     modelId = model || 'gpt-5.4-nano'
   }
