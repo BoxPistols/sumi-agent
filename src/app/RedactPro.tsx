@@ -54,21 +54,17 @@ const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(
 
 // ═══ Multi-Provider AI Models ═══
 const AI_PROVIDERS=[
-  {id:"anthropic",label:"Claude",icon:"C",color:"#D97706",needsKey:false,models:[
+  {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
+    {id:"gpt-5.4-nano",label:"GPT-5.4 Nano",desc:"最速・最安（推奨）",tier:1},
+    {id:"gpt-5.4-mini",label:"GPT-5.4 Mini",desc:"高速・高精度",tier:2,needsUserKey:true},
+  ],defaultModel:"gpt-5.4-nano"},
+  {id:"anthropic",label:"Claude",icon:"C",color:"#D97706",needsKey:true,models:[
     {id:"claude-haiku-4-5-20251001",label:"Haiku 4.5",desc:"高速・低コスト",tier:1},
     {id:"claude-sonnet-4-20250514",label:"Sonnet 4",desc:"バランス型（推奨）",tier:2},
     {id:"claude-sonnet-4-5-20250929",label:"Sonnet 4.5",desc:"高精度",tier:3},
   ],defaultModel:"claude-sonnet-4-20250514"},
-  {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
-    {id:"gpt-4.1-nano",label:"GPT-4.1 Nano",desc:"旧世代・超軽量",tier:1},
-    {id:"gpt-4.1-mini",label:"GPT-4.1 Mini",desc:"旧世代・低コスト",tier:2},
-    {id:"gpt-5-nano",label:"GPT-5 Nano",desc:"最速・最安（推奨）",tier:1},
-    {id:"gpt-5-mini",label:"GPT-5 Mini",desc:"高速・高精度",tier:2},
-  ],defaultModel:"gpt-5-nano"},
   {id:"google",label:"Gemini",icon:"G",color:"#4285F4",needsKey:true,models:[
-    {id:"gemini-2.0-flash",label:"2.0 Flash",desc:"軽量・高速",tier:1},
-    {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"バランス型",tier:2},
-    {id:"gemini-2.5-pro",label:"2.5 Pro",desc:"高精度",tier:3},
+    {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"高速・高精度",tier:1},
   ],defaultModel:"gemini-2.5-flash"},
   {id:"local",label:"ローカルAI",icon:"L",color:"#8B5CF6",needsKey:false,models:[
     {id:"local-auto",label:"自動検出",desc:"ローカルサーバーに接続",tier:1},
@@ -88,10 +84,10 @@ function getProviderMaxTier(providerId) {
     return Math.max(...prov.models.map((m) => m.tier || 1))
 }
 
-function getPreferredTierModel(providerId, tier) {
+function getPreferredTierModel(providerId, tier, hasKey) {
     const prov = getProviderConfig(providerId)
     if (!prov || !prov.models || prov.models.length === 0) return null
-    const candidates = prov.models.filter((m) => (m.tier || 1) === tier)
+    const candidates = prov.models.filter((m) => (m.tier || 1) === tier && (hasKey !== false || !m.needsUserKey))
     if (candidates.length === 0) return null
     return candidates[candidates.length - 1].id
 }
@@ -102,17 +98,17 @@ function getModelTier(providerId, modelId) {
     return m?.tier || null
 }
 
-function pickFormatModelForProfile(providerId, profile) {
+function pickFormatModelForProfile(providerId, profile, hasKey) {
     const prov = getProviderConfig(providerId)
     if (!prov || !prov.models || prov.models.length === 0) return null
     const maxTier = getProviderMaxTier(providerId)
     const targetTier =
         profile === 'speed' ? 1 : profile === 'balanced' ? 2 : maxTier
     return (
-        getPreferredTierModel(providerId, targetTier) ||
-        getPreferredTierModel(providerId, Math.min(2, maxTier)) ||
+        getPreferredTierModel(providerId, targetTier, hasKey) ||
+        getPreferredTierModel(providerId, Math.min(2, maxTier), hasKey) ||
+        getPreferredTierModel(providerId, 1, hasKey) ||
         prov.defaultModel ||
-        prov.models[prov.models.length - 1]?.id ||
         null
     )
 }
@@ -121,24 +117,25 @@ function getModelsForRun(settings) {
     const providerId =
         settings?.provider || getProviderForModel(settings?.model)
     const profile = settings?.aiProfile || 'balanced'
+    const hasKey = !!settings?.apiKey
     const maxTier = getProviderMaxTier(providerId)
     const formatModel =
         settings?.model ||
-        pickFormatModelForProfile(providerId, profile) ||
-        'gpt-5-nano'
+        pickFormatModelForProfile(providerId, profile, hasKey) ||
+        'gpt-5.4-nano'
     const formatTier = getModelTier(providerId, formatModel) || 1
     const formatFallbackModel =
         formatTier <= 1
-            ? getPreferredTierModel(providerId, Math.min(2, maxTier))
+            ? getPreferredTierModel(providerId, Math.min(2, maxTier), hasKey)
             : null
     const detectTier = profile === 'quality' ? Math.min(2, maxTier) : 1
     const detectModel =
-        getPreferredTierModel(providerId, detectTier) ||
-        getPreferredTierModel(providerId, 1) ||
+        getPreferredTierModel(providerId, detectTier, hasKey) ||
+        getPreferredTierModel(providerId, 1, hasKey) ||
         formatModel
     const detectFallbackModel =
         detectTier < maxTier
-            ? getPreferredTierModel(providerId, detectTier + 1)
+            ? getPreferredTierModel(providerId, detectTier + 1, hasKey)
             : null
     return {
         providerId,
@@ -536,7 +533,7 @@ ${truncated}`
         const provider = getProviderForModel(m)
         const raw = await callAI({
             provider,
-            model: m || 'gpt-5-nano',
+            model: m || 'gpt-5.4-nano',
             apiKey,
             maxTokens: 1000,
             messages: [{ role: 'user', content: prompt }],
@@ -1185,7 +1182,7 @@ async function ocrSparsePages(pdfData,sparsePages,apiKey,model,onProgress){
 7. テキストが無いページは「--- Page N ---」の後に「[画像のみ]」と記載`;
       const txt = await callAI({
           provider,
-          model: model || 'gpt-5-nano',
+          model: model || 'gpt-5.4-nano',
           apiKey,
           maxTokens: 8000,
           messages: [
@@ -1259,7 +1256,7 @@ async function aiCleanupText(
     onProgress,
     fallbackModel,
 ) {
-    const primaryModel = model || 'gpt-5-nano'
+    const primaryModel = model || 'gpt-5.4-nano'
     const fbModel =
         fallbackModel && fallbackModel !== primaryModel ? fallbackModel : null
 
@@ -1635,7 +1632,7 @@ async function aiReformat(redactedText,instruction,apiKey,model){
   const provider=getProviderForModel(model);
   return await callAI({
       provider,
-      model: model || 'gpt-5-nano',
+      model: model || 'gpt-5.4-nano',
       apiKey,
       maxTokens: 4000,
       messages: [
@@ -2512,7 +2509,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const [provider, setProvider] = useState(settings.provider || 'openai')
-  const [model, setModel] = useState(settings.model || 'gpt-5-nano')
+  const [model, setModel] = useState(settings.model || 'gpt-5.4-nano')
   const[apiKey,setApiKey]=useState(settings.apiKey||"");
   const[aiDetect,setAiDetect]=useState(settings.aiDetect!==false);
   const [aiProfile, setAiProfile] = useState(settings.aiProfile || 'balanced')
@@ -2555,7 +2552,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   // When switching provider, auto-select default model
   const switchProvider = (pid) => {
       setProvider(pid)
-      setModel(pickFormatModelForProfile(pid, aiProfile) || 'gpt-5-nano')
+      setModel(pickFormatModelForProfile(pid, aiProfile, !!apiKey.trim()) || 'gpt-5.4-nano')
   }
   const keyPlaceholder =
       provider === 'anthropic'
@@ -2568,13 +2565,20 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
       setKeyTest(null)
   }, [provider, model, apiKey])
   useEffect(() => {
+      const hasKey = !!apiKey.trim()
       // Provider list may change defaults; if current model isn't in provider, snap to profile default.
       if (!curProv.models.some((m) => m.id === model)) {
           setModel(
-              pickFormatModelForProfile(provider, aiProfile) || 'gpt-5-nano',
+              pickFormatModelForProfile(provider, aiProfile, hasKey) || 'gpt-5.4-nano',
           )
+          return
       }
-  }, [provider, aiProfile]) // eslint-disable-line
+      // APIキー未入力で needsUserKey モデルが選択中ならデフォルトにフォールバック
+      const cur = curProv.models.find((m) => m.id === model)
+      if (cur?.needsUserKey && !hasKey) {
+          setModel(pickFormatModelForProfile(provider, aiProfile, false) || curProv.defaultModel || 'gpt-5.4-nano')
+      }
+  }, [provider, aiProfile, apiKey]) // eslint-disable-line
   const testApiConnection = async () => {
       const key = apiKey.trim()
       if (requiresKey && !key) {
@@ -2726,20 +2730,25 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               gap: 6,
                           }}
                       >
-                          {curProv.models.map((m) => (
+                          {curProv.models.map((m) => {
+                              const locked = m.needsUserKey && !apiKey.trim()
+                              return (
                               <button
                                   key={m.id}
-                                  onClick={() => setModel(m.id)}
+                                  onClick={() => { if (!locked) setModel(m.id) }}
                                   className={s['settings-model-btn']}
                                   data-active={model === m.id}
-                                  style={{'--provider-color': curProv.color}}
+                                  disabled={locked}
+                                  title={locked ? 'APIキーを入力すると使用できます' : m.desc}
+                                  style={{'--provider-color': curProv.color, ...(locked ? {opacity: 0.45, cursor: 'not-allowed'} : {})}}
                               >
                                   <div className={s['settings-model-label']} data-active={model === m.id} style={model === m.id ? {color: curProv.color} : undefined}>
-                                      {m.label}
+                                      {m.label}{locked ? ' 🔒' : ''}
                                   </div>
-                                  <div className={s['settings-model-desc']}>{m.desc}</div>
+                                  <div className={s['settings-model-desc']}>{locked ? 'APIキー必須' : m.desc}</div>
                               </button>
-                          ))}
+                              )
+                          })}
                       </div>
                   </div>
                   {/* AI profile */}
@@ -2754,7 +2763,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                                   key={p.id}
                                   onClick={() => {
                                       setAiProfile(p.id)
-                                      setModel(pickFormatModelForProfile(provider, p.id) || model)
+                                      setModel(pickFormatModelForProfile(provider, p.id, !!apiKey.trim()) || model)
                                   }}
                                   className={s['settings-profile-btn']}
                                   data-active={aiProfile === p.id}
@@ -2934,7 +2943,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           variant='ghost'
                           onClick={() => {
                               if(!confirm('すべての設定を初期値に戻しますか？\n（テーマ・AIプロバイダー・モデル・APIキー・プロファイルをデフォルトに戻します。アップロード済みのファイルデータには影響しません）'))return;
-                              setProvider('openai');setModel('gpt-5-nano');
+                              setProvider('openai');setModel('gpt-5.4-nano');
                               setApiKey('');setAiDetect(true);
                               setAiProfile('balanced');setProxyUrl('');setLocalEndpoint('http://localhost:11434/v1');
                           }}
@@ -5173,9 +5182,10 @@ function AIPanel({redactedText,apiKey,model,onApply,onClose}){
       const providerId = getProviderForModel(model)
       const tier = getModelTier(providerId, model) || 1
       const maxTier = getProviderMaxTier(providerId)
+      const hasKey = !!apiKey
       const fallbackModel =
           tier <= 1
-              ? getPreferredTierModel(providerId, Math.min(2, maxTier))
+              ? getPreferredTierModel(providerId, Math.min(2, maxTier), hasKey)
               : null
 
       try {
@@ -7007,7 +7017,7 @@ export default function App(){
   const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
-      model: pickFormatModelForProfile('openai', 'balanced') || 'gpt-5-nano',
+      model: pickFormatModelForProfile('openai', 'balanced', false) || 'gpt-5.4-nano',
       aiDetect: true,
       aiProfile: 'balanced',
       provider: 'openai',
@@ -7017,7 +7027,12 @@ export default function App(){
     const safeGet=async(key)=>storage.get(key);
     const ed=await safeGet("rp_edition");if(ed)setEdition(ed);
     const k=await safeGet("rp_api_key");if(k)setSettings(p=>({...p,apiKey:k}));
-    const m=await safeGet("rp_model");if(m)setSettings(p=>({...p,model:m}));
+    const m=await safeGet("rp_model");if(m){
+      const allModels=AI_PROVIDERS.flatMap(p=>p.models);
+      const found=allModels.find(x=>x.id===m);
+      if(found && (!found.needsUserKey || k)){setSettings(p=>({...p,model:m}));}
+      else{await storage.set("rp_model","gpt-5.4-nano");setSettings(p=>({...p,model:"gpt-5.4-nano"}));}
+    }
     const ad=await safeGet("rp_ai_detect");if(ad)setSettings(p=>({...p,aiDetect:ad!=="false"}));
     const ap = await safeGet('rp_ai_profile')
     if (ap) setSettings((p) => ({ ...p, aiProfile: ap }))

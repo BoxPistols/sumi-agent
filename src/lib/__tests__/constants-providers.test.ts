@@ -77,14 +77,12 @@ describe('getProviderForModel', () => {
   })
 
   it('GPTモデル → openai', () => {
-    expect(getProviderForModel('gpt-5-nano')).toBe('openai')
-    expect(getProviderForModel('gpt-5-mini')).toBe('openai')
-    expect(getProviderForModel('gpt-4.1-nano')).toBe('openai')
+    expect(getProviderForModel('gpt-5.4-nano')).toBe('openai')
+    expect(getProviderForModel('gpt-5.4-mini')).toBe('openai')
   })
 
   it('Geminiモデル → google', () => {
     expect(getProviderForModel('gemini-2.5-flash')).toBe('google')
-    expect(getProviderForModel('gemini-2.5-pro')).toBe('google')
   })
 
   it('local-auto → local', () => {
@@ -96,8 +94,8 @@ describe('getProviderForModel', () => {
     expect(getProviderForModel('local-custom')).toBe('local')
   })
 
-  it('不明モデル → anthropic (フォールバック)', () => {
-    expect(getProviderForModel('unknown-model')).toBe('anthropic')
+  it('不明モデル → openai (フォールバック)', () => {
+    expect(getProviderForModel('unknown-model')).toBe('openai')
   })
 })
 

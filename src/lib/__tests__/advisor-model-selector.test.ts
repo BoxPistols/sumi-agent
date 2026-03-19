@@ -37,7 +37,7 @@ describe('MODEL_COSTS', () => {
   })
 
   it('nanoはminiより安い', () => {
-    expect(MODEL_COSTS['gpt-5-nano'].costYen).toBeLessThan(MODEL_COSTS['gpt-5-mini'].costYen)
+    expect(MODEL_COSTS['gpt-5.4-nano'].costYen).toBeLessThan(MODEL_COSTS['gpt-5.4-mini'].costYen)
   })
 })
 
@@ -110,12 +110,12 @@ describe('assessComplexity', () => {
 // ── selectModel ──
 
 describe('selectModel', () => {
-  it('high → gpt-5-mini', () => {
-    expect(selectModel('high')).toBe('gpt-5-mini')
+  it('high → gpt-5.4-mini', () => {
+    expect(selectModel('high')).toBe('gpt-5.4-mini')
   })
 
-  it('low → gpt-5-nano', () => {
-    expect(selectModel('low')).toBe('gpt-5-nano')
+  it('low → gpt-5.4-nano', () => {
+    expect(selectModel('low')).toBe('gpt-5.4-nano')
   })
 })
 
@@ -143,19 +143,19 @@ describe('getCostRecord', () => {
 })
 
 describe('recordCost', () => {
-  it('gpt-5-nanoのコストを加算する', () => {
-    const rec = recordCost('gpt-5-nano')
+  it('gpt-5.4-nanoのコストを加算する', () => {
+    const rec = recordCost('gpt-5.4-nano')
     expect(rec.callCount).toBe(1)
-    expect(rec.dailyTotal).toBeCloseTo(MODEL_COSTS['gpt-5-nano'].costYen)
-    expect(rec.sessionTotal).toBeCloseTo(MODEL_COSTS['gpt-5-nano'].costYen)
+    expect(rec.dailyTotal).toBeCloseTo(MODEL_COSTS['gpt-5.4-nano'].costYen)
+    expect(rec.sessionTotal).toBeCloseTo(MODEL_COSTS['gpt-5.4-nano'].costYen)
   })
 
   it('複数回の呼び出しが累積する', () => {
-    recordCost('gpt-5-nano')
-    const rec = recordCost('gpt-5-mini')
+    recordCost('gpt-5.4-nano')
+    const rec = recordCost('gpt-5.4-mini')
     expect(rec.callCount).toBe(2)
     expect(rec.dailyTotal).toBeCloseTo(
-      MODEL_COSTS['gpt-5-nano'].costYen + MODEL_COSTS['gpt-5-mini'].costYen,
+      MODEL_COSTS['gpt-5.4-nano'].costYen + MODEL_COSTS['gpt-5.4-mini'].costYen,
     )
   })
 
@@ -167,8 +167,8 @@ describe('recordCost', () => {
 
 describe('resetSessionCost', () => {
   it('セッションコストのみリセット（日次は維持）', () => {
-    recordCost('gpt-5-nano')
-    recordCost('gpt-5-mini')
+    recordCost('gpt-5.4-nano')
+    recordCost('gpt-5.4-mini')
     resetSessionCost()
     const rec = getCostRecord()
     expect(rec.sessionTotal).toBe(0)

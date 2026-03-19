@@ -10,10 +10,8 @@ export const MODEL_COSTS: Record<
   string,
   { costYen: number; label: string; tier: 'nano' | 'mini' }
 > = {
-  'gpt-5-nano': { costYen: 0.1, label: 'GPT-5 Nano', tier: 'nano' },
-  'gpt-5-mini': { costYen: 0.51, label: 'GPT-5 Mini', tier: 'mini' },
-  'gpt-4.1-nano': { costYen: 0.11, label: 'GPT-4.1 Nano', tier: 'nano' },
-  'gpt-4.1-mini': { costYen: 0.45, label: 'GPT-4.1 Mini', tier: 'mini' },
+  'gpt-5.4-nano': { costYen: 0.08, label: 'GPT-5.4 Nano', tier: 'nano' },
+  'gpt-5.4-mini': { costYen: 0.4, label: 'GPT-5.4 Mini', tier: 'mini' },
 }
 
 // ── 予算しきい値（円） ──
@@ -93,9 +91,9 @@ export function assessComplexity(params: {
 
 /** 複雑度に応じてモデルを選択 */
 export function selectModel(complexity: Complexity): string {
-  // high → GPT-5 Mini（最新世代の高精度モデル）
-  // low  → GPT-5 Nano（最新世代の最安モデル）
-  return complexity === 'high' ? 'gpt-5-mini' : 'gpt-5-nano'
+  // high → GPT-5.4 Mini（最新世代の高精度モデル）
+  // low  → GPT-5.4 Nano（最新世代の最安モデル）
+  return complexity === 'high' ? 'gpt-5.4-mini' : 'gpt-5.4-nano'
 }
 
 // ── コスト追跡 ──
