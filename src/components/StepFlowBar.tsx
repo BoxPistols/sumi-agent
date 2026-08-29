@@ -11,6 +11,8 @@ export interface StepFlowBarProps {
   hasData: boolean
   /** ファイル解析中か */
   analyzing?: boolean
+  /** エクスポートを開ける状態か（省略時は hasData と同じ）。バッチ処理中など編集画面が未表示の間は false にする */
+  canExport?: boolean
   onStepClick: (id: FlowStepId) => void
 }
 
@@ -23,6 +25,7 @@ export function StepFlowBar({
   current,
   hasData,
   analyzing = false,
+  canExport = hasData,
   onStepClick,
 }: StepFlowBarProps) {
   const currentStep = FLOW_STEPS.find((s) => s.id === current)
@@ -35,8 +38,9 @@ export function StepFlowBar({
     <nav aria-label="作業ステップ" data-intro="step-flow" className={styles.bar}>
       {FLOW_STEPS.map((step, i) => {
         const status = getFlowStepStatus(step.id, current)
-        // データがあれば現在地以外のステップへ移動できる（1=やり直し / 3=書き出し）
-        const clickable = status !== 'current' && hasData
+        // データがあれば現在地以外のステップへ移動できる（1=やり直し / 3=書き出し）。
+        // 書き出しはエクスポート可能な状態（編集画面表示中）に限る
+        const clickable = status !== 'current' && (step.id === 'export' ? canExport : hasData)
         return (
           <Fragment key={step.id}>
             {i > 0 && (
@@ -56,8 +60,12 @@ export function StepFlowBar({
                   ? step.action
                   : step.id === 'input' && hasData
                     ? '最初からやり直す'
-                    : step.id === 'export' && hasData
-                      ? 'エクスポート画面を開く'
+                    : step.id === 'export'
+                      ? canExport
+                        ? 'エクスポート画面を開く'
+                        : hasData
+                          ? '解析が完了すると書き出せます'
+                          : step.action
                       : step.action
               }
               onClick={() => {

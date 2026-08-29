@@ -5566,13 +5566,13 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   const openExportPreview=useCallback(()=>{
     setPreview({
       title:'マスキング済みテキスト',
-      content:viewMode==="ai"&&aiResult?aiResult:redacted,
+      content:editedText??(viewMode==="ai"&&aiResult?aiResult:redacted),
       baseName,
       editable:true,
       meta:{fileName:data.file_name,maskCount:enabledCount,xlMeta:data.xlMeta?.map(sh=>({sheetName:sh.sheetName,aoa:sh.aoa.map(r=>r.map(c=>applyRedaction(String(c??""),detections,data.maskOpts)))}))},
       onContentChange:(newContent)=>{setPreview(prev=>prev?{...prev,content:newContent}:null)},
     });
-  },[viewMode,aiResult,redacted,baseName,data,enabledCount,detections]);
+  },[editedText,viewMode,aiResult,redacted,baseName,data,enabledCount,detections]);
   // ステップフローバーからのエクスポート開閉指示
   useEffect(()=>{
     const handler=(e)=>{if(e.detail?.open)openExportPreview();else setPreview(null);};
@@ -7230,6 +7230,8 @@ export default function App(){
     };
   },[]);
   const hasFlowData=!!data||batchMode;
+  // バッチ処理中（編集画面が未表示）はエクスポートプレビューを開けない
+  const canFlowExport=!!data||(batchMode&&activeFile?.status==='done'&&!!activeFile?.data);
   const flowStep=getCurrentFlowStep({hasData:hasFlowData,exportOpen});
   const handleFlowStepClick=useCallback((id)=>{
     if(id==='input'){
@@ -7237,9 +7239,10 @@ export default function App(){
       return;
     }
     if(!hasFlowData)return;
+    if(id==='export'&&!canFlowExport)return;
     // review: エクスポートを閉じて確認画面へ / export: エクスポートプレビューを開く
     window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_EXPORT,{detail:{open:id==='export'}}));
-  },[hasFlowData,goHome]);
+  },[hasFlowData,canFlowExport,goHome]);
 
   return (
       <div
@@ -7360,7 +7363,7 @@ export default function App(){
                   </button>
               </div>
           </header>
-          <StepFlowBar current={flowStep} hasData={hasFlowData} analyzing={analyzing} onStepClick={handleFlowStepClick}/>
+          <StepFlowBar current={flowStep} hasData={hasFlowData} analyzing={analyzing} canExport={canFlowExport} onStepClick={handleFlowStepClick}/>
           <main style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
           {(!isLite && batchMode) ? (
               <>
