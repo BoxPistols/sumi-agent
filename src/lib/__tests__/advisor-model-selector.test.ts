@@ -32,12 +32,12 @@ describe('MODEL_COSTS', () => {
     for (const [, info] of Object.entries(MODEL_COSTS)) {
       expect(info.costYen).toBeGreaterThan(0)
       expect(info.label).toBeTruthy()
-      expect(['nano', 'mini']).toContain(info.tier)
+      expect(info.tier).toBe('luna')
     }
   })
 
-  it('nanoはminiより安い', () => {
-    expect(MODEL_COSTS['gpt-5.4-nano'].costYen).toBeLessThan(MODEL_COSTS['gpt-5.4-mini'].costYen)
+  it('gpt-5.6-luna のコストが定義されている', () => {
+    expect(MODEL_COSTS['gpt-5.6-luna'].costYen).toBeGreaterThan(0)
   })
 })
 
@@ -110,12 +110,9 @@ describe('assessComplexity', () => {
 // ── selectModel ──
 
 describe('selectModel', () => {
-  it('high → gpt-5.4-mini', () => {
-    expect(selectModel('high')).toBe('gpt-5.4-mini')
-  })
-
-  it('low → gpt-5.4-nano', () => {
-    expect(selectModel('low')).toBe('gpt-5.4-nano')
+  it('high/low とも gpt-5.6-luna（単一ラインナップ）', () => {
+    expect(selectModel('high')).toBe('gpt-5.6-luna')
+    expect(selectModel('low')).toBe('gpt-5.6-luna')
   })
 })
 
@@ -143,19 +140,19 @@ describe('getCostRecord', () => {
 })
 
 describe('recordCost', () => {
-  it('gpt-5.4-nanoのコストを加算する', () => {
-    const rec = recordCost('gpt-5.4-nano')
+  it('gpt-5.6-lunaのコストを加算する', () => {
+    const rec = recordCost('gpt-5.6-luna')
     expect(rec.callCount).toBe(1)
-    expect(rec.dailyTotal).toBeCloseTo(MODEL_COSTS['gpt-5.4-nano'].costYen)
-    expect(rec.sessionTotal).toBeCloseTo(MODEL_COSTS['gpt-5.4-nano'].costYen)
+    expect(rec.dailyTotal).toBeCloseTo(MODEL_COSTS['gpt-5.6-luna'].costYen)
+    expect(rec.sessionTotal).toBeCloseTo(MODEL_COSTS['gpt-5.6-luna'].costYen)
   })
 
   it('複数回の呼び出しが累積する', () => {
-    recordCost('gpt-5.4-nano')
-    const rec = recordCost('gpt-5.4-mini')
+    recordCost('gpt-5.6-luna')
+    const rec = recordCost('gpt-5.6-luna')
     expect(rec.callCount).toBe(2)
     expect(rec.dailyTotal).toBeCloseTo(
-      MODEL_COSTS['gpt-5.4-nano'].costYen + MODEL_COSTS['gpt-5.4-mini'].costYen,
+      MODEL_COSTS['gpt-5.6-luna'].costYen + MODEL_COSTS['gpt-5.6-luna'].costYen,
     )
   })
 
@@ -167,8 +164,8 @@ describe('recordCost', () => {
 
 describe('resetSessionCost', () => {
   it('セッションコストのみリセット（日次は維持）', () => {
-    recordCost('gpt-5.4-nano')
-    recordCost('gpt-5.4-mini')
+    recordCost('gpt-5.6-luna')
+    recordCost('gpt-5.6-luna')
     resetSessionCost()
     const rec = getCostRecord()
     expect(rec.sessionTotal).toBe(0)

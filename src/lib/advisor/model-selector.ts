@@ -1,17 +1,14 @@
 /**
  * アドバイザー Auto モデル選択 + コスト管理
  *
- * タスク複雑度に基づいてnano/miniを動的に選択し、
+ * モデルラインナップは GPT-5.6 Luna に一本化。
+ * assessComplexity は将来の多段ルーティング復活とコスト予測のために残す。
  * セッション/日次のコスト追跡とアラートを管理する。
  */
 
-// ── コスト定義（円） ──
-export const MODEL_COSTS: Record<
-  string,
-  { costYen: number; label: string; tier: 'nano' | 'mini' }
-> = {
-  'gpt-5.4-nano': { costYen: 0.08, label: 'GPT-5.4 Nano', tier: 'nano' },
-  'gpt-5.4-mini': { costYen: 0.4, label: 'GPT-5.4 Mini', tier: 'mini' },
+// ── コスト定義（円 / 1往復の概算） ──
+export const MODEL_COSTS: Record<string, { costYen: number; label: string; tier: 'luna' }> = {
+  'gpt-5.6-luna': { costYen: 0.4, label: 'GPT-5.6 Luna', tier: 'luna' },
 }
 
 // ── 予算しきい値（円） ──
@@ -89,11 +86,11 @@ export function assessComplexity(params: {
   return 'low'
 }
 
-/** 複雑度に応じてモデルを選択 */
+/** 複雑度に応じてモデルを選択（現在のラインナップは GPT-5.6 Luna 一本） */
 export function selectModel(complexity: Complexity): string {
-  // high → GPT-5.4 Mini（最新世代の高精度モデル）
-  // low  → GPT-5.4 Nano（最新世代の最安モデル）
-  return complexity === 'high' ? 'gpt-5.4-mini' : 'gpt-5.4-nano'
+  // 複雑度は将来の多段ルーティング復活に備えて受け取るが、現在は分岐しない
+  void complexity
+  return 'gpt-5.6-luna'
 }
 
 // ── コスト追跡 ──

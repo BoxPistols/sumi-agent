@@ -11,13 +11,17 @@ import {
 // ── AI_PROVIDERS ──
 
 describe('AI_PROVIDERS', () => {
-  it('4つのプロバイダがある（anthropic, openai, google, local）', () => {
-    expect(AI_PROVIDERS).toHaveLength(4)
+  it('3つのプロバイダがある（openai, google, local）', () => {
+    expect(AI_PROVIDERS).toHaveLength(3)
     const ids = AI_PROVIDERS.map((p) => p.id)
-    expect(ids).toContain('anthropic')
-    expect(ids).toContain('openai')
-    expect(ids).toContain('google')
-    expect(ids).toContain('local')
+    expect(ids).toEqual(['openai', 'google', 'local'])
+  })
+
+  it('Claude/Anthropicは含まれない', () => {
+    const ids = AI_PROVIDERS.map((p) => p.id)
+    expect(ids).not.toContain('anthropic')
+    const allModelIds = AI_PROVIDERS.flatMap((p) => p.models.map((m) => m.id))
+    expect(allModelIds.some((id) => id.startsWith('claude'))).toBe(false)
   })
 
   it('各プロバイダにid, label, icon, color, models, defaultModelがある', () => {
@@ -71,14 +75,14 @@ describe('AI_MODELS', () => {
 // ── getProviderForModel ──
 
 describe('getProviderForModel', () => {
-  it('Claudeモデル → anthropic', () => {
-    expect(getProviderForModel('claude-sonnet-4-20250514')).toBe('anthropic')
-    expect(getProviderForModel('claude-haiku-4-5-20251001')).toBe('anthropic')
+  it('OpenAIプロバイダは gpt-5.6-luna のみ', () => {
+    const openai = AI_PROVIDERS.find((p) => p.id === 'openai')!
+    expect(openai.models.map((m) => m.id)).toEqual(['gpt-5.6-luna'])
+    expect(openai.defaultModel).toBe('gpt-5.6-luna')
   })
 
   it('GPTモデル → openai', () => {
-    expect(getProviderForModel('gpt-5.4-nano')).toBe('openai')
-    expect(getProviderForModel('gpt-5.4-mini')).toBe('openai')
+    expect(getProviderForModel('gpt-5.6-luna')).toBe('openai')
   })
 
   it('Geminiモデル → google', () => {

@@ -57,14 +57,8 @@ const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(
 // ═══ Multi-Provider AI Models ═══
 const AI_PROVIDERS=[
   {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
-    {id:"gpt-5.4-nano",label:"GPT-5.4 Nano",desc:"最速・最安（推奨）",tier:1},
-    {id:"gpt-5.4-mini",label:"GPT-5.4 Mini",desc:"高速・高精度",tier:2,needsUserKey:true},
-  ],defaultModel:"gpt-5.4-nano"},
-  {id:"anthropic",label:"Claude",icon:"C",color:"#D97706",needsKey:true,models:[
-    {id:"claude-haiku-4-5-20251001",label:"Haiku 4.5",desc:"高速・低コスト",tier:1},
-    {id:"claude-sonnet-4-20250514",label:"Sonnet 4",desc:"バランス型（推奨）",tier:2},
-    {id:"claude-sonnet-4-5-20250929",label:"Sonnet 4.5",desc:"高精度",tier:3},
-  ],defaultModel:"claude-sonnet-4-20250514"},
+    {id:"gpt-5.6-luna",label:"GPT-5.6 Luna",desc:"高速・高精度（推奨）",tier:1},
+  ],defaultModel:"gpt-5.6-luna"},
   {id:"google",label:"Gemini",icon:"G",color:"#4285F4",needsKey:true,models:[
     {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"高速・高精度",tier:1},
   ],defaultModel:"gemini-2.5-flash"},
@@ -124,7 +118,7 @@ function getModelsForRun(settings) {
     const formatModel =
         settings?.model ||
         pickFormatModelForProfile(providerId, profile, hasKey) ||
-        'gpt-5.4-nano'
+        'gpt-5.6-luna'
     const formatTier = getModelTier(providerId, formatModel) || 1
     const formatFallbackModel =
         formatTier <= 1
@@ -535,7 +529,7 @@ ${truncated}`
         const provider = getProviderForModel(m)
         const raw = await callAI({
             provider,
-            model: m || 'gpt-5.4-nano',
+            model: m || 'gpt-5.6-luna',
             apiKey,
             maxTokens: 1000,
             messages: [{ role: 'user', content: prompt }],
@@ -1184,7 +1178,7 @@ async function ocrSparsePages(pdfData,sparsePages,apiKey,model,onProgress){
 7. テキストが無いページは「--- Page N ---」の後に「[画像のみ]」と記載`;
       const txt = await callAI({
           provider,
-          model: model || 'gpt-5.4-nano',
+          model: model || 'gpt-5.6-luna',
           apiKey,
           maxTokens: 8000,
           messages: [
@@ -1258,7 +1252,7 @@ async function aiCleanupText(
     onProgress,
     fallbackModel,
 ) {
-    const primaryModel = model || 'gpt-5.4-nano'
+    const primaryModel = model || 'gpt-5.6-luna'
     const fbModel =
         fallbackModel && fallbackModel !== primaryModel ? fallbackModel : null
 
@@ -1634,7 +1628,7 @@ async function aiReformat(redactedText,instruction,apiKey,model){
   const provider=getProviderForModel(model);
   return await callAI({
       provider,
-      model: model || 'gpt-5.4-nano',
+      model: model || 'gpt-5.6-luna',
       apiKey,
       maxTokens: 4000,
       messages: [
@@ -2016,7 +2010,7 @@ const CHAT_FAQ=[
     {q:'カスタムキーワードとは？',a:'任意の文字列を指定してマスキング対象に追加できます。初期画面・エディター画面どちらからでも設定可能です。'},
   ]},
   {category:'AI機能',questions:[
-    {q:'AI機能を使うには？',a:'設定（⚙）からAPIキーを入力しAIをONにしてください。Claude, OpenAI, Geminiに対応しています。'},
+    {q:'AI機能を使うには？',a:'設定（⚙）からAPIキーを入力しAIをONにしてください。OpenAI / Gemini / ローカルAIに対応しています。'},
     {q:'AIで何ができる？',a:'AI PII検出（正規表現では困難な個人情報検出）、テキスト再フォーマット、画像OCRの3機能があります。'},
   ]},
   {category:'エクスポート',questions:[
@@ -2364,7 +2358,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                               AI検出・AI整形
                           </div>
                           <ul className={s['help-feature-desc']}>
-                              <li>設定 → プロバイダ選択（OpenAI / Claude / Gemini / ローカルAI）</li>
+                              <li>設定 → プロバイダ選択（OpenAI / Gemini / ローカルAI）</li>
                               <li>APIキーを入力して接続テスト → AI検出をON</li>
                               <li>正規表現で見逃す文脈依存の個人情報を補完</li>
                               <li>テキスト整形: PDFやOCR由来の崩れを自動修正</li>
@@ -2511,7 +2505,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const [provider, setProvider] = useState(settings.provider || 'openai')
-  const [model, setModel] = useState(settings.model || 'gpt-5.4-nano')
+  const [model, setModel] = useState(settings.model || 'gpt-5.6-luna')
   const[apiKey,setApiKey]=useState(settings.apiKey||"");
   const[aiDetect,setAiDetect]=useState(settings.aiDetect!==false);
   const [aiProfile, setAiProfile] = useState(settings.aiProfile || 'balanced')
@@ -2554,14 +2548,14 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   // When switching provider, auto-select default model
   const switchProvider = (pid) => {
       setProvider(pid)
-      setModel(pickFormatModelForProfile(pid, aiProfile, !!apiKey.trim()) || 'gpt-5.4-nano')
+      setModel(pickFormatModelForProfile(pid, aiProfile, !!apiKey.trim()) || 'gpt-5.6-luna')
   }
   const keyPlaceholder =
-      provider === 'anthropic'
-          ? 'sk-ant-api03-...（省略可）'
-          : provider === 'openai'
-            ? 'sk-proj-...（未入力ならサーバー環境変数）'
-            : 'AIza...（必須）'
+      provider === 'openai'
+          ? 'sk-proj-...（未入力ならサーバー環境変数）'
+          : provider === 'google'
+            ? 'AIza...（必須）'
+            : '不要（ローカルAI）'
   const requiresKey = provider === 'google'
   useEffect(() => {
       setKeyTest(null)
@@ -2571,14 +2565,14 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
       // Provider list may change defaults; if current model isn't in provider, snap to profile default.
       if (!curProv.models.some((m) => m.id === model)) {
           setModel(
-              pickFormatModelForProfile(provider, aiProfile, hasKey) || 'gpt-5.4-nano',
+              pickFormatModelForProfile(provider, aiProfile, hasKey) || 'gpt-5.6-luna',
           )
           return
       }
       // APIキー未入力で needsUserKey モデルが選択中ならデフォルトにフォールバック
       const cur = curProv.models.find((m) => m.id === model)
       if (cur?.needsUserKey && !hasKey) {
-          setModel(pickFormatModelForProfile(provider, aiProfile, false) || curProv.defaultModel || 'gpt-5.4-nano')
+          setModel(pickFormatModelForProfile(provider, aiProfile, false) || curProv.defaultModel || 'gpt-5.6-luna')
       }
   }, [provider, aiProfile, apiKey]) // eslint-disable-line
   const testApiConnection = async () => {
@@ -2597,6 +2591,8 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
               provider,
               model,
               apiKey: key || undefined,
+              // ローカルAIは設定中のエンドポイントをそのまま検証する
+              localEndpoint: provider === 'local' ? localEndpoint.trim() || undefined : undefined,
               maxTokens: 32,
               messages: [
                   {
@@ -2606,9 +2602,13 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
               ],
           })
           const short = (text || '').replace(/\s+/g, ' ').trim().slice(0, 48)
+          const target =
+              provider === 'local'
+                  ? `${curProv.label} / ${localEndpoint.trim() || '既定のエンドポイント'}`
+                  : `${curProv.label} / ${model}`
           setKeyTest({
               ok: true,
-              msg: `接続OK (${provider} / ${model})${short ? ` 返答: ${short}` : ''}`,
+              msg: `接続OK (${target})${short ? ` 返答: ${short}` : ''}`,
           })
       } catch (e) {
           setKeyTest({
@@ -2783,7 +2783,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           <span className={s['settings-mono']}>PII検出=高速</span>{' '}
                           /{' '}
                           <span className={s['settings-mono']}>再構成・再フォーマット=高品質</span>
-                          （例: OpenAIなら検出は GPT-5 Nano、整形は GPT-5 Mini）
+                          （例: OpenAIなら GPT-5.6 Luna を使用）
                       </div>
                   </div>
                   {/* AI detect toggle */}
@@ -2804,11 +2804,11 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   <div>
                       <div className={s['settings-section-title']} style={{marginBottom:4}}>API Key</div>
                       <div className={s['settings-section-desc']}>
-                          {provider === 'anthropic'
-                              ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のキーを入力すると無制限に利用できます。'
-                              : provider === 'openai'
-                                ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のAPIキーを入力すると無制限に利用できます。'
-                                : 'APIキーが必須です。下のボタンで接続テストできます。'}
+                          {provider === 'openai'
+                              ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のAPIキーを入力すると無制限に利用できます。'
+                              : provider === 'google'
+                                ? 'APIキーが必須です。下のボタンで接続テストできます。'
+                                : 'APIキー不要。ローカルAIサーバーへの接続を下のボタンでテストできます。'}
                       </div>
                       <div style={{ position: 'relative' }}>
                           <input
@@ -2833,7 +2833,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               disabled={testingKey}
                               style={{ padding: '6px 12px', fontSize: 12, borderRadius: 7 }}
                           >
-                              {testingKey ? '接続テスト中...' : 'API接続テスト'}
+                              {testingKey ? '接続テスト中...' : provider === 'local' ? 'ローカルAI接続テスト' : 'API接続テスト'}
                           </Btn>
                           <span aria-live="polite" aria-atomic="true">
                           {keyTest && (
@@ -2945,7 +2945,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           variant='ghost'
                           onClick={() => {
                               if(!confirm('すべての設定を初期値に戻しますか？\n（テーマ・AIプロバイダー・モデル・APIキー・プロファイルをデフォルトに戻します。アップロード済みのファイルデータには影響しません）'))return;
-                              setProvider('openai');setModel('gpt-5.4-nano');
+                              setProvider('openai');setModel('gpt-5.6-luna');
                               setApiKey('');setAiDetect(true);
                               setAiProfile('balanced');setProxyUrl('');setLocalEndpoint('http://localhost:11434/v1');
                           }}
@@ -7110,10 +7110,29 @@ async function launchTour(steps,doneKey){
   document.body.setAttribute('data-theme',theme);
   const tour=introJs();
   tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
+  // 「いま何番目か」を常に示す（例: 7 / 12）
+  const total=validSteps.length;
+  const renderStepCounter=()=>{
+    const tooltip=document.querySelector('.introjs-tooltip');
+    if(!tooltip)return;
+    const idx=(typeof tour.currentStep==='function'?tour.currentStep():tour._currentStep)??0;
+    const current=Math.min(total,Math.max(1,idx+1));
+    let el=tooltip.querySelector('.introjs-stepcounter');
+    if(!el){
+      el=document.createElement('div');
+      el.className='introjs-stepcounter';
+      const anchor=tooltip.querySelector('.introjs-progress')||tooltip.querySelector('.introjs-tooltipbuttons');
+      if(anchor)tooltip.insertBefore(el,anchor);else tooltip.appendChild(el);
+    }
+    el.textContent=`${current} / ${total}`;
+    el.setAttribute('aria-label',`全${total}ステップ中 ${current}番目`);
+  };
   const cleanup=()=>{document.body.removeAttribute('data-theme');if(doneKey)try{localStorage.setItem(doneKey,'1')}catch{}};
   tour.oncomplete(cleanup);
   tour.onexit(cleanup);
+  tour.onafterchange(()=>{renderStepCounter();});
   tour.start();
+  setTimeout(renderStepCounter,0);
 }
 
 // ═══ App ═══
@@ -7150,7 +7169,7 @@ export default function App(){
   const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
-      model: pickFormatModelForProfile('openai', 'balanced', false) || 'gpt-5.4-nano',
+      model: pickFormatModelForProfile('openai', 'balanced', false) || 'gpt-5.6-luna',
       aiDetect: true,
       aiProfile: 'balanced',
       provider: 'openai',
@@ -7164,7 +7183,7 @@ export default function App(){
       const allModels=AI_PROVIDERS.flatMap(p=>p.models);
       const found=allModels.find(x=>x.id===m);
       if(found && (!found.needsUserKey || k)){setSettings(p=>({...p,model:m}));}
-      else{await storage.set("rp_model","gpt-5.4-nano");setSettings(p=>({...p,model:"gpt-5.4-nano"}));}
+      else{await storage.set("rp_model","gpt-5.6-luna");setSettings(p=>({...p,model:"gpt-5.6-luna"}));}
     }
     const ad=await safeGet("rp_ai_detect");if(ad)setSettings(p=>({...p,aiDetect:ad!=="false"}));
     const ap = await safeGet('rp_ai_profile')

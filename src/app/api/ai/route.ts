@@ -73,7 +73,7 @@ interface ContentBlock {
 }
 
 interface AIRequestBody {
-  provider: 'openai' | 'anthropic' | 'google' | 'local'
+  provider: 'openai' | 'google' | 'local'
   model: string
   messages: Array<{ role: string; content: string | ContentBlock[] }>
   maxTokens?: number
@@ -213,12 +213,11 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // サーバーキー利用時（ユーザーキー未提供）は gpt-5.4-nano のみ許可
-  // gpt-5.4-mini 等の上位モデルはユーザー自身のAPIキーが必要
-  if (!hasUserKey && provider === 'openai' && model !== 'gpt-5.4-nano') {
+  // サーバーキー利用時（ユーザーキー未提供）は gpt-5.6-luna のみ許可
+  if (!hasUserKey && provider === 'openai' && model !== 'gpt-5.6-luna') {
     return NextResponse.json(
       {
-        error: `${model} を使用するには自身のAPIキーを設定してください。無料版では gpt-5.4-nano のみ利用可能です。`,
+        error: `${model} を使用するには自身のAPIキーを設定してください。無料版では gpt-5.6-luna のみ利用可能です。`,
       },
       { status: 403 },
     )
@@ -351,51 +350,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (provider === 'anthropic') {
-      const key = userKey || process.env.ANTHROPIC_API_KEY
-      if (!key) {
-        return NextResponse.json({ error: 'Anthropic APIキーが未設定です' }, { status: 400 })
-      }
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-      }
-
-      const reqBody: Record<string, unknown> = {
-        model: model || 'claude-sonnet-4-20250514',
-        max_tokens: maxTokens,
-        messages,
-      }
-      if (system) reqBody.system = system
-
-      const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(reqBody),
-      })
-
-      if (!res.ok) {
-        const e = await res.text().catch(() => '')
-        return NextResponse.json(
-          { error: `Claude ${res.status}: ${e.slice(0, 200)}` },
-          { status: 502 },
-        )
-      }
-
-      const d = await res.json()
-      const text =
-        d.content
-          ?.map((c: { type: string; text?: string }) => (c.type === 'text' ? c.text : ''))
-          .join('') || ''
-      return NextResponse.json({
-        text,
-        remaining: rl?.remaining,
-        limit: rl?.limit,
-        resetAt: rl?.resetAt,
-      })
-    }
-
     if (provider === 'local') {
       // Ollama / LM Studio 等 — OpenAI互換API
       const endpoint =
@@ -439,6 +393,17 @@ export async function POST(request: NextRequest) {
       )
     }
     const msg = err instanceof Error ? err.message : 'Unknown error'
+    // ローカルAIは「サーバーが起動していない」ケースが大半なので原因を明示する
+    if (provider === 'local' && /fetch failed|ECONNREFUSED|network/i.test(msg)) {
+      const endpoint =
+        body.localEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434/v1'
+      return NextResponse.json(
+        {
+          error: `ローカルAIに接続できません（${endpoint}）。Ollama / LM Studio 等が起動しているか、エンドポイントが正しいか確認してください。`,
+        },
+        { status: 502 },
+      )
+    }
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

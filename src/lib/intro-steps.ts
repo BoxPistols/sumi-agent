@@ -271,7 +271,7 @@ export const PRO_SWITCH_STEPS: IntroStep[] = [
   {
     element: '[data-intro="settings-button"]',
     title: 'AI設定',
-    intro: 'AI検出プロバイダ（Claude / GPT / Gemini）の設定やAPIキーの管理。',
+    intro: 'AI検出プロバイダ（OpenAI / Gemini / ローカルAI）の設定やAPIキーの管理。',
     position: 'bottom',
   },
 ]

@@ -42,6 +42,7 @@ Sumi -- 経歴書の個人情報 自動検出・マスキングツール。個�
 - ESLint は `eslint-config-next` を使用
 - named export を優先（default export は Next.js の規約に従う場合のみ）
 - CSS-in-JS は使わない -- CSS Custom Properties (`T` オブジェクト) + インラインスタイルで構成
+- **UI・スタイル変更時は `docs/DESIGN.md` に従う**（カラートークン、コントラスト基準 4.5:1、ボタン階層、両テーマ検証）。`.claude/skills/design-system` に作業手順あり
 - パスエイリアス: `@/*` = `./src/*`
 
 ## Git規約
