@@ -47,6 +47,8 @@ import * as mammoth from "mammoth";
 import * as Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { clearAllSiteData } from "../lib/storage";
+import { StepFlowBar } from "@/components/StepFlowBar";
+import { getCurrentFlowStep, FLOW_EVENT_SET_EXPORT, FLOW_EVENT_EXPORT_STATE, FLOW_EVENT_ANALYZING } from "@/lib/flow-steps";
 
 // ═══ Theme System (CSS Custom Properties) ═══
 const C={accent:"#1C1917",accentDim:"rgba(28,25,23,0.08)",red:"#DC2626",redDim:"rgba(220,38,38,0.1)",green:"#059669",greenDim:"rgba(5,150,105,0.1)",amber:"#D97706",amberDim:"rgba(217,119,6,0.1)",purple:"#9B6DFF",purpleDim:"rgba(155,109,255,0.1)",cyan:"#22D3EE",cyanDim:"rgba(34,211,238,0.1)",sumi:"#1C1917",washi:"#FAF9F6",stamp:"#DC2626",font:"'Noto Sans JP','DM Sans',system-ui,sans-serif",mono:"'JetBrains Mono','Fira Code',monospace"};
@@ -1948,7 +1950,7 @@ function BatchProcessingView({file}){
   return (
     <div aria-live="polite" aria-label={`${file.fileName}を処理中: ${file.stage||'処理待機中'} ${file.progress||0}%`} style={{
       display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-      height:'calc(100vh - 90px)',gap:16,fontFamily:T.font,
+      height:'calc(100vh - 130px)',gap:16,fontFamily:T.font,
     }}>
       <div style={{width:48,height:48,border:`3px solid ${T.border}`,borderTopColor:T.accent,borderRadius:'50%',
         animation:'rp-spin 1s linear infinite'}} role="status" aria-label="処理中"/>
@@ -1967,7 +1969,7 @@ function BatchErrorView({file,onRetry}){
   return (
     <div role="alert" style={{
       display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-      height:'calc(100vh - 90px)',gap:12,fontFamily:T.font,
+      height:'calc(100vh - 130px)',gap:12,fontFamily:T.font,
     }}>
       <div style={{width:48,height:48,borderRadius:'50%',background:T.redDim,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,color:T.red}} aria-hidden="true">!</div>
       <div style={{fontSize:16,fontWeight:600,color:T.text}}>{file.fileName}</div>
@@ -4188,6 +4190,12 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
     return()=>clearInterval(id);
   },[loading]);
 
+  // 解析中状態をステップフローバーへ通知
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_ANALYZING,{detail:{active:loading}}));
+    return()=>{window.dispatchEvent(new CustomEvent(FLOW_EVENT_ANALYZING,{detail:{active:false}}));};
+  },[loading]);
+
   useEffect(()=>{(async()=>{try{const v=await safeGet("rp_custom_keywords");if(v){const parsed=JSON.parse(v);if(Array.isArray(parsed))setCustomKeywords(parsed);}}catch(e){}finally{kwLoadedRef.current=true;}})();},[]);
   useEffect(()=>{if(kwLoadedRef.current)storage.set("rp_custom_keywords",JSON.stringify(customKeywords));},[customKeywords]);
 
@@ -5554,7 +5562,28 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   // アドバイザー: 改善テキストを却下
   const handleAdvisorDraftReject=useCallback(()=>{setAdvisorDraft(null);},[]);
 
-  const buildTxt=()=>viewMode==="ai"&&aiResult?aiResult:redacted;
+  // エクスポートプレビューを開く（フッターのボタンとステップフローバーの両方から呼ばれる）
+  const openExportPreview=useCallback(()=>{
+    setPreview({
+      title:'マスキング済みテキスト',
+      content:viewMode==="ai"&&aiResult?aiResult:redacted,
+      baseName,
+      editable:true,
+      meta:{fileName:data.file_name,maskCount:enabledCount,xlMeta:data.xlMeta?.map(sh=>({sheetName:sh.sheetName,aoa:sh.aoa.map(r=>r.map(c=>applyRedaction(String(c??""),detections,data.maskOpts)))}))},
+      onContentChange:(newContent)=>{setPreview(prev=>prev?{...prev,content:newContent}:null)},
+    });
+  },[viewMode,aiResult,redacted,baseName,data,enabledCount,detections]);
+  // ステップフローバーからのエクスポート開閉指示
+  useEffect(()=>{
+    const handler=(e)=>{if(e.detail?.open)openExportPreview();else setPreview(null);};
+    window.addEventListener(FLOW_EVENT_SET_EXPORT,handler);
+    return()=>window.removeEventListener(FLOW_EVENT_SET_EXPORT,handler);
+  },[openExportPreview]);
+  // エクスポートプレビューの開閉状態をステップフローバーへ通知（アンマウント時はクローズ扱い）
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_EXPORT_STATE,{detail:{open:!!preview}}));
+    return()=>{window.dispatchEvent(new CustomEvent(FLOW_EVENT_EXPORT_STATE,{detail:{open:false}}));};
+  },[preview]);
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
   // A4プレビュー用 memoized HTML
@@ -5724,7 +5753,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
           style={{
               display: 'grid',
               gridTemplateColumns: gridCols,
-              height: 'calc(100vh - 52px - 36px)',
+              height: 'calc(100vh - 52px - 40px - 36px)',
               fontFamily: T.font,
               transition: presetTransRef.current ? 'grid-template-columns .2s ease' : undefined,
           }}
@@ -6609,8 +6638,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       style={{
                           width: '100%',
                           borderRadius: 10,
-                          background: T.accent,
+                          background: 'transparent',
                           fontSize: 13,
+                          color: T.accent,
+                          border: `1.5px solid ${T.accent}`,
                       }}
                   >
                       AI で再フォーマット
@@ -6641,23 +6672,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   </Btn>}
                   <div className={s['ed-btn-row']}>
                       <Btn
-                          title='マスキング結果をプレビュー'
-                          variant='ghost'
-                          onClick={() =>
-                              setPreview({
-                                  title: 'マスキング済みテキスト',
-                                  content: buildTxt(),
-                                  baseName,
-                                  editable: true,
-                                  meta: { fileName: data.file_name, maskCount: enabledCount, xlMeta: data.xlMeta?.map(s=>({sheetName:s.sheetName,aoa:s.aoa.map(r=>r.map(c=>applyRedaction(String(c??""),detections,data.maskOpts)))})) },
-                                  onContentChange: (newContent) => {
-                                      setPreview(prev => prev ? {...prev, content: newContent} : null)
-                                  },
-                              })
-                          }
-                          style={{ flex: 1, borderRadius: 10, fontSize: 13 }}
+                          title='マスキング結果を確認して書き出す'
+                          onClick={openExportPreview}
+                          style={{ flex: 1, borderRadius: 10, fontSize: 13, background: T.accent }}
                       >
-                          プレビュー / 保存
+                          次へ: 書き出す
                       </Btn>
                       <Btn
                           title='クリップボードにコピー'
@@ -7197,6 +7216,31 @@ export default function App(){
   const batchMode=batchFiles.length>0;
   const activeFile=batchFiles[activeFileIdx];
 
+  // ── ステップフローバー連携 ──
+  const[exportOpen,setExportOpen]=useState(false);
+  const[analyzing,setAnalyzing]=useState(false);
+  useEffect(()=>{
+    const onExportState=(e)=>setExportOpen(!!e.detail?.open);
+    const onAnalyzing=(e)=>setAnalyzing(!!e.detail?.active);
+    window.addEventListener(FLOW_EVENT_EXPORT_STATE,onExportState);
+    window.addEventListener(FLOW_EVENT_ANALYZING,onAnalyzing);
+    return()=>{
+      window.removeEventListener(FLOW_EVENT_EXPORT_STATE,onExportState);
+      window.removeEventListener(FLOW_EVENT_ANALYZING,onAnalyzing);
+    };
+  },[]);
+  const hasFlowData=!!data||batchMode;
+  const flowStep=getCurrentFlowStep({hasData:hasFlowData,exportOpen});
+  const handleFlowStepClick=useCallback((id)=>{
+    if(id==='input'){
+      if(hasFlowData&&window.confirm('最初からやり直しますか？現在の検出結果は破棄されます。'))goHome();
+      return;
+    }
+    if(!hasFlowData)return;
+    // review: エクスポートを閉じて確認画面へ / export: エクスポートプレビューを開く
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_EXPORT,{detail:{open:id==='export'}}));
+  },[hasFlowData,goHome]);
+
   return (
       <div
           data-theme={isDark ? 'dark' : 'light'}
@@ -7316,6 +7360,7 @@ export default function App(){
                   </button>
               </div>
           </header>
+          <StepFlowBar current={flowStep} hasData={hasFlowData} analyzing={analyzing} onStepClick={handleFlowStepClick}/>
           <main style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
           {(!isLite && batchMode) ? (
               <>

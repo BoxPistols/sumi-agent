@@ -12,10 +12,20 @@ export interface IntroStep {
   position?: 'top' | 'bottom' | 'left' | 'right'
 }
 
+/** ステップフローバー紹介（全ツアー共通の先頭ステップ） */
+const STEP_FLOW_INTRO: IntroStep = {
+  element: '[data-intro="step-flow"]',
+  title: '3ステップで完了',
+  intro:
+    'Sumiの作業は「1 取り込む → 2 確認する → 3 書き出す」の3ステップだけ。今いるステップと、いまやることが常にここに表示されます。',
+  position: 'bottom',
+}
+
 /**
  * Lite版 UploadScreen ステップ
  */
 export const UPLOAD_STEPS_LITE: IntroStep[] = [
+  STEP_FLOW_INTRO,
   {
     element: '[data-intro="upload-zone"]',
     title: 'ファイルアップロード',
@@ -47,6 +57,7 @@ export const UPLOAD_STEPS_LITE: IntroStep[] = [
  * Pro版 UploadScreen ステップ
  */
 export const UPLOAD_STEPS_PRO: IntroStep[] = [
+  STEP_FLOW_INTRO,
   {
     element: '[data-intro="upload-zone"]',
     title: 'ファイルアップロード',
@@ -102,6 +113,13 @@ export const UPLOAD_STEPS_PRO: IntroStep[] = [
  */
 export const EDITOR_STEPS_LITE: IntroStep[] = [
   {
+    element: '[data-intro="step-flow"]',
+    title: 'ステップ2: 確認する',
+    intro:
+      '検出結果の確認画面です。確認が済んだら「3 書き出す」をクリックするとエクスポートに進めます。',
+    position: 'bottom',
+  },
+  {
     element: '[data-intro="view-tabs"]',
     title: '表示モード',
     intro: '「マスク」で置換後テキスト、「Diff」で変更前後の差分を確認できます。',
@@ -131,6 +149,13 @@ export const EDITOR_STEPS_LITE: IntroStep[] = [
  * Pro版 EditorScreen ステップ
  */
 export const EDITOR_STEPS_PRO: IntroStep[] = [
+  {
+    element: '[data-intro="step-flow"]',
+    title: 'ステップ2: 確認する',
+    intro:
+      '検出結果の確認画面です。確認が済んだら「3 書き出す」をクリックするとエクスポートに進めます。',
+    position: 'bottom',
+  },
   {
     element: '[data-intro="view-tabs"]',
     title: '表示モード',
@@ -187,8 +212,9 @@ export const EDITOR_STEPS_PRO: IntroStep[] = [
   },
   {
     element: '[data-intro="export-buttons"]',
-    title: 'プレビュー / 保存',
-    intro: 'マスキング結果のプレビュー表示やクリップボードコピーはこちらから。',
+    title: '書き出し',
+    intro:
+      '「次へ: 書き出す」でプレビューを確認し、6形式（Text / Markdown / CSV / Excel / PDF / Word）で保存できます。コピーもこちらから。',
     position: 'top',
   },
   {
