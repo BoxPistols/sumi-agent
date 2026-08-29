@@ -88,11 +88,12 @@ test.describe('PreviewModal', () => {
     await page.getByRole('button', { name: '次へ: 書き出す' }).click()
     await expect(page.locator('[role="dialog"]')).toBeVisible()
 
-    // 最大化ボタン
-    const expandBtn = page.getByRole('button', { name: '最大化' })
+    // 最大化ボタン（背後の整えるビューにも「縮小」ズームボタンがあるためダイアログ内にスコープ）
+    const dialog = page.getByRole('dialog')
+    const expandBtn = dialog.getByRole('button', { name: '最大化' })
     if ((await expandBtn.count()) > 0) {
       await expandBtn.click()
-      await expect(page.getByRole('button', { name: '縮小' })).toBeVisible()
+      await expect(dialog.getByRole('button', { name: '縮小' })).toBeVisible()
     }
   })
 })
