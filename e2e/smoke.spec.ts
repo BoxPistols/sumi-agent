@@ -80,19 +80,19 @@ test.describe('PreviewModal', () => {
     // EditorScreen のツアーオーバーレイを除去
     await dismissTour(page)
 
-    // プレビューボタンをクリック
-    const previewBtn = page.getByRole('button', { name: /プレビュー/ })
-    if ((await previewBtn.count()) > 0) {
-      await previewBtn.first().click()
-      // モーダルが開く
-      await expect(page.locator('[role="dialog"]')).toBeVisible()
+    // 確認する → 整える（A4プレビュー画面）
+    await page.getByRole('button', { name: '次へ: 整える' }).click()
+    await expect(page.getByText('A4 プレビュー')).toBeVisible()
 
-      // 最大化ボタン
-      const expandBtn = page.getByRole('button', { name: '最大化' })
-      if ((await expandBtn.count()) > 0) {
-        await expandBtn.click()
-        await expect(page.getByRole('button', { name: '縮小' })).toBeVisible()
-      }
+    // 整える → 書き出す（エクスポートプレビューモーダル）
+    await page.getByRole('button', { name: '次へ: 書き出す' }).click()
+    await expect(page.locator('[role="dialog"]')).toBeVisible()
+
+    // 最大化ボタン
+    const expandBtn = page.getByRole('button', { name: '最大化' })
+    if ((await expandBtn.count()) > 0) {
+      await expandBtn.click()
+      await expect(page.getByRole('button', { name: '縮小' })).toBeVisible()
     }
   })
 })
