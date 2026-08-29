@@ -11,14 +11,14 @@ export interface StepFlowBarProps {
   hasData: boolean
   /** ファイル解析中か */
   analyzing?: boolean
-  /** エクスポートを開ける状態か（省略時は hasData と同じ）。バッチ処理中など編集画面が未表示の間は false にする */
+  /** 整える/書き出すへ進める状態か（省略時は hasData と同じ）。バッチ処理中など編集画面が未表示の間は false にする */
   canExport?: boolean
   onStepClick: (id: FlowStepId) => void
 }
 
 /**
  * ヘッダー直下に常時表示するステップフローバー。
- * 「1 取り込む → 2 確認する → 3 書き出す」の現在地と、
+ * 「1 取り込む → 2 確認する → 3 整える → 4 書き出す」の現在地と、
  * いまやるべきことを一目で示す。
  */
 export function StepFlowBar({
@@ -38,9 +38,10 @@ export function StepFlowBar({
     <nav aria-label="作業ステップ" data-intro="step-flow" className={styles.bar}>
       {FLOW_STEPS.map((step, i) => {
         const status = getFlowStepStatus(step.id, current)
-        // データがあれば現在地以外のステップへ移動できる（1=やり直し / 3=書き出し）。
-        // 書き出しはエクスポート可能な状態（編集画面表示中）に限る
-        const clickable = status !== 'current' && (step.id === 'export' ? canExport : hasData)
+        // データがあれば現在地以外のステップへ移動できる（1=やり直し）。
+        // 整える/書き出すは編集画面が表示されている状態に限る
+        const needsEditor = step.id === 'format' || step.id === 'export'
+        const clickable = status !== 'current' && (needsEditor ? canExport : hasData)
         return (
           <Fragment key={step.id}>
             {i > 0 && (
@@ -60,13 +61,11 @@ export function StepFlowBar({
                   ? step.action
                   : step.id === 'input' && hasData
                     ? '最初からやり直す'
-                    : step.id === 'export'
-                      ? canExport
+                    : needsEditor && hasData && !canExport
+                      ? '解析が完了すると進めます'
+                      : step.id === 'export' && canExport
                         ? 'エクスポート画面を開く'
-                        : hasData
-                          ? '解析が完了すると書き出せます'
-                          : step.action
-                      : step.action
+                        : step.action
               }
               onClick={() => {
                 if (clickable) onStepClick(step.id)

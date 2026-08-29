@@ -1,12 +1,13 @@
 /**
  * 作業ステップフロー定義
  *
- * 「取り込む → 確認する → 書き出す」の3ステップで
+ * 「取り込む → 確認する → 整える → 書き出す」の4ステップで
  * ユーザーの現在地と次にすべきことを常に提示するための定義。
+ * 各ステップの画面は単一目的（確認する=PII確認のみ / 整える=レイアウト調整のみ）。
  * StepFlowBar コンポーネントと App / EditorScreen / UploadScreen が参照する。
  */
 
-export type FlowStepId = 'input' | 'review' | 'export'
+export type FlowStepId = 'input' | 'review' | 'format' | 'export'
 
 export type FlowStepStatus = 'done' | 'current' | 'upcoming'
 
@@ -20,7 +21,7 @@ export interface FlowStep {
 }
 
 /** アプリ全体のゴール（ステップバーのツールチップ等で表示） */
-export const FLOW_GOAL = '個人情報をマスクした経歴書を書き出す'
+export const FLOW_GOAL = '個人情報をマスクした、整った経歴書を書き出す'
 
 export const FLOW_STEPS: FlowStep[] = [
   {
@@ -36,17 +37,28 @@ export const FLOW_STEPS: FlowStep[] = [
     action: '検出された個人情報を確認し、不要な項目はオフにする',
   },
   {
-    id: 'export',
+    id: 'format',
     num: 3,
+    label: '整える',
+    action: 'A4プレビューで仕上がりを確認し、レイアウトを整える',
+  },
+  {
+    id: 'export',
+    num: 4,
     label: '書き出す',
     action: '形式を選んで保存、またはコピーする',
   },
 ]
 
 /** アプリ状態から現在のステップを判定する */
-export function getCurrentFlowStep(state: { hasData: boolean; exportOpen: boolean }): FlowStepId {
+export function getCurrentFlowStep(state: {
+  hasData: boolean
+  exportOpen: boolean
+  formatMode?: boolean
+}): FlowStepId {
   if (!state.hasData) return 'input'
-  return state.exportOpen ? 'export' : 'review'
+  if (state.exportOpen) return 'export'
+  return state.formatMode ? 'format' : 'review'
 }
 
 /** あるステップが現在地に対して done / current / upcoming のどれかを返す */
@@ -71,3 +83,7 @@ export const FLOW_EVENT_SET_EXPORT = 'sumi:flow-set-export'
 export const FLOW_EVENT_EXPORT_STATE = 'sumi:flow-export-state'
 /** UploadScreen → App: 解析中かどうかを通知（detail: {active: boolean}） */
 export const FLOW_EVENT_ANALYZING = 'sumi:flow-analyzing'
+/** ステップバー → EditorScreen: 表示モードを切り替える（detail: {mode: 'review'|'format'}） */
+export const FLOW_EVENT_SET_MODE = 'sumi:flow-set-mode'
+/** EditorScreen → App: 現在の表示モードを通知（detail: {mode: 'review'|'format'}） */
+export const FLOW_EVENT_MODE_STATE = 'sumi:flow-mode-state'

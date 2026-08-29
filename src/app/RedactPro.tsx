@@ -48,7 +48,7 @@ import * as Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { clearAllSiteData } from "../lib/storage";
 import { StepFlowBar } from "@/components/StepFlowBar";
-import { getCurrentFlowStep, FLOW_EVENT_SET_EXPORT, FLOW_EVENT_EXPORT_STATE, FLOW_EVENT_ANALYZING } from "@/lib/flow-steps";
+import { getCurrentFlowStep, FLOW_EVENT_SET_EXPORT, FLOW_EVENT_EXPORT_STATE, FLOW_EVENT_ANALYZING, FLOW_EVENT_SET_MODE, FLOW_EVENT_MODE_STATE } from "@/lib/flow-steps";
 
 // ═══ Theme System (CSS Custom Properties) ═══
 const C={accent:"#1C1917",accentDim:"rgba(28,25,23,0.08)",red:"#DC2626",redDim:"rgba(220,38,38,0.1)",green:"#059669",greenDim:"rgba(5,150,105,0.1)",amber:"#D97706",amberDim:"rgba(217,119,6,0.1)",purple:"#9B6DFF",purpleDim:"rgba(155,109,255,0.1)",cyan:"#22D3EE",cyanDim:"rgba(34,211,238,0.1)",sumi:"#1C1917",washi:"#FAF9F6",stamp:"#DC2626",font:"'Noto Sans JP','DM Sans',system-ui,sans-serif",mono:"'JetBrains Mono','Fira Code',monospace"};
@@ -5415,7 +5415,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   },[]);
   const[editMode,setEditMode]=useState(false);
   const[editedText,setEditedText]=useState(null);
-  const[previewVisible,setPreviewVisible]=useState(true);
+  // 確認ステップはテキスト+検出リストに集中させる（A4プレビューは「整える」ステップが主役）
+  const[previewVisible,setPreviewVisible]=useState(false);
   const[previewFontType,setPreviewFontType]=useState("gothic");
   const[previewZoom,setPreviewZoom]=useState(1);
   // Draggable panel widths (percentages of total width)
@@ -5584,6 +5585,19 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     window.dispatchEvent(new CustomEvent(FLOW_EVENT_EXPORT_STATE,{detail:{open:!!preview}}));
     return()=>{window.dispatchEvent(new CustomEvent(FLOW_EVENT_EXPORT_STATE,{detail:{open:false}}));};
   },[preview]);
+  // ── ステップフロー: 確認する(review) / 整える(format) のモード切替 ──
+  const[flowMode,setFlowMode]=useState('review');
+  useEffect(()=>{
+    const handler=(e)=>{const m=e.detail?.mode;if(m==='review'||m==='format')setFlowMode(m);};
+    window.addEventListener(FLOW_EVENT_SET_MODE,handler);
+    return()=>window.removeEventListener(FLOW_EVENT_SET_MODE,handler);
+  },[]);
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_MODE_STATE,{detail:{mode:flowMode}}));
+    return()=>{window.dispatchEvent(new CustomEvent(FLOW_EVENT_MODE_STATE,{detail:{mode:'review'}}));};
+  },[flowMode]);
+  const goFormat=useCallback(()=>setFlowMode('format'),[]);
+  const goReview=useCallback(()=>setFlowMode('review'),[]);
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
   // A4プレビュー用 memoized HTML
@@ -5746,6 +5760,143 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     }
     return '1fr 36px 40px';
   },[isLite,previewVisible,sidebarCollapsed,leftPct,rightPct,centerCol]);
+
+  // ── 整えるステップ: A4プレビューを主役にした専用ビュー（Lite/Pro共通） ──
+  if(flowMode==='format'){
+    return (
+      <div className='rp-editor-wrap' style={{display:'flex',flexDirection:'column',height:'calc(100vh - 52px - 40px - 36px)',minHeight:0,fontFamily:T.font,background:T.bg}}>
+          <div className={s['ed-preview-toolbar']}>
+              <span className={s['ed-preview-label']}>A4 プレビュー</span>
+              {!isLite && (
+                  <button
+                      onClick={()=>{
+                          if(!editMode){setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);setEditMode(true);}
+                          else{setEditMode(false);setEditedText(null);}
+                      }}
+                      title='テキストを直接編集してA4プレビューに反映'
+                      className={s['ed-small-btn']}
+                      style={{
+                          border:`1px solid ${editMode?T.accent:T.border}`,
+                          background:editMode?T.accentDim:'transparent',
+                          color:editMode?T.accent:T.text3,fontWeight:editMode?600:400,
+                      }}
+                  >{editMode?'編集を終了':'テキストを編集'}</button>
+              )}
+              {!isLite && editMode && (
+                  <>
+                      <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" className={s['ed-small-btn']}
+                          style={{
+                              border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
+                              background:previewFontType==="gothic"?T.accentDim:"transparent",
+                              color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
+                          }}>ゴシック</button>
+                      <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" className={s['ed-small-btn']}
+                          style={{
+                              border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
+                              background:previewFontType==="mincho"?T.accentDim:"transparent",
+                              color:previewFontType==="mincho"?T.accent:T.text3,fontWeight:previewFontType==="mincho"?600:400,
+                          }}>明朝</button>
+                  </>
+              )}
+              <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:4}}>
+                  <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小" aria-label="縮小" className={s['ed-zoom-btn']}>&minus;</button>
+                  <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット" aria-label="ズームをリセット" className={s['ed-zoom-label']}>{Math.round(previewZoom*100)}%</button>
+                  <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大" aria-label="拡大" className={s['ed-zoom-btn']}>+</button>
+              </div>
+              <span style={{flex:1}}/>
+              {!isLite && (
+                  <button onClick={()=>setShowAI(true)} title='AIで推薦書・スキルシート等の形式に自動整形' className={s['ed-small-btn']}
+                      style={{border:`1px solid ${T.border}`,background:'transparent',color:T.text2}}>AI で再フォーマット</button>
+              )}
+              {!isLite && <button onClick={()=>setShowDesign(true)} title="全画面編集" aria-label="全画面編集" className={s['ed-small-icon-btn']}>&#x2197;</button>}
+          </div>
+          <div style={{flex:1,minHeight:0,display:'flex',background:'#e5e7eb',overflow:'hidden'}}>
+              {!isLite && editMode && (
+                  <div style={{width:'38%',minWidth:280,display:'flex',flexDirection:'column',borderRight:`1px solid ${T.border}`,background:T.bg,minHeight:0}}>
+                      <div className={s['ed-edit-hint']}>
+                          <span style={{fontWeight:600,color:T.text2}}>記法: </span>
+                          <code className={s['ed-edit-code']}>**太字**</code>
+                          <code className={s['ed-edit-code']} style={{marginLeft:6}}># 見出し</code>
+                          <span style={{opacity:0.6,marginLeft:8}}>A4プレビューに即反映</span>
+                      </div>
+                      <textarea
+                          aria-label="Markdown編集"
+                          value={editedText??""}
+                          onChange={(e)=>setEditedText(e.target.value)}
+                          spellCheck={false}
+                          className={s['ed-edit-textarea']}
+                      />
+                  </div>
+              )}
+              <div style={{flex:1,minWidth:0,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+                  {!isLite && editMode ? (
+                      <div style={{flex:1,overflow:"auto",display:"flex",justifyContent:"center",padding:16}}>
+                          <div style={{width:Math.round(595*previewZoom),flexShrink:0}}>
+                              <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${previewZoom})`,transformOrigin:"top left"}}>
+                                  <iframe
+                                      srcDoc={previewHtml}
+                                      sandbox="allow-same-origin"
+                                      style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
+                                      title="A4 Preview"
+                                      onLoad={(e)=>{try{const h=e.target.contentDocument?.documentElement?.scrollHeight;if(h&&h>842)e.target.style.height=h+"px";}catch(ex){}}}
+                                  />
+                              </div>
+                          </div>
+                      </div>
+                  ) : (
+                      <A4PreviewPanel
+                          text={aiResult||data.text_preview}
+                          detections={detections}
+                          maskOpts={data.maskOpts}
+                          focusDetId={focusDetId}
+                          focusPulse={focusPulse}
+                          onFocusDet={focusDetection}
+                          zoom={previewZoom}
+                      />
+                  )}
+              </div>
+          </div>
+          <div style={{display:'flex',gap:8,padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,flexShrink:0,alignItems:'center'}}>
+              <Btn variant='ghost' onClick={goReview} title='検出結果の確認に戻る' style={{borderRadius:10,fontSize:13}}>&larr; 確認に戻る</Btn>
+              <span style={{flex:1,fontSize:12,color:T.text3}}>仕上がりを確認できたら書き出しへ</span>
+              <Btn onClick={openExportPreview} title='マスキング結果を確認して書き出す' style={{borderRadius:10,fontSize:13,background:T.accent,padding:'11px 22px'}}>次へ: 書き出す</Btn>
+          </div>
+          {showAI && (
+              <AIPanel
+                  redactedText={redacted}
+                  apiKey={apiKey}
+                  model={model}
+                  onApply={(t) => {
+                      setAiResult(t)
+                      setViewMode('ai')
+                      setShowAI(false)
+                  }}
+                  onClose={() => setShowAI(false)}
+              />
+          )}
+          {showDesign && (
+              <DesignExportModal
+                  text={editMode ? (editedText??redacted) : viewMode === 'ai' && aiResult ? aiResult : redacted}
+                  apiKey={apiKey}
+                  model={model}
+                  baseName={baseName}
+                  onClose={() => setShowDesign(false)}
+              />
+          )}
+          {preview && (
+              <PreviewModal
+                  title={preview.title}
+                  content={preview.content}
+                  baseName={preview.baseName}
+                  editable={preview.editable}
+                  meta={preview.meta}
+                  onClose={() => setPreview(null)}
+                  onContentChange={preview.onContentChange}
+              />
+          )}
+      </div>
+    );
+  }
 
   return (
       <div
@@ -6631,52 +6782,14 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   data-intro="export-buttons"
                   className={s['ed-footer']}
               >
-                  {!isLite && <Btn
-                      data-intro="ai-reformat"
-                      title='AIでテキストを再整形'
-                      onClick={() => setShowAI(true)}
-                      style={{
-                          width: '100%',
-                          borderRadius: 10,
-                          background: 'transparent',
-                          fontSize: 13,
-                          color: T.accent,
-                          border: `1.5px solid ${T.accent}`,
-                      }}
-                  >
-                      AI で再フォーマット
-                  </Btn>}
-                  {!isLite && <Btn
-                      data-intro="pdf-edit"
-                      title='PDF編集モードを開く'
-                      onClick={() => {
-                          if(!editMode){
-                              setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
-                              setEditMode(true);
-                              setPreviewVisible(true);
-                          }else{
-                              setEditMode(false);
-                              setEditedText(null);
-                          }
-                      }}
-                      style={{
-                          width: '100%',
-                          borderRadius: 10,
-                          background: editMode ? T.accent : 'transparent',
-                          fontSize: 13,
-                          color: editMode ? undefined : T.accent,
-                          border: editMode ? 'none' : `1.5px solid ${T.accent}`,
-                      }}
-                  >
-                      {editMode ? '編集完了 / プレビューを閉じる' : 'PDF プレビュー・編集'}
-                  </Btn>}
                   <div className={s['ed-btn-row']}>
                       <Btn
-                          title='マスキング結果を確認して書き出す'
-                          onClick={openExportPreview}
+                          data-intro="go-format"
+                          title='A4プレビューでレイアウトを整える（AI整形・PDF編集もこちら）'
+                          onClick={goFormat}
                           style={{ flex: 1, borderRadius: 10, fontSize: 13, background: T.accent }}
                       >
-                          次へ: 書き出す
+                          次へ: 整える
                       </Btn>
                       <Btn
                           title='クリップボードにコピー'
@@ -7219,29 +7332,38 @@ export default function App(){
   // ── ステップフローバー連携 ──
   const[exportOpen,setExportOpen]=useState(false);
   const[analyzing,setAnalyzing]=useState(false);
+  const[flowFormatMode,setFlowFormatMode]=useState(false);
   useEffect(()=>{
     const onExportState=(e)=>setExportOpen(!!e.detail?.open);
     const onAnalyzing=(e)=>setAnalyzing(!!e.detail?.active);
+    const onModeState=(e)=>setFlowFormatMode(e.detail?.mode==='format');
     window.addEventListener(FLOW_EVENT_EXPORT_STATE,onExportState);
     window.addEventListener(FLOW_EVENT_ANALYZING,onAnalyzing);
+    window.addEventListener(FLOW_EVENT_MODE_STATE,onModeState);
     return()=>{
       window.removeEventListener(FLOW_EVENT_EXPORT_STATE,onExportState);
       window.removeEventListener(FLOW_EVENT_ANALYZING,onAnalyzing);
+      window.removeEventListener(FLOW_EVENT_MODE_STATE,onModeState);
     };
   },[]);
   const hasFlowData=!!data||batchMode;
   // バッチ処理中（編集画面が未表示）はエクスポートプレビューを開けない
   const canFlowExport=!!data||(batchMode&&activeFile?.status==='done'&&!!activeFile?.data);
-  const flowStep=getCurrentFlowStep({hasData:hasFlowData,exportOpen});
+  const flowStep=getCurrentFlowStep({hasData:hasFlowData,exportOpen,formatMode:flowFormatMode});
   const handleFlowStepClick=useCallback((id)=>{
     if(id==='input'){
       if(hasFlowData&&window.confirm('最初からやり直しますか？現在の検出結果は破棄されます。'))goHome();
       return;
     }
     if(!hasFlowData)return;
-    if(id==='export'&&!canFlowExport)return;
-    // review: エクスポートを閉じて確認画面へ / export: エクスポートプレビューを開く
-    window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_EXPORT,{detail:{open:id==='export'}}));
+    if((id==='format'||id==='export')&&!canFlowExport)return;
+    if(id==='export'){
+      window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_EXPORT,{detail:{open:true}}));
+      return;
+    }
+    // review / format: エクスポートを閉じて対象モードへ切替
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_EXPORT,{detail:{open:false}}));
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_MODE,{detail:{mode:id==='format'?'format':'review'}}));
   },[hasFlowData,canFlowExport,goHome]);
 
   return (
