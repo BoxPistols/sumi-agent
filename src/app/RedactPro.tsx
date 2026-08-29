@@ -5857,9 +5857,9 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               </div>
           </div>
           <div style={{display:'flex',gap:8,padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,flexShrink:0,alignItems:'center'}}>
-              <Btn variant='ghost' onClick={goReview} title='検出結果の確認に戻る' style={{borderRadius:10,fontSize:13}}>&larr; 確認に戻る</Btn>
+              <Btn variant='ghost' onClick={goReview} aria-label='確認に戻る' title='検出結果の確認に戻る' style={{borderRadius:10,fontSize:13}}>&larr; 確認に戻る</Btn>
               <span style={{flex:1,fontSize:12,color:T.text3}}>仕上がりを確認できたら書き出しへ</span>
-              <Btn onClick={openExportPreview} title='マスキング結果を確認して書き出す' style={{borderRadius:10,fontSize:13,background:T.accent,padding:'11px 22px'}}>次へ: 書き出す</Btn>
+              <Btn onClick={openExportPreview} aria-label='次へ: 書き出す' title='マスキング結果を確認して書き出す' style={{borderRadius:10,fontSize:13,background:T.accent,padding:'11px 22px'}}>次へ: 書き出す</Btn>
           </div>
           {showAI && (
               <AIPanel
@@ -6785,6 +6785,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   <div className={s['ed-btn-row']}>
                       <Btn
                           data-intro="go-format"
+                          aria-label='次へ: 整える'
                           title='A4プレビューでレイアウトを整える（AI整形・PDF編集もこちら）'
                           onClick={goFormat}
                           style={{ flex: 1, borderRadius: 10, fontSize: 13, background: T.accent }}
