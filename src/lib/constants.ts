@@ -45,40 +45,8 @@ export const AI_PROVIDERS: AIProvider[] = [
     icon: 'O',
     color: '#10A37F',
     needsKey: false,
-    models: [
-      { id: 'gpt-5.4-nano', label: 'GPT-5.4 Nano', desc: '最速・最安（推奨）', tier: 1 },
-      {
-        id: 'gpt-5.4-mini',
-        label: 'GPT-5.4 Mini',
-        desc: '高速・高精度',
-        tier: 2,
-        needsUserKey: true,
-      },
-    ],
-    defaultModel: 'gpt-5.4-nano',
-  },
-  {
-    id: 'anthropic',
-    label: 'Claude',
-    icon: 'C',
-    color: '#D97706',
-    needsKey: true,
-    models: [
-      { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5', desc: '高速・低コスト', tier: 1 },
-      {
-        id: 'claude-sonnet-4-20250514',
-        label: 'Sonnet 4',
-        desc: 'バランス型（推奨）',
-        tier: 2,
-      },
-      {
-        id: 'claude-sonnet-4-5-20250929',
-        label: 'Sonnet 4.5',
-        desc: '高精度',
-        tier: 3,
-      },
-    ],
-    defaultModel: 'claude-sonnet-4-20250514',
+    models: [{ id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna', desc: '高速・高精度（推奨）', tier: 1 }],
+    defaultModel: 'gpt-5.6-luna',
   },
   {
     id: 'google',
@@ -103,6 +71,15 @@ export const AI_PROVIDERS: AIProvider[] = [
 export const AI_MODELS = AI_PROVIDERS.flatMap((p) =>
   p.models.map((m) => ({ ...m, provider: p.id })),
 )
+
+/** 廃止済みプロバイダ（保存値）を現行のものへ移行する */
+export const DEFAULT_PROVIDER = 'openai'
+export const DEFAULT_MODEL = 'gpt-5.6-luna'
+
+export function migrateProviderId(savedProvider: string | null | undefined): string {
+  if (!savedProvider) return DEFAULT_PROVIDER
+  return AI_PROVIDERS.some((p) => p.id === savedProvider) ? savedProvider : DEFAULT_PROVIDER
+}
 
 export function getProviderForModel(modelId: string): string {
   if (modelId === 'local-auto' || modelId.startsWith('local-')) return 'local'

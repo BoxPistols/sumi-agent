@@ -58,9 +58,11 @@
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.4) !important;
 }
 
+/* 次へ/完了: グラデーション両端で白文字 4.5:1 以上を満たす紫を使う
+   （#a78bfa=2.72:1 / #8b5cf6=4.23:1 はいずれも不可。#7c3aed=5.70:1 / #6d28d9=7.10:1） */
 .introjs-nextbutton,
 .introjs-donebutton {
-  background: linear-gradient(135deg, #8b5cf6, #a78bfa) !important;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
   border: none !important;
   color: #fff !important;
   font-weight: 600 !important;
@@ -68,7 +70,8 @@
 
 .introjs-nextbutton:hover,
 .introjs-donebutton:hover {
-  background: linear-gradient(135deg, #7c3aed, #8b5cf6) !important;
+  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+  color: #fff !important;
 }
 
 /* スキップボタン: 絶対配置 + 切れ防止 */
@@ -92,6 +95,17 @@
 
 .introjs-skipbutton:hover {
   color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* ステップカウンター（例: 7 / 12）— 進捗バーの上に右寄せで表示 */
+.introjs-stepcounter {
+  padding: 0 20px 4px !important;
+  text-align: right !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
 .introjs-progress {
@@ -162,12 +176,33 @@
   color: #0f172a !important;
 }
 
+/* 次へ/完了はプライマリのまま維持する。
+   [data-theme='light'] .introjs-button と同詳細度のため、必ずこの後に置く。
+   白文字 on #7c3aed = 5.70:1 / on #6d28d9 = 7.10:1（AA 合格） */
+[data-theme='light'] .introjs-nextbutton,
+[data-theme='light'] .introjs-donebutton {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+[data-theme='light'] .introjs-nextbutton:hover,
+[data-theme='light'] .introjs-donebutton:hover {
+  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+  color: #fff !important;
+}
+
 [data-theme='light'] .introjs-skipbutton {
   color: #94a3b8 !important;
 }
 
 [data-theme='light'] .introjs-skipbutton:hover {
   color: #475569 !important;
+}
+
+[data-theme='light'] .introjs-stepcounter {
+  color: #57534e !important;
 }
 
 [data-theme='light'] .introjs-progress {

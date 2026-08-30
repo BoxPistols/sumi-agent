@@ -1713,7 +1713,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 56px);
+  min-height: calc(100vh - 96px);
   padding: 40px;
   animation: fadeUp 0.4s;
 }
@@ -1843,7 +1843,7 @@
 }
 
 .up-root {
-  min-height: calc(100vh - 56px);
+  min-height: calc(100vh - 96px);
   padding: 32px 40px;
   animation: fadeUp 0.5s ease;
 }

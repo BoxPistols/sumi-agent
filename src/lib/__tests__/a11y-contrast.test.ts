@@ -137,6 +137,39 @@ describe('A11y コントラスト比（WCAG A レベル）', () => {
     })
   })
 
+  describe('ガイドツアー（intro.js）ボタン', () => {
+    // 塗りボタンは文字色との比を 4.5:1 以上に保つ（docs/DESIGN.md §2.3）
+    const AA = 4.5
+
+    it('ダークテーマ: 次へ/完了ボタンはグラデーション両端で白文字が AA を満たす', () => {
+      assertContrast('#FFFFFF', '#7c3aed', AA, 'tour next (dark, from)')
+      assertContrast('#FFFFFF', '#6d28d9', AA, 'tour next (dark, to)')
+    })
+
+    it('ライトテーマ: 次へ/完了ボタンはグラデーション両端で白文字が読める', () => {
+      assertContrast('#FFFFFF', '#7c3aed', AA, 'tour next (light, from)')
+      assertContrast('#FFFFFF', '#6d28d9', AA, 'tour next (light, to)')
+    })
+
+    it('紫の塗り背景に暗い文字を置くと読めない（退行防止）', () => {
+      // 実際に起きた不具合: [data-theme=light] .introjs-button が
+      // .introjs-nextbutton の白文字を上書きし 1.79:1 になった
+      expect(contrastRatio('#475569', '#7c3aed')).toBeLessThan(3)
+    })
+
+    it('明るすぎる紫は塗り背景に使えない', () => {
+      expect(contrastRatio('#FFFFFF', '#a78bfa')).toBeLessThan(3)
+      expect(contrastRatio('#FFFFFF', '#9B6DFF')).toBeLessThan(AA)
+      // #8b5cf6 は 4.23:1 で本文サイズのボタン文字には不足
+      expect(contrastRatio('#FFFFFF', '#8b5cf6')).toBeLessThan(AA)
+    })
+
+    it('ステップカウンターのテキストが背景に対して読める', () => {
+      assertContrast('#57534E', '#FFFFFF', MIN, 'step counter (light)')
+      assertContrast('#A6A6A6', '#1e293b', MIN, 'step counter (dark)')
+    })
+  })
+
   describe('コントラスト計算の正確性', () => {
     it('黒と白: 21:1', () => {
       expect(contrastRatio('#000000', '#FFFFFF')).toBeCloseTo(21, 0)

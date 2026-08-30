@@ -4,6 +4,8 @@ import {
   buildLocalChatUrl,
   buildLocalMessages,
   buildLocalRequestBody,
+  sanitizeEndpointForDisplay,
+  fetchLocalWithRedirectGuard,
 } from '../local-ai'
 
 // ── isAllowedLocalEndpoint（SSRF防止） ──
@@ -16,7 +18,6 @@ describe('isAllowedLocalEndpoint', () => {
     ['http://127.0.0.1:11434/v1', '127.0.0.1'],
     ['http://127.0.0.1:8080/v1', '127.0.0.1 別ポート'],
     ['http://[::1]:8080/v1', 'IPv6 localhost'],
-    ['http://0.0.0.0:11434/v1', '0.0.0.0'],
     ['https://localhost:11434/v1', 'HTTPS localhost'],
   ])('%s → true (%s)', (endpoint) => {
     expect(isAllowedLocalEndpoint(endpoint)).toBe(true)
@@ -30,6 +31,8 @@ describe('isAllowedLocalEndpoint', () => {
     ['http://172.16.0.1/v1', 'プライベートIP (172.16.x)'],
     ['http://169.254.169.254/latest/meta-data', 'クラウドメタデータ'],
     ['http://localhost.evil.com/v1', 'サブドメイン偽装'],
+    ['http://0.0.0.0:11434/v1', '0.0.0.0（全インターフェース）'],
+    ['file:///etc/passwd', 'file スキーム'],
     ['not-a-url', '不正URL'],
     ['', '空文字'],
   ])('%s → false (%s)', (endpoint) => {
@@ -171,5 +174,80 @@ describe('buildLocalRequestBody', () => {
     )
     const msgs = body.messages as Array<{ role: string; content: string }>
     expect(msgs[0].content).toBe('テキスト部分')
+  })
+})
+
+// ── SSRF: リダイレクト検証 ──
+
+describe('fetchLocalWithRedirectGuard', () => {
+  const okRes = (status: number, location?: string) =>
+    ({ status, headers: { get: () => location ?? null } }) as unknown as Response
+
+  it('リダイレクトが無ければそのまま返す', async () => {
+    const res = await fetchLocalWithRedirectGuard(
+      'http://localhost:11434/v1/chat/completions',
+      {},
+      async () => okRes(200),
+    )
+    expect(res.status).toBe(200)
+  })
+
+  it('ループバック内のリダイレクトは追従する', async () => {
+    let calls = 0
+    const res = await fetchLocalWithRedirectGuard(
+      'http://localhost:11434/v1/chat/completions',
+      {},
+      async () => {
+        calls += 1
+        return calls === 1 ? okRes(307, 'http://127.0.0.1:11434/v2/chat') : okRes(200)
+      },
+    )
+    expect(res.status).toBe(200)
+    expect(calls).toBe(2)
+  })
+
+  it('外部ホストへのリダイレクトは拒否する（SSRF対策）', async () => {
+    await expect(
+      fetchLocalWithRedirectGuard('http://localhost:11434/v1/chat/completions', {}, async () =>
+        okRes(302, 'http://169.254.169.254/latest/meta-data/'),
+      ),
+    ).rejects.toThrow()
+  })
+
+  it('プライベートIPへのリダイレクトも拒否する', async () => {
+    await expect(
+      fetchLocalWithRedirectGuard('http://localhost:11434/v1/chat/completions', {}, async () =>
+        okRes(302, 'http://192.168.1.1/admin'),
+      ),
+    ).rejects.toThrow()
+  })
+
+  it('リダイレクトループは上限で打ち切る', async () => {
+    await expect(
+      fetchLocalWithRedirectGuard(
+        'http://localhost:11434/v1/chat/completions',
+        {},
+        async () => okRes(302, 'http://localhost:11434/loop'),
+        2,
+      ),
+    ).rejects.toThrow()
+  })
+})
+
+// ── エラー表示用サニタイズ ──
+
+describe('sanitizeEndpointForDisplay', () => {
+  it('認証情報・パス・クエリを落としてオリジンだけ返す', () => {
+    expect(sanitizeEndpointForDisplay('http://user:pass@localhost:11434/v1?token=secret')).toBe(
+      'http://localhost:11434',
+    )
+  })
+
+  it('通常のエンドポイントはオリジンになる', () => {
+    expect(sanitizeEndpointForDisplay('http://localhost:11434/v1')).toBe('http://localhost:11434')
+  })
+
+  it('不正なURLは null', () => {
+    expect(sanitizeEndpointForDisplay('not a url')).toBeNull()
   })
 })

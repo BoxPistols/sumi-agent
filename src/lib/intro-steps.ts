@@ -12,10 +12,20 @@ export interface IntroStep {
   position?: 'top' | 'bottom' | 'left' | 'right'
 }
 
+/** ステップフローバー紹介（全ツアー共通の先頭ステップ） */
+const STEP_FLOW_INTRO: IntroStep = {
+  element: '[data-intro="step-flow"]',
+  title: '4ステップで完了',
+  intro:
+    'Sumiの作業は「1 取り込む → 2 確認する → 3 整える → 4 書き出す」の4ステップだけ。今いるステップと、いまやることが常にここに表示されます。',
+  position: 'bottom',
+}
+
 /**
  * Lite版 UploadScreen ステップ
  */
 export const UPLOAD_STEPS_LITE: IntroStep[] = [
+  STEP_FLOW_INTRO,
   {
     element: '[data-intro="upload-zone"]',
     title: 'ファイルアップロード',
@@ -47,6 +57,7 @@ export const UPLOAD_STEPS_LITE: IntroStep[] = [
  * Pro版 UploadScreen ステップ
  */
 export const UPLOAD_STEPS_PRO: IntroStep[] = [
+  STEP_FLOW_INTRO,
   {
     element: '[data-intro="upload-zone"]',
     title: 'ファイルアップロード',
@@ -102,6 +113,13 @@ export const UPLOAD_STEPS_PRO: IntroStep[] = [
  */
 export const EDITOR_STEPS_LITE: IntroStep[] = [
   {
+    element: '[data-intro="step-flow"]',
+    title: 'ステップ2: 確認する',
+    intro:
+      '検出結果の確認画面です。確認が済んだら「次へ: 整える」でA4プレビューに進み、最後に「4 書き出す」でエクスポートします。',
+    position: 'bottom',
+  },
+  {
     element: '[data-intro="view-tabs"]',
     title: '表示モード',
     intro: '「マスク」で置換後テキスト、「Diff」で変更前後の差分を確認できます。',
@@ -120,9 +138,10 @@ export const EDITOR_STEPS_LITE: IntroStep[] = [
     position: 'left',
   },
   {
-    element: '[data-intro="export-buttons"]',
-    title: 'エクスポート',
-    intro: 'テキスト・Markdown・CSV・Excel・PDF・Wordの6形式で出力できます。',
+    element: '[data-intro="go-format"]',
+    title: '次へ: 整える',
+    intro:
+      '確認が済んだらこのボタンでA4プレビューへ。仕上がりを確認してから、テキスト・Markdown・CSV・Excel・PDF・Wordの6形式で書き出せます。',
     position: 'top',
   },
 ]
@@ -131,6 +150,13 @@ export const EDITOR_STEPS_LITE: IntroStep[] = [
  * Pro版 EditorScreen ステップ
  */
 export const EDITOR_STEPS_PRO: IntroStep[] = [
+  {
+    element: '[data-intro="step-flow"]',
+    title: 'ステップ2: 確認する',
+    intro:
+      '検出結果の確認画面です。確認が済んだら「次へ: 整える」でA4プレビューに進み、最後に「4 書き出す」でエクスポートします。',
+    position: 'bottom',
+  },
   {
     element: '[data-intro="view-tabs"]',
     title: '表示モード',
@@ -174,21 +200,10 @@ export const EDITOR_STEPS_PRO: IntroStep[] = [
     position: 'left',
   },
   {
-    element: '[data-intro="ai-reformat"]',
-    title: 'AI再フォーマット',
-    intro: 'AIがマスキング済みテキストを推薦書やスキルシートなどの形式に自動整形します。',
-    position: 'left',
-  },
-  {
-    element: '[data-intro="pdf-edit"]',
-    title: 'PDFプレビュー・編集',
-    intro: 'A4レイアウトでプレビュー。テキストを直接編集してPDF出力できます。',
-    position: 'left',
-  },
-  {
-    element: '[data-intro="export-buttons"]',
-    title: 'プレビュー / 保存',
-    intro: 'マスキング結果のプレビュー表示やクリップボードコピーはこちらから。',
+    element: '[data-intro="go-format"]',
+    title: '次へ: 整える',
+    intro:
+      '確認が済んだらこのボタンでA4プレビューへ。テキスト直接編集・AI再フォーマット（推薦書/スキルシート等）もそこで行い、最後に6形式（Text / Markdown / CSV / Excel / PDF / Word）で書き出せます。',
     position: 'top',
   },
   {
@@ -256,7 +271,7 @@ export const PRO_SWITCH_STEPS: IntroStep[] = [
   {
     element: '[data-intro="settings-button"]',
     title: 'AI設定',
-    intro: 'AI検出プロバイダ（Claude / GPT / Gemini）の設定やAPIキーの管理。',
+    intro: 'AI検出プロバイダ（OpenAI / Gemini / ローカルAI）の設定やAPIキーの管理。',
     position: 'bottom',
   },
 ]

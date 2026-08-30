@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isAllowedLocalEndpoint, buildLocalChatUrl, buildLocalRequestBody } from '@/lib/local-ai'
+import {
+  isAllowedLocalEndpoint,
+  buildLocalChatUrl,
+  buildLocalRequestBody,
+  sanitizeEndpointForDisplay,
+  fetchLocalWithRedirectGuard,
+} from '@/lib/local-ai'
+import { DEFAULT_MODEL } from '@/lib/constants'
+import {
+  resolveOpenAITokenLimit,
+  shouldAddReasoningEffort,
+  isModelAllowedWithoutUserKey,
+} from '@/lib/openai-params'
 
 /**
  * Server-side AI proxy.
@@ -73,7 +85,7 @@ interface ContentBlock {
 }
 
 interface AIRequestBody {
-  provider: 'openai' | 'anthropic' | 'google' | 'local'
+  provider: 'openai' | 'google' | 'local'
   model: string
   messages: Array<{ role: string; content: string | ContentBlock[] }>
   maxTokens?: number
@@ -213,12 +225,11 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // サーバーキー利用時（ユーザーキー未提供）は gpt-5.4-nano のみ許可
-  // gpt-5.4-mini 等の上位モデルはユーザー自身のAPIキーが必要
-  if (!hasUserKey && provider === 'openai' && model !== 'gpt-5.4-nano') {
+  // サーバーキー利用時（ユーザーキー未提供）は既定モデルのみ許可
+  if (!hasUserKey && !isModelAllowedWithoutUserKey(provider, model, DEFAULT_MODEL)) {
     return NextResponse.json(
       {
-        error: `${model} を使用するには自身のAPIキーを設定してください。無料版では gpt-5.4-nano のみ利用可能です。`,
+        error: `${model} を使用するには自身のAPIキーを設定してください。無料版では ${DEFAULT_MODEL} のみ利用可能です。`,
       },
       { status: 403 },
     )
@@ -257,16 +268,14 @@ export async function POST(request: NextRequest) {
 
       // GPT-5系: max_completion_tokens を使用、temperature は指定不可
       // nano は 4000、mini 以上は 16000 を上限とする
-      const isGpt5 = model.startsWith('gpt-5')
-      const tokenLimit = isGpt5 && model.includes('nano') ? 4000 : isGpt5 ? 16000 : maxTokens
       const reqBody: Record<string, unknown> = {
         model,
         messages: msgs,
-        max_completion_tokens: Math.min(maxTokens, tokenLimit),
+        max_completion_tokens: resolveOpenAITokenLimit(model, maxTokens),
       }
       // GPT-5 family can spend the entire budget on hidden reasoning tokens,
       // yielding empty visible output for small max_completion_tokens.
-      if (isGpt5) reqBody.reasoning_effort = 'low'
+      if (shouldAddReasoningEffort(model)) reqBody.reasoning_effort = 'low'
 
       const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -351,51 +360,6 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    if (provider === 'anthropic') {
-      const key = userKey || process.env.ANTHROPIC_API_KEY
-      if (!key) {
-        return NextResponse.json({ error: 'Anthropic APIキーが未設定です' }, { status: 400 })
-      }
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-      }
-
-      const reqBody: Record<string, unknown> = {
-        model: model || 'claude-sonnet-4-20250514',
-        max_tokens: maxTokens,
-        messages,
-      }
-      if (system) reqBody.system = system
-
-      const res = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(reqBody),
-      })
-
-      if (!res.ok) {
-        const e = await res.text().catch(() => '')
-        return NextResponse.json(
-          { error: `Claude ${res.status}: ${e.slice(0, 200)}` },
-          { status: 502 },
-        )
-      }
-
-      const d = await res.json()
-      const text =
-        d.content
-          ?.map((c: { type: string; text?: string }) => (c.type === 'text' ? c.text : ''))
-          .join('') || ''
-      return NextResponse.json({
-        text,
-        remaining: rl?.remaining,
-        limit: rl?.limit,
-        resetAt: rl?.resetAt,
-      })
-    }
-
     if (provider === 'local') {
       // Ollama / LM Studio 等 — OpenAI互換API
       const endpoint =
@@ -409,11 +373,16 @@ export async function POST(request: NextRequest) {
 
       const reqBody = buildLocalRequestBody(model, messages, maxTokens, system)
 
-      const res = await fetchWithTimeout(buildLocalChatUrl(endpoint), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reqBody),
-      })
+      // リダイレクト先も毎回ループバック検証する（SSRF対策）
+      const res = await fetchLocalWithRedirectGuard(
+        buildLocalChatUrl(endpoint),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reqBody),
+        },
+        (u, i) => fetchWithTimeout(u, i),
+      )
 
       if (!res.ok) {
         const e = await res.text().catch(() => '')
@@ -439,6 +408,21 @@ export async function POST(request: NextRequest) {
       )
     }
     const msg = err instanceof Error ? err.message : 'Unknown error'
+    // ローカルAIは「サーバーが起動していない」ケースが大半なので原因を明示する
+    if (
+      provider === 'local' &&
+      /fetch failed|ECONNREFUSED|network|ループバック|リダイレクト/i.test(msg)
+    ) {
+      // サーバー環境変数の値は開示しない。ユーザーが自ら入力した値のみ、
+      // 認証情報・パス・クエリを除いたオリジンだけを返す。
+      const shown = body.localEndpoint ? sanitizeEndpointForDisplay(body.localEndpoint) : null
+      return NextResponse.json(
+        {
+          error: `ローカルAIに接続できません${shown ? `（${shown}）` : ''}。Ollama / LM Studio 等が起動しているか、エンドポイントが正しいか確認してください。`,
+        },
+        { status: 502 },
+      )
+    }
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

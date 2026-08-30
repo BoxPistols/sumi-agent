@@ -47,6 +47,8 @@ import * as mammoth from "mammoth";
 import * as Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { clearAllSiteData } from "../lib/storage";
+import { StepFlowBar } from "@/components/StepFlowBar";
+import { getCurrentFlowStep, FLOW_EVENT_SET_EXPORT, FLOW_EVENT_EXPORT_STATE, FLOW_EVENT_ANALYZING, FLOW_EVENT_SET_MODE, FLOW_EVENT_MODE_STATE } from "@/lib/flow-steps";
 
 // ═══ Theme System (CSS Custom Properties) ═══
 const C={accent:"#1C1917",accentDim:"rgba(28,25,23,0.08)",red:"#DC2626",redDim:"rgba(220,38,38,0.1)",green:"#059669",greenDim:"rgba(5,150,105,0.1)",amber:"#D97706",amberDim:"rgba(217,119,6,0.1)",purple:"#9B6DFF",purpleDim:"rgba(155,109,255,0.1)",cyan:"#22D3EE",cyanDim:"rgba(34,211,238,0.1)",sumi:"#1C1917",washi:"#FAF9F6",stamp:"#DC2626",font:"'Noto Sans JP','DM Sans',system-ui,sans-serif",mono:"'JetBrains Mono','Fira Code',monospace"};
@@ -55,14 +57,8 @@ const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(
 // ═══ Multi-Provider AI Models ═══
 const AI_PROVIDERS=[
   {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
-    {id:"gpt-5.4-nano",label:"GPT-5.4 Nano",desc:"最速・最安（推奨）",tier:1},
-    {id:"gpt-5.4-mini",label:"GPT-5.4 Mini",desc:"高速・高精度",tier:2,needsUserKey:true},
-  ],defaultModel:"gpt-5.4-nano"},
-  {id:"anthropic",label:"Claude",icon:"C",color:"#D97706",needsKey:true,models:[
-    {id:"claude-haiku-4-5-20251001",label:"Haiku 4.5",desc:"高速・低コスト",tier:1},
-    {id:"claude-sonnet-4-20250514",label:"Sonnet 4",desc:"バランス型（推奨）",tier:2},
-    {id:"claude-sonnet-4-5-20250929",label:"Sonnet 4.5",desc:"高精度",tier:3},
-  ],defaultModel:"claude-sonnet-4-20250514"},
+    {id:"gpt-5.6-luna",label:"GPT-5.6 Luna",desc:"高速・高精度（推奨）",tier:1},
+  ],defaultModel:"gpt-5.6-luna"},
   {id:"google",label:"Gemini",icon:"G",color:"#4285F4",needsKey:true,models:[
     {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"高速・高精度",tier:1},
   ],defaultModel:"gemini-2.5-flash"},
@@ -122,7 +118,7 @@ function getModelsForRun(settings) {
     const formatModel =
         settings?.model ||
         pickFormatModelForProfile(providerId, profile, hasKey) ||
-        'gpt-5.4-nano'
+        'gpt-5.6-luna'
     const formatTier = getModelTier(providerId, formatModel) || 1
     const formatFallbackModel =
         formatTier <= 1
@@ -189,6 +185,12 @@ async function callAI({provider,model,messages,maxTokens=4000,apiKey,system,loca
     _rateLimitListeners.forEach(fn=>fn(_lastRateLimit));
   }
   return d.text||"";
+}
+
+// 廃止済みプロバイダ（例: 旧 anthropic）の保存値を現行のものへ移行する
+function migrateProviderId(savedProvider){
+  if(!savedProvider)return 'openai';
+  return AI_PROVIDERS.some(p=>p.id===savedProvider)?savedProvider:'openai';
 }
 
 function getProviderForModel(modelId){
@@ -533,7 +535,7 @@ ${truncated}`
         const provider = getProviderForModel(m)
         const raw = await callAI({
             provider,
-            model: m || 'gpt-5.4-nano',
+            model: m || 'gpt-5.6-luna',
             apiKey,
             maxTokens: 1000,
             messages: [{ role: 'user', content: prompt }],
@@ -1182,7 +1184,7 @@ async function ocrSparsePages(pdfData,sparsePages,apiKey,model,onProgress){
 7. テキストが無いページは「--- Page N ---」の後に「[画像のみ]」と記載`;
       const txt = await callAI({
           provider,
-          model: model || 'gpt-5.4-nano',
+          model: model || 'gpt-5.6-luna',
           apiKey,
           maxTokens: 8000,
           messages: [
@@ -1256,7 +1258,7 @@ async function aiCleanupText(
     onProgress,
     fallbackModel,
 ) {
-    const primaryModel = model || 'gpt-5.4-nano'
+    const primaryModel = model || 'gpt-5.6-luna'
     const fbModel =
         fallbackModel && fallbackModel !== primaryModel ? fallbackModel : null
 
@@ -1632,7 +1634,7 @@ async function aiReformat(redactedText,instruction,apiKey,model){
   const provider=getProviderForModel(model);
   return await callAI({
       provider,
-      model: model || 'gpt-5.4-nano',
+      model: model || 'gpt-5.6-luna',
       apiKey,
       maxTokens: 4000,
       messages: [
@@ -1948,7 +1950,7 @@ function BatchProcessingView({file}){
   return (
     <div aria-live="polite" aria-label={`${file.fileName}を処理中: ${file.stage||'処理待機中'} ${file.progress||0}%`} style={{
       display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-      height:'calc(100vh - 90px)',gap:16,fontFamily:T.font,
+      height:'calc(100vh - 130px)',gap:16,fontFamily:T.font,
     }}>
       <div style={{width:48,height:48,border:`3px solid ${T.border}`,borderTopColor:T.accent,borderRadius:'50%',
         animation:'rp-spin 1s linear infinite'}} role="status" aria-label="処理中"/>
@@ -1967,7 +1969,7 @@ function BatchErrorView({file,onRetry}){
   return (
     <div role="alert" style={{
       display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-      height:'calc(100vh - 90px)',gap:12,fontFamily:T.font,
+      height:'calc(100vh - 130px)',gap:12,fontFamily:T.font,
     }}>
       <div style={{width:48,height:48,borderRadius:'50%',background:T.redDim,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,color:T.red}} aria-hidden="true">!</div>
       <div style={{fontSize:16,fontWeight:600,color:T.text}}>{file.fileName}</div>
@@ -2014,7 +2016,7 @@ const CHAT_FAQ=[
     {q:'カスタムキーワードとは？',a:'任意の文字列を指定してマスキング対象に追加できます。初期画面・エディター画面どちらからでも設定可能です。'},
   ]},
   {category:'AI機能',questions:[
-    {q:'AI機能を使うには？',a:'設定（⚙）からAPIキーを入力しAIをONにしてください。Claude, OpenAI, Geminiに対応しています。'},
+    {q:'AI機能を使うには？',a:'設定（⚙）からAPIキーを入力しAIをONにしてください。OpenAI / Gemini / ローカルAIに対応しています。'},
     {q:'AIで何ができる？',a:'AI PII検出（正規表現では困難な個人情報検出）、テキスト再フォーマット、画像OCRの3機能があります。'},
   ]},
   {category:'エクスポート',questions:[
@@ -2362,7 +2364,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                               AI検出・AI整形
                           </div>
                           <ul className={s['help-feature-desc']}>
-                              <li>設定 → プロバイダ選択（OpenAI / Claude / Gemini / ローカルAI）</li>
+                              <li>設定 → プロバイダ選択（OpenAI / Gemini / ローカルAI）</li>
                               <li>APIキーを入力して接続テスト → AI検出をON</li>
                               <li>正規表現で見逃す文脈依存の個人情報を補完</li>
                               <li>テキスト整形: PDFやOCR由来の崩れを自動修正</li>
@@ -2509,7 +2511,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const [provider, setProvider] = useState(settings.provider || 'openai')
-  const [model, setModel] = useState(settings.model || 'gpt-5.4-nano')
+  const [model, setModel] = useState(settings.model || 'gpt-5.6-luna')
   const[apiKey,setApiKey]=useState(settings.apiKey||"");
   const[aiDetect,setAiDetect]=useState(settings.aiDetect!==false);
   const [aiProfile, setAiProfile] = useState(settings.aiProfile || 'balanced')
@@ -2552,14 +2554,14 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   // When switching provider, auto-select default model
   const switchProvider = (pid) => {
       setProvider(pid)
-      setModel(pickFormatModelForProfile(pid, aiProfile, !!apiKey.trim()) || 'gpt-5.4-nano')
+      setModel(pickFormatModelForProfile(pid, aiProfile, !!apiKey.trim()) || 'gpt-5.6-luna')
   }
   const keyPlaceholder =
-      provider === 'anthropic'
-          ? 'sk-ant-api03-...（省略可）'
-          : provider === 'openai'
-            ? 'sk-proj-...（未入力ならサーバー環境変数）'
-            : 'AIza...（必須）'
+      provider === 'openai'
+          ? 'sk-proj-...（未入力ならサーバー環境変数）'
+          : provider === 'google'
+            ? 'AIza...（必須）'
+            : '不要（ローカルAI）'
   const requiresKey = provider === 'google'
   useEffect(() => {
       setKeyTest(null)
@@ -2569,14 +2571,14 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
       // Provider list may change defaults; if current model isn't in provider, snap to profile default.
       if (!curProv.models.some((m) => m.id === model)) {
           setModel(
-              pickFormatModelForProfile(provider, aiProfile, hasKey) || 'gpt-5.4-nano',
+              pickFormatModelForProfile(provider, aiProfile, hasKey) || 'gpt-5.6-luna',
           )
           return
       }
       // APIキー未入力で needsUserKey モデルが選択中ならデフォルトにフォールバック
       const cur = curProv.models.find((m) => m.id === model)
       if (cur?.needsUserKey && !hasKey) {
-          setModel(pickFormatModelForProfile(provider, aiProfile, false) || curProv.defaultModel || 'gpt-5.4-nano')
+          setModel(pickFormatModelForProfile(provider, aiProfile, false) || curProv.defaultModel || 'gpt-5.6-luna')
       }
   }, [provider, aiProfile, apiKey]) // eslint-disable-line
   const testApiConnection = async () => {
@@ -2595,6 +2597,8 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
               provider,
               model,
               apiKey: key || undefined,
+              // ローカルAIは設定中のエンドポイントをそのまま検証する
+              localEndpoint: provider === 'local' ? localEndpoint.trim() || undefined : undefined,
               maxTokens: 32,
               messages: [
                   {
@@ -2604,9 +2608,13 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
               ],
           })
           const short = (text || '').replace(/\s+/g, ' ').trim().slice(0, 48)
+          const target =
+              provider === 'local'
+                  ? `${curProv.label} / ${localEndpoint.trim() || '既定のエンドポイント'}`
+                  : `${curProv.label} / ${model}`
           setKeyTest({
               ok: true,
-              msg: `接続OK (${provider} / ${model})${short ? ` 返答: ${short}` : ''}`,
+              msg: `接続OK (${target})${short ? ` 返答: ${short}` : ''}`,
           })
       } catch (e) {
           setKeyTest({
@@ -2781,7 +2789,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           <span className={s['settings-mono']}>PII検出=高速</span>{' '}
                           /{' '}
                           <span className={s['settings-mono']}>再構成・再フォーマット=高品質</span>
-                          （例: OpenAIなら検出は GPT-5 Nano、整形は GPT-5 Mini）
+                          （例: OpenAIなら GPT-5.6 Luna を使用）
                       </div>
                   </div>
                   {/* AI detect toggle */}
@@ -2802,11 +2810,11 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                   <div>
                       <div className={s['settings-section-title']} style={{marginBottom:4}}>API Key</div>
                       <div className={s['settings-section-desc']}>
-                          {provider === 'anthropic'
-                              ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のキーを入力すると無制限に利用できます。'
-                              : provider === 'openai'
-                                ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のAPIキーを入力すると無制限に利用できます。'
-                                : 'APIキーが必須です。下のボタンで接続テストできます。'}
+                          {provider === 'openai'
+                              ? '未入力時はサーバー共用キーを使用（24時間50回まで）。自分のAPIキーを入力すると無制限に利用できます。'
+                              : provider === 'google'
+                                ? 'APIキーが必須です。下のボタンで接続テストできます。'
+                                : 'APIキー不要。ローカルAIサーバーへの接続を下のボタンでテストできます。'}
                       </div>
                       <div style={{ position: 'relative' }}>
                           <input
@@ -2831,7 +2839,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                               disabled={testingKey}
                               style={{ padding: '6px 12px', fontSize: 12, borderRadius: 7 }}
                           >
-                              {testingKey ? '接続テスト中...' : 'API接続テスト'}
+                              {testingKey ? '接続テスト中...' : provider === 'local' ? 'ローカルAI接続テスト' : 'API接続テスト'}
                           </Btn>
                           <span aria-live="polite" aria-atomic="true">
                           {keyTest && (
@@ -2943,7 +2951,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           variant='ghost'
                           onClick={() => {
                               if(!confirm('すべての設定を初期値に戻しますか？\n（テーマ・AIプロバイダー・モデル・APIキー・プロファイルをデフォルトに戻します。アップロード済みのファイルデータには影響しません）'))return;
-                              setProvider('openai');setModel('gpt-5.4-nano');
+                              setProvider('openai');setModel('gpt-5.6-luna');
                               setApiKey('');setAiDetect(true);
                               setAiProfile('balanced');setProxyUrl('');setLocalEndpoint('http://localhost:11434/v1');
                           }}
@@ -4188,6 +4196,12 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
     return()=>clearInterval(id);
   },[loading]);
 
+  // 解析中状態をステップフローバーへ通知
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_ANALYZING,{detail:{active:loading}}));
+    return()=>{window.dispatchEvent(new CustomEvent(FLOW_EVENT_ANALYZING,{detail:{active:false}}));};
+  },[loading]);
+
   useEffect(()=>{(async()=>{try{const v=await safeGet("rp_custom_keywords");if(v){const parsed=JSON.parse(v);if(Array.isArray(parsed))setCustomKeywords(parsed);}}catch(e){}finally{kwLoadedRef.current=true;}})();},[]);
   useEffect(()=>{if(kwLoadedRef.current)storage.set("rp_custom_keywords",JSON.stringify(customKeywords));},[customKeywords]);
 
@@ -5407,7 +5421,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   },[]);
   const[editMode,setEditMode]=useState(false);
   const[editedText,setEditedText]=useState(null);
-  const[previewVisible,setPreviewVisible]=useState(true);
+  // 確認ステップはテキスト+検出リストに集中させる（A4プレビューは「整える」ステップが主役）
+  const[previewVisible,setPreviewVisible]=useState(false);
   const[previewFontType,setPreviewFontType]=useState("gothic");
   const[previewZoom,setPreviewZoom]=useState(1);
   // Draggable panel widths (percentages of total width)
@@ -5554,7 +5569,41 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
   // アドバイザー: 改善テキストを却下
   const handleAdvisorDraftReject=useCallback(()=>{setAdvisorDraft(null);},[]);
 
-  const buildTxt=()=>viewMode==="ai"&&aiResult?aiResult:redacted;
+  // エクスポートプレビューを開く（フッターのボタンとステップフローバーの両方から呼ばれる）
+  const openExportPreview=useCallback(()=>{
+    setPreview({
+      title:'マスキング済みテキスト',
+      content:editedText??(viewMode==="ai"&&aiResult?aiResult:redacted),
+      baseName,
+      editable:true,
+      meta:{fileName:data.file_name,maskCount:enabledCount,xlMeta:data.xlMeta?.map(sh=>({sheetName:sh.sheetName,aoa:sh.aoa.map(r=>r.map(c=>applyRedaction(String(c??""),detections,data.maskOpts)))}))},
+      onContentChange:(newContent)=>{setPreview(prev=>prev?{...prev,content:newContent}:null)},
+    });
+  },[editedText,viewMode,aiResult,redacted,baseName,data,enabledCount,detections]);
+  // ステップフローバーからのエクスポート開閉指示
+  useEffect(()=>{
+    const handler=(e)=>{if(e.detail?.open)openExportPreview();else setPreview(null);};
+    window.addEventListener(FLOW_EVENT_SET_EXPORT,handler);
+    return()=>window.removeEventListener(FLOW_EVENT_SET_EXPORT,handler);
+  },[openExportPreview]);
+  // エクスポートプレビューの開閉状態をステップフローバーへ通知（アンマウント時はクローズ扱い）
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_EXPORT_STATE,{detail:{open:!!preview}}));
+    return()=>{window.dispatchEvent(new CustomEvent(FLOW_EVENT_EXPORT_STATE,{detail:{open:false}}));};
+  },[preview]);
+  // ── ステップフロー: 確認する(review) / 整える(format) のモード切替 ──
+  const[flowMode,setFlowMode]=useState('review');
+  useEffect(()=>{
+    const handler=(e)=>{const m=e.detail?.mode;if(m==='review'||m==='format')setFlowMode(m);};
+    window.addEventListener(FLOW_EVENT_SET_MODE,handler);
+    return()=>window.removeEventListener(FLOW_EVENT_SET_MODE,handler);
+  },[]);
+  useEffect(()=>{
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_MODE_STATE,{detail:{mode:flowMode}}));
+    return()=>{window.dispatchEvent(new CustomEvent(FLOW_EVENT_MODE_STATE,{detail:{mode:'review'}}));};
+  },[flowMode]);
+  const goFormat=useCallback(()=>setFlowMode('format'),[]);
+  const goReview=useCallback(()=>setFlowMode('review'),[]);
   const buildCsv=()=>"種類,カテゴリ,検出値,検出方法,確信度,マスク有無\n"+detections.map(d=>`"${d.label}","${d.category}","${d.value}","${d.source}","${d.confidence||""}","${d.enabled?"マスク済":"未マスク"}"`).join("\n");
 
   // A4プレビュー用 memoized HTML
@@ -5718,13 +5767,150 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     return '1fr 36px 40px';
   },[isLite,previewVisible,sidebarCollapsed,leftPct,rightPct,centerCol]);
 
+  // ── 整えるステップ: A4プレビューを主役にした専用ビュー（Lite/Pro共通） ──
+  if(flowMode==='format'){
+    return (
+      <div className='rp-editor-wrap' style={{display:'flex',flexDirection:'column',height:'calc(100vh - 52px - 40px - 36px)',minHeight:0,fontFamily:T.font,background:T.bg}}>
+          <div className={s['ed-preview-toolbar']}>
+              <span className={s['ed-preview-label']}>A4 プレビュー</span>
+              {!isLite && (
+                  <button
+                      onClick={()=>{
+                          if(!editMode){setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);setEditMode(true);}
+                          else{setEditMode(false);setEditedText(null);}
+                      }}
+                      title='テキストを直接編集してA4プレビューに反映'
+                      className={s['ed-small-btn']}
+                      style={{
+                          border:`1px solid ${editMode?T.accent:T.border}`,
+                          background:editMode?T.accentDim:'transparent',
+                          color:editMode?T.accent:T.text3,fontWeight:editMode?600:400,
+                      }}
+                  >{editMode?'編集を終了':'テキストを編集'}</button>
+              )}
+              {!isLite && editMode && (
+                  <>
+                      <button onClick={()=>setPreviewFontType("gothic")} title="ゴシック体に切替" className={s['ed-small-btn']}
+                          style={{
+                              border:`1px solid ${previewFontType==="gothic"?T.accent:T.border}`,
+                              background:previewFontType==="gothic"?T.accentDim:"transparent",
+                              color:previewFontType==="gothic"?T.accent:T.text3,fontWeight:previewFontType==="gothic"?600:400,
+                          }}>ゴシック</button>
+                      <button onClick={()=>setPreviewFontType("mincho")} title="明朝体に切替" className={s['ed-small-btn']}
+                          style={{
+                              border:`1px solid ${previewFontType==="mincho"?T.accent:T.border}`,
+                              background:previewFontType==="mincho"?T.accentDim:"transparent",
+                              color:previewFontType==="mincho"?T.accent:T.text3,fontWeight:previewFontType==="mincho"?600:400,
+                          }}>明朝</button>
+                  </>
+              )}
+              <div style={{display:"flex",alignItems:"center",gap:2,marginLeft:4}}>
+                  <button onClick={()=>setPreviewZoom(z=>Math.max(0.3,+(z-0.1).toFixed(2)))} title="縮小" aria-label="縮小" className={s['ed-zoom-btn']}>&minus;</button>
+                  <button onClick={()=>setPreviewZoom(1)} title="ズームをリセット" aria-label="ズームをリセット" className={s['ed-zoom-label']}>{Math.round(previewZoom*100)}%</button>
+                  <button onClick={()=>setPreviewZoom(z=>Math.min(1.5,+(z+0.1).toFixed(2)))} title="拡大" aria-label="拡大" className={s['ed-zoom-btn']}>+</button>
+              </div>
+              <span style={{flex:1}}/>
+              {!isLite && (
+                  <button onClick={()=>setShowAI(true)} title='AIで推薦書・スキルシート等の形式に自動整形' className={s['ed-small-btn']}
+                      style={{border:`1px solid ${T.border}`,background:'transparent',color:T.text2}}>AI で再フォーマット</button>
+              )}
+              {!isLite && <button onClick={()=>setShowDesign(true)} title="全画面編集" aria-label="全画面編集" className={s['ed-small-icon-btn']}>&#x2197;</button>}
+          </div>
+          <div style={{flex:1,minHeight:0,display:'flex',background:'#e5e7eb',overflow:'hidden'}}>
+              {!isLite && editMode && (
+                  <div style={{width:'38%',minWidth:280,display:'flex',flexDirection:'column',borderRight:`1px solid ${T.border}`,background:T.bg,minHeight:0}}>
+                      <div className={s['ed-edit-hint']}>
+                          <span style={{fontWeight:600,color:T.text2}}>記法: </span>
+                          <code className={s['ed-edit-code']}>**太字**</code>
+                          <code className={s['ed-edit-code']} style={{marginLeft:6}}># 見出し</code>
+                          <span style={{opacity:0.6,marginLeft:8}}>A4プレビューに即反映</span>
+                      </div>
+                      <textarea
+                          aria-label="Markdown編集"
+                          value={editedText??""}
+                          onChange={(e)=>setEditedText(e.target.value)}
+                          spellCheck={false}
+                          className={s['ed-edit-textarea']}
+                      />
+                  </div>
+              )}
+              <div style={{flex:1,minWidth:0,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+                  {!isLite && editMode ? (
+                      <div style={{flex:1,overflow:"auto",display:"flex",justifyContent:"center",padding:16}}>
+                          <div style={{width:Math.round(595*previewZoom),flexShrink:0}}>
+                              <div style={{width:595,minHeight:842,background:"#fff",boxShadow:"0 4px 24px rgba(0,0,0,.12)",borderRadius:4,transform:`scale(${previewZoom})`,transformOrigin:"top left"}}>
+                                  <iframe
+                                      srcDoc={previewHtml}
+                                      sandbox="allow-same-origin"
+                                      style={{width:"100%",minHeight:842,border:"none",pointerEvents:"none"}}
+                                      title="A4 Preview"
+                                      onLoad={(e)=>{try{const h=e.target.contentDocument?.documentElement?.scrollHeight;if(h&&h>842)e.target.style.height=h+"px";}catch(ex){}}}
+                                  />
+                              </div>
+                          </div>
+                      </div>
+                  ) : (
+                      <A4PreviewPanel
+                          text={aiResult||data.fullText||data.text_preview}
+                          detections={detections}
+                          maskOpts={data.maskOpts}
+                          focusDetId={focusDetId}
+                          focusPulse={focusPulse}
+                          onFocusDet={focusDetection}
+                          zoom={previewZoom}
+                      />
+                  )}
+              </div>
+          </div>
+          <div style={{display:'flex',gap:8,padding:'10px 14px',borderTop:`1px solid ${T.border}`,background:T.bg2,flexShrink:0,alignItems:'center'}}>
+              <Btn variant='ghost' onClick={goReview} aria-label='確認に戻る' title='検出結果の確認に戻る' style={{borderRadius:10,fontSize:13}}>&larr; 確認に戻る</Btn>
+              <span style={{flex:1,fontSize:12,color:T.text3}}>仕上がりを確認できたら書き出しへ</span>
+              <Btn onClick={openExportPreview} aria-label='次へ: 書き出す' title='マスキング結果を確認して書き出す' style={{borderRadius:10,fontSize:13,background:T.accent,padding:'11px 22px'}}>次へ: 書き出す</Btn>
+          </div>
+          {showAI && (
+              <AIPanel
+                  redactedText={redacted}
+                  apiKey={apiKey}
+                  model={model}
+                  onApply={(t) => {
+                      setAiResult(t)
+                      setViewMode('ai')
+                      setShowAI(false)
+                  }}
+                  onClose={() => setShowAI(false)}
+              />
+          )}
+          {showDesign && (
+              <DesignExportModal
+                  text={editMode ? (editedText??redacted) : viewMode === 'ai' && aiResult ? aiResult : redacted}
+                  apiKey={apiKey}
+                  model={model}
+                  baseName={baseName}
+                  onClose={() => setShowDesign(false)}
+              />
+          )}
+          {preview && (
+              <PreviewModal
+                  title={preview.title}
+                  content={preview.content}
+                  baseName={preview.baseName}
+                  editable={preview.editable}
+                  meta={preview.meta}
+                  onClose={() => setPreview(null)}
+                  onContentChange={preview.onContentChange}
+              />
+          )}
+      </div>
+    );
+  }
+
   return (
       <div
           className='rp-editor-wrap'
           style={{
               display: 'grid',
               gridTemplateColumns: gridCols,
-              height: 'calc(100vh - 52px - 36px)',
+              height: 'calc(100vh - 52px - 40px - 36px)',
               fontFamily: T.font,
               transition: presetTransRef.current ? 'grid-template-columns .2s ease' : undefined,
           }}
@@ -6123,7 +6309,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       </div>
                   ) : (
                       <A4PreviewPanel
-                          text={aiResult||data.text_preview}
+                          text={aiResult||data.fullText||data.text_preview}
                           detections={detections}
                           maskOpts={data.maskOpts}
                           focusDetId={focusDetId}
@@ -6602,62 +6788,15 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   data-intro="export-buttons"
                   className={s['ed-footer']}
               >
-                  {!isLite && <Btn
-                      data-intro="ai-reformat"
-                      title='AIでテキストを再整形'
-                      onClick={() => setShowAI(true)}
-                      style={{
-                          width: '100%',
-                          borderRadius: 10,
-                          background: T.accent,
-                          fontSize: 13,
-                      }}
-                  >
-                      AI で再フォーマット
-                  </Btn>}
-                  {!isLite && <Btn
-                      data-intro="pdf-edit"
-                      title='PDF編集モードを開く'
-                      onClick={() => {
-                          if(!editMode){
-                              setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
-                              setEditMode(true);
-                              setPreviewVisible(true);
-                          }else{
-                              setEditMode(false);
-                              setEditedText(null);
-                          }
-                      }}
-                      style={{
-                          width: '100%',
-                          borderRadius: 10,
-                          background: editMode ? T.accent : 'transparent',
-                          fontSize: 13,
-                          color: editMode ? undefined : T.accent,
-                          border: editMode ? 'none' : `1.5px solid ${T.accent}`,
-                      }}
-                  >
-                      {editMode ? '編集完了 / プレビューを閉じる' : 'PDF プレビュー・編集'}
-                  </Btn>}
                   <div className={s['ed-btn-row']}>
                       <Btn
-                          title='マスキング結果をプレビュー'
-                          variant='ghost'
-                          onClick={() =>
-                              setPreview({
-                                  title: 'マスキング済みテキスト',
-                                  content: buildTxt(),
-                                  baseName,
-                                  editable: true,
-                                  meta: { fileName: data.file_name, maskCount: enabledCount, xlMeta: data.xlMeta?.map(s=>({sheetName:s.sheetName,aoa:s.aoa.map(r=>r.map(c=>applyRedaction(String(c??""),detections,data.maskOpts)))})) },
-                                  onContentChange: (newContent) => {
-                                      setPreview(prev => prev ? {...prev, content: newContent} : null)
-                                  },
-                              })
-                          }
-                          style={{ flex: 1, borderRadius: 10, fontSize: 13 }}
+                          data-intro="go-format"
+                          aria-label='次へ: 整える'
+                          title='A4プレビューでレイアウトを整える（AI整形・PDF編集もこちら）'
+                          onClick={goFormat}
+                          style={{ flex: 1, borderRadius: 10, fontSize: 13, background: T.accent }}
                       >
-                          プレビュー / 保存
+                          次へ: 整える
                       </Btn>
                       <Btn
                           title='クリップボードにコピー'
@@ -6977,10 +7116,29 @@ async function launchTour(steps,doneKey){
   document.body.setAttribute('data-theme',theme);
   const tour=introJs();
   tour.setOptions({...INTRO_OPTIONS,steps:validSteps});
+  // 「いま何番目か」を常に示す（例: 7 / 12）
+  const total=validSteps.length;
+  const renderStepCounter=()=>{
+    const tooltip=document.querySelector('.introjs-tooltip');
+    if(!tooltip)return;
+    const idx=(typeof tour.currentStep==='function'?tour.currentStep():tour._currentStep)??0;
+    const current=Math.min(total,Math.max(1,idx+1));
+    let el=tooltip.querySelector('.introjs-stepcounter');
+    if(!el){
+      el=document.createElement('div');
+      el.className='introjs-stepcounter';
+      const anchor=tooltip.querySelector('.introjs-progress')||tooltip.querySelector('.introjs-tooltipbuttons');
+      if(anchor)tooltip.insertBefore(el,anchor);else tooltip.appendChild(el);
+    }
+    el.textContent=`${current} / ${total}`;
+    el.setAttribute('aria-label',`全${total}ステップ中 ${current}番目`);
+  };
   const cleanup=()=>{document.body.removeAttribute('data-theme');if(doneKey)try{localStorage.setItem(doneKey,'1')}catch{}};
   tour.oncomplete(cleanup);
   tour.onexit(cleanup);
+  tour.onafterchange(()=>{renderStepCounter();});
   tour.start();
+  setTimeout(renderStepCounter,0);
 }
 
 // ═══ App ═══
@@ -7017,7 +7175,7 @@ export default function App(){
   const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
-      model: pickFormatModelForProfile('openai', 'balanced', false) || 'gpt-5.4-nano',
+      model: pickFormatModelForProfile('openai', 'balanced', false) || 'gpt-5.6-luna',
       aiDetect: true,
       aiProfile: 'balanced',
       provider: 'openai',
@@ -7031,12 +7189,17 @@ export default function App(){
       const allModels=AI_PROVIDERS.flatMap(p=>p.models);
       const found=allModels.find(x=>x.id===m);
       if(found && (!found.needsUserKey || k)){setSettings(p=>({...p,model:m}));}
-      else{await storage.set("rp_model","gpt-5.4-nano");setSettings(p=>({...p,model:"gpt-5.4-nano"}));}
+      else{await storage.set("rp_model","gpt-5.6-luna");setSettings(p=>({...p,model:"gpt-5.6-luna"}));}
     }
     const ad=await safeGet("rp_ai_detect");if(ad)setSettings(p=>({...p,aiDetect:ad!=="false"}));
     const ap = await safeGet('rp_ai_profile')
     if (ap) setSettings((p) => ({ ...p, aiProfile: ap }))
-    const prov=await safeGet("rp_provider");if(prov)setSettings(p=>({...p,provider:prov}));
+    const prov=await safeGet("rp_provider");
+    if(prov){
+      const migrated=migrateProviderId(prov);
+      if(migrated!==prov)await storage.set("rp_provider",migrated);
+      setSettings(p=>({...p,provider:migrated}));
+    }
     const px=await safeGet("rp_proxy_url");if(px)setSettings(p=>({...p,proxyUrl:px}));
     const le=await safeGet("rp_local_endpoint");if(le)setSettings(p=>({...p,localEndpoint:le}));
     const th=await safeGet("rp_theme");if(th)setIsDark(th!=="light");
@@ -7197,6 +7360,43 @@ export default function App(){
   const batchMode=batchFiles.length>0;
   const activeFile=batchFiles[activeFileIdx];
 
+  // ── ステップフローバー連携 ──
+  const[exportOpen,setExportOpen]=useState(false);
+  const[analyzing,setAnalyzing]=useState(false);
+  const[flowFormatMode,setFlowFormatMode]=useState(false);
+  useEffect(()=>{
+    const onExportState=(e)=>setExportOpen(!!e.detail?.open);
+    const onAnalyzing=(e)=>setAnalyzing(!!e.detail?.active);
+    const onModeState=(e)=>setFlowFormatMode(e.detail?.mode==='format');
+    window.addEventListener(FLOW_EVENT_EXPORT_STATE,onExportState);
+    window.addEventListener(FLOW_EVENT_ANALYZING,onAnalyzing);
+    window.addEventListener(FLOW_EVENT_MODE_STATE,onModeState);
+    return()=>{
+      window.removeEventListener(FLOW_EVENT_EXPORT_STATE,onExportState);
+      window.removeEventListener(FLOW_EVENT_ANALYZING,onAnalyzing);
+      window.removeEventListener(FLOW_EVENT_MODE_STATE,onModeState);
+    };
+  },[]);
+  const hasFlowData=!!data||batchMode;
+  // バッチ処理中（編集画面が未表示）はエクスポートプレビューを開けない
+  const canFlowExport=!!data||(batchMode&&activeFile?.status==='done'&&!!activeFile?.data);
+  const flowStep=getCurrentFlowStep({hasData:hasFlowData,exportOpen,formatMode:flowFormatMode});
+  const handleFlowStepClick=useCallback((id)=>{
+    if(id==='input'){
+      if(hasFlowData&&window.confirm('最初からやり直しますか？現在の検出結果は破棄されます。'))goHome();
+      return;
+    }
+    if(!hasFlowData)return;
+    if((id==='format'||id==='export')&&!canFlowExport)return;
+    if(id==='export'){
+      window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_EXPORT,{detail:{open:true}}));
+      return;
+    }
+    // review / format: エクスポートを閉じて対象モードへ切替
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_EXPORT,{detail:{open:false}}));
+    window.dispatchEvent(new CustomEvent(FLOW_EVENT_SET_MODE,{detail:{mode:id==='format'?'format':'review'}}));
+  },[hasFlowData,canFlowExport,goHome]);
+
   return (
       <div
           data-theme={isDark ? 'dark' : 'light'}
@@ -7316,6 +7516,7 @@ export default function App(){
                   </button>
               </div>
           </header>
+          <StepFlowBar current={flowStep} hasData={hasFlowData} analyzing={analyzing} canExport={canFlowExport} onStepClick={handleFlowStepClick}/>
           <main style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
           {(!isLite && batchMode) ? (
               <>
