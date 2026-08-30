@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { AI_PROVIDERS, AI_MODELS, getProviderForModel } from '../constants'
+import { AI_PROVIDERS, AI_MODELS, getProviderForModel, migrateProviderId } from '../constants'
 import { MODEL_COSTS, selectModel } from '../advisor/model-selector'
 
 const LUNA = 'gpt-5.6-luna'
@@ -227,5 +227,36 @@ describe('サーバー共用キーのモデル制限', () => {
   it('Gemini / ローカルAI は別途 needsKey で制御', () => {
     expect(isModelAllowedWithoutUserKey('google', 'gemini-2.5-flash')).toBe(true)
     expect(isModelAllowedWithoutUserKey('local', 'local-auto')).toBe(true)
+  })
+})
+
+// ── 10. 保存済みプロバイダのマイグレーション ──
+
+describe('保存済みプロバイダのマイグレーション', () => {
+  it('廃止済みの anthropic → openai', () => {
+    expect(migrateProviderId('anthropic')).toBe('openai')
+  })
+
+  it('未設定・不明な値 → openai', () => {
+    expect(migrateProviderId(null)).toBe('openai')
+    expect(migrateProviderId(undefined)).toBe('openai')
+    expect(migrateProviderId('unknown')).toBe('openai')
+  })
+
+  it('現行プロバイダはそのまま維持', () => {
+    expect(migrateProviderId('openai')).toBe('openai')
+    expect(migrateProviderId('google')).toBe('google')
+    expect(migrateProviderId('local')).toBe('local')
+  })
+
+  it('{provider: anthropic, model: claude-*} から復元しても両方が有効値になる', () => {
+    const allValidModels = AI_PROVIDERS.flatMap((p) => p.models.map((m) => m.id))
+    const provider = migrateProviderId('anthropic')
+    const savedModel = 'claude-sonnet-4-20250514'
+    const model = allValidModels.includes(savedModel) ? savedModel : LUNA
+    expect(provider).toBe('openai')
+    expect(model).toBe(LUNA)
+    expect(AI_PROVIDERS.some((p) => p.id === provider)).toBe(true)
+    expect(allValidModels).toContain(model)
   })
 })

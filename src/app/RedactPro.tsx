@@ -187,6 +187,12 @@ async function callAI({provider,model,messages,maxTokens=4000,apiKey,system,loca
   return d.text||"";
 }
 
+// 廃止済みプロバイダ（例: 旧 anthropic）の保存値を現行のものへ移行する
+function migrateProviderId(savedProvider){
+  if(!savedProvider)return 'openai';
+  return AI_PROVIDERS.some(p=>p.id===savedProvider)?savedProvider:'openai';
+}
+
 function getProviderForModel(modelId){
   for(const p of AI_PROVIDERS){if(p.models.some(m=>m.id===modelId))return p.id;}
   return 'openai'
@@ -5845,7 +5851,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       </div>
                   ) : (
                       <A4PreviewPanel
-                          text={aiResult||data.text_preview}
+                          text={aiResult||data.fullText||data.text_preview}
                           detections={detections}
                           maskOpts={data.maskOpts}
                           focusDetId={focusDetId}
@@ -6303,7 +6309,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       </div>
                   ) : (
                       <A4PreviewPanel
-                          text={aiResult||data.text_preview}
+                          text={aiResult||data.fullText||data.text_preview}
                           detections={detections}
                           maskOpts={data.maskOpts}
                           focusDetId={focusDetId}
@@ -7188,7 +7194,12 @@ export default function App(){
     const ad=await safeGet("rp_ai_detect");if(ad)setSettings(p=>({...p,aiDetect:ad!=="false"}));
     const ap = await safeGet('rp_ai_profile')
     if (ap) setSettings((p) => ({ ...p, aiProfile: ap }))
-    const prov=await safeGet("rp_provider");if(prov)setSettings(p=>({...p,provider:prov}));
+    const prov=await safeGet("rp_provider");
+    if(prov){
+      const migrated=migrateProviderId(prov);
+      if(migrated!==prov)await storage.set("rp_provider",migrated);
+      setSettings(p=>({...p,provider:migrated}));
+    }
     const px=await safeGet("rp_proxy_url");if(px)setSettings(p=>({...p,proxyUrl:px}));
     const le=await safeGet("rp_local_endpoint");if(le)setSettings(p=>({...p,localEndpoint:le}));
     const th=await safeGet("rp_theme");if(th)setIsDark(th!=="light");

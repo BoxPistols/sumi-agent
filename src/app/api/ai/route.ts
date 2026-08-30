@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isAllowedLocalEndpoint, buildLocalChatUrl, buildLocalRequestBody } from '@/lib/local-ai'
+import {
+  isAllowedLocalEndpoint,
+  buildLocalChatUrl,
+  buildLocalRequestBody,
+  sanitizeEndpointForDisplay,
+  fetchLocalWithRedirectGuard,
+} from '@/lib/local-ai'
 
 /**
  * Server-side AI proxy.
@@ -363,11 +369,16 @@ export async function POST(request: NextRequest) {
 
       const reqBody = buildLocalRequestBody(model, messages, maxTokens, system)
 
-      const res = await fetchWithTimeout(buildLocalChatUrl(endpoint), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reqBody),
-      })
+      // リダイレクト先も毎回ループバック検証する（SSRF対策）
+      const res = await fetchLocalWithRedirectGuard(
+        buildLocalChatUrl(endpoint),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(reqBody),
+        },
+        (u, i) => fetchWithTimeout(u, i),
+      )
 
       if (!res.ok) {
         const e = await res.text().catch(() => '')
@@ -394,12 +405,16 @@ export async function POST(request: NextRequest) {
     }
     const msg = err instanceof Error ? err.message : 'Unknown error'
     // ローカルAIは「サーバーが起動していない」ケースが大半なので原因を明示する
-    if (provider === 'local' && /fetch failed|ECONNREFUSED|network/i.test(msg)) {
-      const endpoint =
-        body.localEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434/v1'
+    if (
+      provider === 'local' &&
+      /fetch failed|ECONNREFUSED|network|ループバック|リダイレクト/i.test(msg)
+    ) {
+      // サーバー環境変数の値は開示しない。ユーザーが自ら入力した値のみ、
+      // 認証情報・パス・クエリを除いたオリジンだけを返す。
+      const shown = body.localEndpoint ? sanitizeEndpointForDisplay(body.localEndpoint) : null
       return NextResponse.json(
         {
-          error: `ローカルAIに接続できません（${endpoint}）。Ollama / LM Studio 等が起動しているか、エンドポイントが正しいか確認してください。`,
+          error: `ローカルAIに接続できません${shown ? `（${shown}）` : ''}。Ollama / LM Studio 等が起動しているか、エンドポイントが正しいか確認してください。`,
         },
         { status: 502 },
       )

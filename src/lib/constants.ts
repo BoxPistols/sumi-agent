@@ -72,6 +72,15 @@ export const AI_MODELS = AI_PROVIDERS.flatMap((p) =>
   p.models.map((m) => ({ ...m, provider: p.id })),
 )
 
+/** 廃止済みプロバイダ（保存値）を現行のものへ移行する */
+export const DEFAULT_PROVIDER = 'openai'
+export const DEFAULT_MODEL = 'gpt-5.6-luna'
+
+export function migrateProviderId(savedProvider: string | null | undefined): string {
+  if (!savedProvider) return DEFAULT_PROVIDER
+  return AI_PROVIDERS.some((p) => p.id === savedProvider) ? savedProvider : DEFAULT_PROVIDER
+}
+
 export function getProviderForModel(modelId: string): string {
   if (modelId === 'local-auto' || modelId.startsWith('local-')) return 'local'
   for (const p of AI_PROVIDERS) {
