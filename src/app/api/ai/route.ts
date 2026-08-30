@@ -6,6 +6,12 @@ import {
   sanitizeEndpointForDisplay,
   fetchLocalWithRedirectGuard,
 } from '@/lib/local-ai'
+import { DEFAULT_MODEL } from '@/lib/constants'
+import {
+  resolveOpenAITokenLimit,
+  shouldAddReasoningEffort,
+  isModelAllowedWithoutUserKey,
+} from '@/lib/openai-params'
 
 /**
  * Server-side AI proxy.
@@ -219,11 +225,11 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // サーバーキー利用時（ユーザーキー未提供）は gpt-5.6-luna のみ許可
-  if (!hasUserKey && provider === 'openai' && model !== 'gpt-5.6-luna') {
+  // サーバーキー利用時（ユーザーキー未提供）は既定モデルのみ許可
+  if (!hasUserKey && !isModelAllowedWithoutUserKey(provider, model, DEFAULT_MODEL)) {
     return NextResponse.json(
       {
-        error: `${model} を使用するには自身のAPIキーを設定してください。無料版では gpt-5.6-luna のみ利用可能です。`,
+        error: `${model} を使用するには自身のAPIキーを設定してください。無料版では ${DEFAULT_MODEL} のみ利用可能です。`,
       },
       { status: 403 },
     )
@@ -262,16 +268,14 @@ export async function POST(request: NextRequest) {
 
       // GPT-5系: max_completion_tokens を使用、temperature は指定不可
       // nano は 4000、mini 以上は 16000 を上限とする
-      const isGpt5 = model.startsWith('gpt-5')
-      const tokenLimit = isGpt5 && model.includes('nano') ? 4000 : isGpt5 ? 16000 : maxTokens
       const reqBody: Record<string, unknown> = {
         model,
         messages: msgs,
-        max_completion_tokens: Math.min(maxTokens, tokenLimit),
+        max_completion_tokens: resolveOpenAITokenLimit(model, maxTokens),
       }
       // GPT-5 family can spend the entire budget on hidden reasoning tokens,
       // yielding empty visible output for small max_completion_tokens.
-      if (isGpt5) reqBody.reasoning_effort = 'low'
+      if (shouldAddReasoningEffort(model)) reqBody.reasoning_effort = 'low'
 
       const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

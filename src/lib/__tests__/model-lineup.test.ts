@@ -14,6 +14,12 @@
 import { describe, it, expect } from 'vitest'
 import { AI_PROVIDERS, AI_MODELS, getProviderForModel, migrateProviderId } from '../constants'
 import { MODEL_COSTS, selectModel } from '../advisor/model-selector'
+import {
+  resolveOpenAITokenLimit,
+  shouldAddReasoningEffort,
+  supportsTemperature,
+  isModelAllowedWithoutUserKey,
+} from '../openai-params'
 
 const LUNA = 'gpt-5.6-luna'
 
@@ -143,18 +149,11 @@ describe('MODEL_COSTS / selectModel', () => {
 // ── 7. API パラメータ要件（route.ts のロジックを再現） ──
 
 describe('OpenAI API パラメータ要件', () => {
-  const buildOpenAITokenLimit = (model: string, requestedMax: number): number => {
-    const isGpt5 = model.startsWith('gpt-5')
-    const tokenLimit = isGpt5 && model.includes('nano') ? 4000 : isGpt5 ? 16000 : requestedMax
-    return Math.min(requestedMax, tokenLimit)
-  }
-  const shouldAddReasoningEffort = (model: string): boolean => model.startsWith('gpt-5')
-  const supportsTemperature = (model: string): boolean => !model.startsWith('gpt-5')
-
+  // route.ts と同じ実装（src/lib/openai-params.ts）を検証する
   it('gpt-5.6-luna: 最大 16000 トークン', () => {
-    expect(buildOpenAITokenLimit(LUNA, 4000)).toBe(4000)
-    expect(buildOpenAITokenLimit(LUNA, 16000)).toBe(16000)
-    expect(buildOpenAITokenLimit(LUNA, 32000)).toBe(16000)
+    expect(resolveOpenAITokenLimit(LUNA, 4000)).toBe(4000)
+    expect(resolveOpenAITokenLimit(LUNA, 16000)).toBe(16000)
+    expect(resolveOpenAITokenLimit(LUNA, 32000)).toBe(16000)
   })
 
   it('gpt-5.6-luna: reasoning_effort が必要', () => {
@@ -166,9 +165,14 @@ describe('OpenAI API パラメータ要件', () => {
   })
 
   it('非GPT-5系モデル: リクエスト値がそのまま、temperature 指定可', () => {
-    expect(buildOpenAITokenLimit('gemini-2.5-flash', 8000)).toBe(8000)
+    expect(resolveOpenAITokenLimit('gemini-2.5-flash', 8000)).toBe(8000)
     expect(shouldAddReasoningEffort('gemini-2.5-flash')).toBe(false)
     expect(supportsTemperature('gemini-2.5-flash')).toBe(true)
+  })
+
+  it('nano 系は 4000 が上限（将来モデル追加時の保険）', () => {
+    expect(resolveOpenAITokenLimit('gpt-5-nano', 16000)).toBe(4000)
+    expect(resolveOpenAITokenLimit('gpt-5-nano', 2000)).toBe(2000)
   })
 })
 
@@ -211,22 +215,18 @@ describe('保存済みモデル名のマイグレーション', () => {
 // ── 9. サーバー共用キーでのモデル制限（route.ts と同等） ──
 
 describe('サーバー共用キーのモデル制限', () => {
-  const isModelAllowedWithoutUserKey = (provider: string, model: string): boolean => {
-    if (provider === 'openai' && model !== LUNA) return false
-    return true
-  }
-
+  // route.ts と同じ実装（src/lib/openai-params.ts）を検証する
   it('gpt-5.6-luna → 許可', () => {
-    expect(isModelAllowedWithoutUserKey('openai', LUNA)).toBe(true)
+    expect(isModelAllowedWithoutUserKey('openai', LUNA, LUNA)).toBe(true)
   })
 
   it('OpenAIの他モデル → 拒否', () => {
-    expect(isModelAllowedWithoutUserKey('openai', 'gpt-5.4-mini')).toBe(false)
+    expect(isModelAllowedWithoutUserKey('openai', 'gpt-5.4-mini', LUNA)).toBe(false)
   })
 
   it('Gemini / ローカルAI は別途 needsKey で制御', () => {
-    expect(isModelAllowedWithoutUserKey('google', 'gemini-2.5-flash')).toBe(true)
-    expect(isModelAllowedWithoutUserKey('local', 'local-auto')).toBe(true)
+    expect(isModelAllowedWithoutUserKey('google', 'gemini-2.5-flash', LUNA)).toBe(true)
+    expect(isModelAllowedWithoutUserKey('local', 'local-auto', LUNA)).toBe(true)
   })
 })
 
