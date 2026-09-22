@@ -1,7 +1,7 @@
 /**
  * モデルラインナップ テスト
  *
- * 対応プロバイダは OpenAI (GPT-5.6 Luna) / Gemini / ローカルAI の3つのみ。
+ * 対応プロバイダは OpenAI (GPT-6 Luna) / Gemini / ローカルAI の3つのみ。
  * 以下を検証する:
  * 1. プロバイダ・モデル定義（Claude/Anthropic と旧GPTモデルの排除）
  * 2. デフォルトモデルの統一
@@ -21,7 +21,7 @@ import {
   isModelAllowedWithoutUserKey,
 } from '../openai-params'
 
-const LUNA = 'gpt-5.6-luna'
+const LUNA = 'gpt-6-luna'
 
 // 廃止された、コードベースに残ってはいけないモデルID
 const RETIRED_MODELS = [
@@ -61,14 +61,14 @@ describe('プロバイダ構成', () => {
 
 // ── 2. OpenAI モデル定義 ──
 
-describe('OpenAI モデル定義（GPT-5.6 Luna）', () => {
+describe('OpenAI モデル定義（GPT-6 Luna）', () => {
   const openai = AI_PROVIDERS.find((p) => p.id === 'openai')!
 
-  it('モデルは gpt-5.6-luna の1つのみ', () => {
+  it('モデルは gpt-6-luna の1つのみ', () => {
     expect(openai.models.map((m) => m.id)).toEqual([LUNA])
   })
 
-  it('defaultModel が gpt-5.6-luna', () => {
+  it('defaultModel が gpt-6-luna', () => {
     expect(openai.defaultModel).toBe(LUNA)
   })
 
@@ -98,7 +98,7 @@ describe('廃止モデルの排除', () => {
 // ── 4. プロバイダルーティング ──
 
 describe('プロバイダルーティング', () => {
-  it('gpt-5.6-luna → openai', () => {
+  it('gpt-6-luna → openai', () => {
     expect(getProviderForModel(LUNA)).toBe('openai')
   })
 
@@ -125,7 +125,7 @@ describe('AI_MODELS', () => {
     expect(AI_MODELS).toHaveLength(total)
   })
 
-  it('gpt-5.6-luna が含まれ、provider が付与されている', () => {
+  it('gpt-6-luna が含まれ、provider が付与されている', () => {
     const luna = AI_MODELS.find((m) => m.id === LUNA)
     expect(luna).toBeDefined()
     expect(luna!.provider).toBe('openai')
@@ -135,12 +135,12 @@ describe('AI_MODELS', () => {
 // ── 6. コストとモデル選択 ──
 
 describe('MODEL_COSTS / selectModel', () => {
-  it('gpt-5.6-luna のコストが定義されている', () => {
+  it('gpt-6-luna のコストが定義されている', () => {
     expect(MODEL_COSTS[LUNA]).toBeDefined()
     expect(MODEL_COSTS[LUNA].costYen).toBeGreaterThan(0)
   })
 
-  it('複雑度に関わらず gpt-5.6-luna を選ぶ', () => {
+  it('複雑度に関わらず gpt-6-luna を選ぶ', () => {
     expect(selectModel('low')).toBe(LUNA)
     expect(selectModel('high')).toBe(LUNA)
   })
@@ -150,17 +150,17 @@ describe('MODEL_COSTS / selectModel', () => {
 
 describe('OpenAI API パラメータ要件', () => {
   // route.ts と同じ実装（src/lib/openai-params.ts）を検証する
-  it('gpt-5.6-luna: 最大 16000 トークン', () => {
+  it('gpt-6-luna: 最大 16000 トークン', () => {
     expect(resolveOpenAITokenLimit(LUNA, 4000)).toBe(4000)
     expect(resolveOpenAITokenLimit(LUNA, 16000)).toBe(16000)
     expect(resolveOpenAITokenLimit(LUNA, 32000)).toBe(16000)
   })
 
-  it('gpt-5.6-luna: reasoning_effort が必要', () => {
+  it('gpt-6-luna: reasoning_effort が必要', () => {
     expect(shouldAddReasoningEffort(LUNA)).toBe(true)
   })
 
-  it('gpt-5.6-luna: temperature 指定不可', () => {
+  it('gpt-6-luna: temperature 指定不可', () => {
     expect(supportsTemperature(LUNA)).toBe(false)
   })
 
@@ -192,7 +192,7 @@ describe('保存済みモデル名のマイグレーション', () => {
     expect(migrateModel(null)).toBe(LUNA)
   })
 
-  it('gpt-5.6-luna → そのまま維持', () => {
+  it('gpt-6-luna → そのまま維持', () => {
     expect(migrateModel(LUNA)).toBe(LUNA)
   })
 
@@ -216,7 +216,7 @@ describe('保存済みモデル名のマイグレーション', () => {
 
 describe('サーバー共用キーのモデル制限', () => {
   // route.ts と同じ実装（src/lib/openai-params.ts）を検証する
-  it('gpt-5.6-luna → 許可', () => {
+  it('gpt-6-luna → 許可', () => {
     expect(isModelAllowedWithoutUserKey('openai', LUNA, LUNA)).toBe(true)
   })
 

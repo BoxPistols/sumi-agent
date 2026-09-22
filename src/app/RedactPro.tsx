@@ -57,8 +57,8 @@ const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(
 // ═══ Multi-Provider AI Models ═══
 const AI_PROVIDERS=[
   {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
-    {id:"gpt-5.6-luna",label:"GPT-5.6 Luna",desc:"高速・高精度（推奨）",tier:1},
-  ],defaultModel:"gpt-5.6-luna"},
+    {id:"gpt-6-luna",label:"GPT-6 Luna",desc:"高速・高精度（推奨）",tier:1},
+  ],defaultModel:"gpt-6-luna"},
   {id:"google",label:"Gemini",icon:"G",color:"#4285F4",needsKey:true,models:[
     {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"高速・高精度",tier:1},
   ],defaultModel:"gemini-2.5-flash"},
@@ -118,7 +118,7 @@ function getModelsForRun(settings) {
     const formatModel =
         settings?.model ||
         pickFormatModelForProfile(providerId, profile, hasKey) ||
-        'gpt-5.6-luna'
+        'gpt-6-luna'
     const formatTier = getModelTier(providerId, formatModel) || 1
     const formatFallbackModel =
         formatTier <= 1
@@ -535,7 +535,7 @@ ${truncated}`
         const provider = getProviderForModel(m)
         const raw = await callAI({
             provider,
-            model: m || 'gpt-5.6-luna',
+            model: m || 'gpt-6-luna',
             apiKey,
             maxTokens: 1000,
             messages: [{ role: 'user', content: prompt }],
@@ -1184,7 +1184,7 @@ async function ocrSparsePages(pdfData,sparsePages,apiKey,model,onProgress){
 7. テキストが無いページは「--- Page N ---」の後に「[画像のみ]」と記載`;
       const txt = await callAI({
           provider,
-          model: model || 'gpt-5.6-luna',
+          model: model || 'gpt-6-luna',
           apiKey,
           maxTokens: 8000,
           messages: [
@@ -1258,7 +1258,7 @@ async function aiCleanupText(
     onProgress,
     fallbackModel,
 ) {
-    const primaryModel = model || 'gpt-5.6-luna'
+    const primaryModel = model || 'gpt-6-luna'
     const fbModel =
         fallbackModel && fallbackModel !== primaryModel ? fallbackModel : null
 
@@ -1634,7 +1634,7 @@ async function aiReformat(redactedText,instruction,apiKey,model){
   const provider=getProviderForModel(model);
   return await callAI({
       provider,
-      model: model || 'gpt-5.6-luna',
+      model: model || 'gpt-6-luna',
       apiKey,
       maxTokens: 4000,
       messages: [
@@ -2511,7 +2511,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   const trapRef=useFocusTrap();
   useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
   const [provider, setProvider] = useState(settings.provider || 'openai')
-  const [model, setModel] = useState(settings.model || 'gpt-5.6-luna')
+  const [model, setModel] = useState(settings.model || 'gpt-6-luna')
   const[apiKey,setApiKey]=useState(settings.apiKey||"");
   const[aiDetect,setAiDetect]=useState(settings.aiDetect!==false);
   const [aiProfile, setAiProfile] = useState(settings.aiProfile || 'balanced')
@@ -2554,7 +2554,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
   // When switching provider, auto-select default model
   const switchProvider = (pid) => {
       setProvider(pid)
-      setModel(pickFormatModelForProfile(pid, aiProfile, !!apiKey.trim()) || 'gpt-5.6-luna')
+      setModel(pickFormatModelForProfile(pid, aiProfile, !!apiKey.trim()) || 'gpt-6-luna')
   }
   const keyPlaceholder =
       provider === 'openai'
@@ -2571,14 +2571,14 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
       // Provider list may change defaults; if current model isn't in provider, snap to profile default.
       if (!curProv.models.some((m) => m.id === model)) {
           setModel(
-              pickFormatModelForProfile(provider, aiProfile, hasKey) || 'gpt-5.6-luna',
+              pickFormatModelForProfile(provider, aiProfile, hasKey) || 'gpt-6-luna',
           )
           return
       }
       // APIキー未入力で needsUserKey モデルが選択中ならデフォルトにフォールバック
       const cur = curProv.models.find((m) => m.id === model)
       if (cur?.needsUserKey && !hasKey) {
-          setModel(pickFormatModelForProfile(provider, aiProfile, false) || curProv.defaultModel || 'gpt-5.6-luna')
+          setModel(pickFormatModelForProfile(provider, aiProfile, false) || curProv.defaultModel || 'gpt-6-luna')
       }
   }, [provider, aiProfile, apiKey]) // eslint-disable-line
   const testApiConnection = async () => {
@@ -2789,7 +2789,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           <span className={s['settings-mono']}>PII検出=高速</span>{' '}
                           /{' '}
                           <span className={s['settings-mono']}>再構成・再フォーマット=高品質</span>
-                          （例: OpenAIなら GPT-5.6 Luna を使用）
+                          （例: OpenAIなら GPT-6 Luna を使用）
                       </div>
                   </div>
                   {/* AI detect toggle */}
@@ -2951,7 +2951,7 @@ function SettingsModal({settings,onSave,onClose,isDark,setIsDark,isLite,edition,
                           variant='ghost'
                           onClick={() => {
                               if(!confirm('すべての設定を初期値に戻しますか？\n（テーマ・AIプロバイダー・モデル・APIキー・プロファイルをデフォルトに戻します。アップロード済みのファイルデータには影響しません）'))return;
-                              setProvider('openai');setModel('gpt-5.6-luna');
+                              setProvider('openai');setModel('gpt-6-luna');
                               setApiKey('');setAiDetect(true);
                               setAiProfile('balanced');setProxyUrl('');setLocalEndpoint('http://localhost:11434/v1');
                           }}
@@ -7175,7 +7175,7 @@ export default function App(){
   const[showWelcome,setShowWelcome]=useState(false);
   const [settings, setSettings] = useState({
       apiKey: '',
-      model: pickFormatModelForProfile('openai', 'balanced', false) || 'gpt-5.6-luna',
+      model: pickFormatModelForProfile('openai', 'balanced', false) || 'gpt-6-luna',
       aiDetect: true,
       aiProfile: 'balanced',
       provider: 'openai',
@@ -7189,7 +7189,7 @@ export default function App(){
       const allModels=AI_PROVIDERS.flatMap(p=>p.models);
       const found=allModels.find(x=>x.id===m);
       if(found && (!found.needsUserKey || k)){setSettings(p=>({...p,model:m}));}
-      else{await storage.set("rp_model","gpt-5.6-luna");setSettings(p=>({...p,model:"gpt-5.6-luna"}));}
+      else{await storage.set("rp_model","gpt-6-luna");setSettings(p=>({...p,model:"gpt-6-luna"}));}
     }
     const ad=await safeGet("rp_ai_detect");if(ad)setSettings(p=>({...p,aiDetect:ad!=="false"}));
     const ap = await safeGet('rp_ai_profile')
