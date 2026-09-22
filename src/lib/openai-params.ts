@@ -7,7 +7,7 @@
  * トークン上限と reasoning_effort / temperature の扱いが他モデルと異なる。
  */
 
-/** GPT-5 系かどうか（GPT-6系も推論モデルとして同じ経路に含める） */
+/** GPT-5系かどうか（GPT-6系も推論モデルとして同じ経路に含める） */
 export function isGpt5Model(model: string): boolean {
   return model.startsWith('gpt-5') || model.startsWith('gpt-6')
 }
