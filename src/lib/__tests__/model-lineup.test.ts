@@ -1,7 +1,7 @@
 /**
  * モデルラインナップ テスト
  *
- * 対応プロバイダは OpenAI (GPT-6 Luna) / Gemini / ローカルAI の3つのみ。
+ * 対応プロバイダは OpenAI (GPT-6 Luna) / ローカルAI の2つのみ。
  * 以下を検証する:
  * 1. プロバイダ・モデル定義（Claude/Anthropic と旧GPTモデルの排除）
  * 2. デフォルトモデルの統一
@@ -39,8 +39,8 @@ const RETIRED_MODELS = [
 // ── 1. プロバイダ構成 ──
 
 describe('プロバイダ構成', () => {
-  it('OpenAI / Gemini / ローカルAI の3つのみ', () => {
-    expect(AI_PROVIDERS.map((p) => p.id)).toEqual(['openai', 'google', 'local'])
+  it('OpenAI / ローカルAI の2つのみ', () => {
+    expect(AI_PROVIDERS.map((p) => p.id)).toEqual(['openai', 'local'])
   })
 
   it('Anthropic(Claude) プロバイダは存在しない', () => {
@@ -102,8 +102,8 @@ describe('プロバイダルーティング', () => {
     expect(getProviderForModel(LUNA)).toBe('openai')
   })
 
-  it('gemini-2.5-flash → google', () => {
-    expect(getProviderForModel('gemini-2.5-flash')).toBe('google')
+  it('一覧から外したgemini-2.5-flash → openai', () => {
+    expect(getProviderForModel('gemini-2.5-flash')).toBe('openai')
   })
 
   it('local-auto → local', () => {
@@ -207,8 +207,11 @@ describe('保存済みモデル名のマイグレーション', () => {
   })
 
   it('現行の他プロバイダモデルは維持される', () => {
-    expect(migrateModel('gemini-2.5-flash')).toBe('gemini-2.5-flash')
     expect(migrateModel('local-auto')).toBe('local-auto')
+  })
+
+  it('一覧から外したGeminiモデル → デフォルトにリセット', () => {
+    expect(migrateModel('gemini-2.5-flash')).toBe(LUNA)
   })
 })
 
@@ -245,8 +248,11 @@ describe('保存済みプロバイダのマイグレーション', () => {
 
   it('現行プロバイダはそのまま維持', () => {
     expect(migrateProviderId('openai')).toBe('openai')
-    expect(migrateProviderId('google')).toBe('google')
     expect(migrateProviderId('local')).toBe('local')
+  })
+
+  it('保存値がgoogleのまま残っていてもopenaiに戻る', () => {
+    expect(migrateProviderId('google')).toBe('openai')
   })
 
   it('{provider: anthropic, model: claude-*} から復元しても両方が有効値になる', () => {

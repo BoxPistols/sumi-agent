@@ -11,10 +11,10 @@ import {
 // ── AI_PROVIDERS ──
 
 describe('AI_PROVIDERS', () => {
-  it('3つのプロバイダがある（openai, google, local）', () => {
-    expect(AI_PROVIDERS).toHaveLength(3)
+  it('2つのプロバイダがある（openai, local）', () => {
+    expect(AI_PROVIDERS).toHaveLength(2)
     const ids = AI_PROVIDERS.map((p) => p.id)
-    expect(ids).toEqual(['openai', 'google', 'local'])
+    expect(ids).toEqual(['openai', 'local'])
   })
 
   it('Claude/Anthropicは含まれない', () => {
@@ -85,8 +85,8 @@ describe('getProviderForModel', () => {
     expect(getProviderForModel('gpt-6-luna')).toBe('openai')
   })
 
-  it('Geminiモデル → google', () => {
-    expect(getProviderForModel('gemini-2.5-flash')).toBe('google')
+  it('一覧から外したGeminiモデル → openai', () => {
+    expect(getProviderForModel('gemini-2.5-flash')).toBe('openai')
   })
 
   it('local-auto → local', () => {
