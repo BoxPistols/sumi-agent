@@ -38,6 +38,7 @@ export interface AIProvider {
   defaultModel: string
 }
 
+// Geminiは2.5 Flashが新規の利用者に404を返すため外した。保存済みのgoogleはmigrateProviderIdでopenaiへ戻る
 export const AI_PROVIDERS: AIProvider[] = [
   {
     id: 'openai',
@@ -47,15 +48,6 @@ export const AI_PROVIDERS: AIProvider[] = [
     needsKey: false,
     models: [{ id: 'gpt-6-luna', label: 'GPT-6 Luna', desc: '高速・高精度（推奨）', tier: 1 }],
     defaultModel: 'gpt-6-luna',
-  },
-  {
-    id: 'google',
-    label: 'Gemini',
-    icon: 'G',
-    color: '#4285F4',
-    needsKey: true,
-    models: [{ id: 'gemini-2.5-flash', label: '2.5 Flash', desc: '高速・高精度', tier: 1 }],
-    defaultModel: 'gemini-2.5-flash',
   },
   {
     id: 'local',

@@ -55,13 +55,11 @@ const C={accent:"#1C1917",accentDim:"rgba(28,25,23,0.08)",red:"#DC2626",redDim:"
 const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(--rp-bg)",bg2:"var(--rp-bg2)",surface:"var(--rp-surface)",surfaceAlt:"var(--rp-surfaceAlt)",border:"var(--rp-border)",text:"var(--rp-text)",text2:"var(--rp-text2)",text3:"var(--rp-text3)",diffAdd:"var(--rp-diffAdd)",diffDel:"var(--rp-diffDel)",diffAddBorder:"var(--rp-diffAddBorder)",diffDelBorder:"var(--rp-diffDelBorder)"};
 
 // ═══ Multi-Provider AI Models ═══
+// Geminiは2.5 Flashが新規の利用者に404を返すため外した。保存済みのgoogleはmigrateProviderIdでopenaiへ戻る
 const AI_PROVIDERS=[
   {id:"openai",label:"OpenAI",icon:"O",color:"#10A37F",needsKey:false,models:[
     {id:"gpt-6-luna",label:"GPT-6 Luna",desc:"高速・高精度（推奨）",tier:1},
   ],defaultModel:"gpt-6-luna"},
-  {id:"google",label:"Gemini",icon:"G",color:"#4285F4",needsKey:true,models:[
-    {id:"gemini-2.5-flash",label:"2.5 Flash",desc:"高速・高精度",tier:1},
-  ],defaultModel:"gemini-2.5-flash"},
   {id:"local",label:"ローカルAI",icon:"L",color:"#8B5CF6",needsKey:false,models:[
     {id:"local-auto",label:"自動検出",desc:"ローカルサーバーに接続",tier:1},
   ],defaultModel:"local-auto"},
@@ -2016,7 +2014,7 @@ const CHAT_FAQ=[
     {q:'カスタムキーワードとは？',a:'任意の文字列を指定してマスキング対象に追加できます。初期画面・エディター画面どちらからでも設定可能です。'},
   ]},
   {category:'AI機能',questions:[
-    {q:'AI機能を使うには？',a:'設定（⚙）からAPIキーを入力しAIをONにしてください。OpenAI / Gemini / ローカルAIに対応しています。'},
+    {q:'AI機能を使うには？',a:'設定（⚙）からAPIキーを入力しAIをONにしてください。OpenAI / ローカルAIに対応しています。'},
     {q:'AIで何ができる？',a:'AI PII検出（正規表現では困難な個人情報検出）、テキスト再フォーマット、画像OCRの3機能があります。'},
   ]},
   {category:'エクスポート',questions:[
@@ -2364,7 +2362,7 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                               AI検出・AI整形
                           </div>
                           <ul className={s['help-feature-desc']}>
-                              <li>設定 → プロバイダ選択（OpenAI / Gemini / ローカルAI）</li>
+                              <li>設定 → プロバイダ選択（OpenAI / ローカルAI）</li>
                               <li>APIキーを入力して接続テスト → AI検出をON</li>
                               <li>正規表現で見逃す文脈依存の個人情報を補完</li>
                               <li>テキスト整形: PDFやOCR由来の崩れを自動修正</li>
