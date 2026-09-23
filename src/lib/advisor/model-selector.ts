@@ -1,14 +1,14 @@
 /**
  * アドバイザー Auto モデル選択 + コスト管理
  *
- * モデルラインナップは GPT-5.6 Luna に一本化。
+ * モデルラインナップは GPT-6 Luna に一本化。
  * assessComplexity は将来の多段ルーティング復活とコスト予測のために残す。
  * セッション/日次のコスト追跡とアラートを管理する。
  */
 
 // ── コスト定義（円 / 1往復の概算） ──
 export const MODEL_COSTS: Record<string, { costYen: number; label: string; tier: 'luna' }> = {
-  'gpt-5.6-luna': { costYen: 0.4, label: 'GPT-5.6 Luna', tier: 'luna' },
+  'gpt-6-luna': { costYen: 0.4, label: 'GPT-6 Luna', tier: 'luna' },
 }
 
 // ── 予算しきい値（円） ──
@@ -86,11 +86,11 @@ export function assessComplexity(params: {
   return 'low'
 }
 
-/** 複雑度に応じてモデルを選択（現在のラインナップは GPT-5.6 Luna 一本） */
+/** 複雑度に応じてモデルを選択（現在のラインナップは GPT-6 Luna 一本） */
 export function selectModel(complexity: Complexity): string {
   // 複雑度は将来の多段ルーティング復活に備えて受け取るが、現在は分岐しない
   void complexity
-  return 'gpt-5.6-luna'
+  return 'gpt-6-luna'
 }
 
 // ── コスト追跡 ──

@@ -45,8 +45,8 @@ export const AI_PROVIDERS: AIProvider[] = [
     icon: 'O',
     color: '#10A37F',
     needsKey: false,
-    models: [{ id: 'gpt-5.6-luna', label: 'GPT-5.6 Luna', desc: '高速・高精度（推奨）', tier: 1 }],
-    defaultModel: 'gpt-5.6-luna',
+    models: [{ id: 'gpt-6-luna', label: 'GPT-6 Luna', desc: '高速・高精度（推奨）', tier: 1 }],
+    defaultModel: 'gpt-6-luna',
   },
   {
     id: 'google',
@@ -74,7 +74,7 @@ export const AI_MODELS = AI_PROVIDERS.flatMap((p) =>
 
 /** 廃止済みプロバイダ（保存値）を現行のものへ移行する */
 export const DEFAULT_PROVIDER = 'openai'
-export const DEFAULT_MODEL = 'gpt-5.6-luna'
+export const DEFAULT_MODEL = 'gpt-6-luna'
 
 export function migrateProviderId(savedProvider: string | null | undefined): string {
   if (!savedProvider) return DEFAULT_PROVIDER

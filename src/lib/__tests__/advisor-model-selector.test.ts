@@ -36,8 +36,8 @@ describe('MODEL_COSTS', () => {
     }
   })
 
-  it('gpt-5.6-luna のコストが定義されている', () => {
-    expect(MODEL_COSTS['gpt-5.6-luna'].costYen).toBeGreaterThan(0)
+  it('gpt-6-luna のコストが定義されている', () => {
+    expect(MODEL_COSTS['gpt-6-luna'].costYen).toBeGreaterThan(0)
   })
 })
 
@@ -110,9 +110,9 @@ describe('assessComplexity', () => {
 // ── selectModel ──
 
 describe('selectModel', () => {
-  it('high/low とも gpt-5.6-luna（単一ラインナップ）', () => {
-    expect(selectModel('high')).toBe('gpt-5.6-luna')
-    expect(selectModel('low')).toBe('gpt-5.6-luna')
+  it('high/low とも gpt-6-luna（単一ラインナップ）', () => {
+    expect(selectModel('high')).toBe('gpt-6-luna')
+    expect(selectModel('low')).toBe('gpt-6-luna')
   })
 })
 
@@ -140,19 +140,19 @@ describe('getCostRecord', () => {
 })
 
 describe('recordCost', () => {
-  it('gpt-5.6-lunaのコストを加算する', () => {
-    const rec = recordCost('gpt-5.6-luna')
+  it('gpt-6-lunaのコストを加算する', () => {
+    const rec = recordCost('gpt-6-luna')
     expect(rec.callCount).toBe(1)
-    expect(rec.dailyTotal).toBeCloseTo(MODEL_COSTS['gpt-5.6-luna'].costYen)
-    expect(rec.sessionTotal).toBeCloseTo(MODEL_COSTS['gpt-5.6-luna'].costYen)
+    expect(rec.dailyTotal).toBeCloseTo(MODEL_COSTS['gpt-6-luna'].costYen)
+    expect(rec.sessionTotal).toBeCloseTo(MODEL_COSTS['gpt-6-luna'].costYen)
   })
 
   it('複数回の呼び出しが累積する', () => {
-    recordCost('gpt-5.6-luna')
-    const rec = recordCost('gpt-5.6-luna')
+    recordCost('gpt-6-luna')
+    const rec = recordCost('gpt-6-luna')
     expect(rec.callCount).toBe(2)
     expect(rec.dailyTotal).toBeCloseTo(
-      MODEL_COSTS['gpt-5.6-luna'].costYen + MODEL_COSTS['gpt-5.6-luna'].costYen,
+      MODEL_COSTS['gpt-6-luna'].costYen + MODEL_COSTS['gpt-6-luna'].costYen,
     )
   })
 
@@ -164,8 +164,8 @@ describe('recordCost', () => {
 
 describe('resetSessionCost', () => {
   it('セッションコストのみリセット（日次は維持）', () => {
-    recordCost('gpt-5.6-luna')
-    recordCost('gpt-5.6-luna')
+    recordCost('gpt-6-luna')
+    recordCost('gpt-6-luna')
     resetSessionCost()
     const rec = getCostRecord()
     expect(rec.sessionTotal).toBe(0)

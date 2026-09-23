@@ -75,14 +75,14 @@ describe('AI_MODELS', () => {
 // ── getProviderForModel ──
 
 describe('getProviderForModel', () => {
-  it('OpenAIプロバイダは gpt-5.6-luna のみ', () => {
+  it('OpenAIプロバイダは gpt-6-luna のみ', () => {
     const openai = AI_PROVIDERS.find((p) => p.id === 'openai')!
-    expect(openai.models.map((m) => m.id)).toEqual(['gpt-5.6-luna'])
-    expect(openai.defaultModel).toBe('gpt-5.6-luna')
+    expect(openai.models.map((m) => m.id)).toEqual(['gpt-6-luna'])
+    expect(openai.defaultModel).toBe('gpt-6-luna')
   })
 
   it('GPTモデル → openai', () => {
-    expect(getProviderForModel('gpt-5.6-luna')).toBe('openai')
+    expect(getProviderForModel('gpt-6-luna')).toBe('openai')
   })
 
   it('Geminiモデル → google', () => {

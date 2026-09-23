@@ -158,7 +158,7 @@ Sumi のUIを一貫させ、可読性を保証するための規約。**UIを変
 
 ## 9. AIプロバイダ表示
 
-対応プロバイダは **OpenAI（GPT-5.6 Luna） / Gemini / ローカルAI** の3つのみ。定義は `src/lib/constants.ts` の `AI_PROVIDERS` が単一の情報源。
+対応プロバイダは **OpenAI（GPT-6 Luna） / Gemini / ローカルAI** の3つのみ。定義は `src/lib/constants.ts` の `AI_PROVIDERS` が単一の情報源。
 
 - プロバイダ選択ボタンは `--provider-color` にブランド色を渡し、選択中のみ着色する
 - APIキーが必要なプロバイダは「要APIキー」を明示する
