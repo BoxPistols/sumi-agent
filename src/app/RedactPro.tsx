@@ -7196,6 +7196,8 @@ export default function App(){
     if(prov){
       const migrated=migrateProviderId(prov);
       if(migrated!==prov)await storage.set("rp_provider",migrated);
+      // 外したGeminiのキーをOpenAIへ送らないよう消す（未入力ならサーバー共用キーを使う）
+      if(prov==="google"&&migrated!==prov){await storage.del("rp_api_key");setSettings(p=>({...p,apiKey:""}));}
       setSettings(p=>({...p,provider:migrated}));
     }
     const px=await safeGet("rp_proxy_url");if(px)setSettings(p=>({...p,proxyUrl:px}));
