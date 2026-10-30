@@ -34,6 +34,8 @@
   --rp-diffAddBorder: #2a5a3a;
   --rp-diffDelBorder: #5a2a2a;
   --rp-scrollThumb: #57534e;
+  /* 要確認・注意の文字色（amber を各テーマで 4.5:1 以上に調整。#d97706 は amberDim 上で 4.4:1） */
+  --rp-warn: #f59e0b;
 }
 
 [data-theme='light'] {
@@ -52,6 +54,8 @@
   --rp-diffAddBorder: #a5d6a7;
   --rp-diffDelBorder: #fecaca;
   --rp-scrollThumb: #a8a29e;
+  /* 要確認・注意の文字色（ライトでは #D97706 が 3.2:1 しかないため濃い amber） */
+  --rp-warn: #92400e;
 }
 
 /* ═══ Base ═══ */
@@ -213,9 +217,6 @@ textarea:focus-visible {
   .rp-editor-wrap > [style*='cursor: col-resize'],
   .rp-editor-wrap > div[style*='width: 5px'] {
     display: none !important;
-  }
-  .rp-upload-grid {
-    grid-template-columns: 1fr !important;
   }
   .rp-upload-main {
     grid-template-columns: 1fr !important;

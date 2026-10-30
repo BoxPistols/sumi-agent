@@ -22,6 +22,16 @@ export const ACCEPTED_FORMAT_LABELS = [
   'TXT',
 ] as const
 
+/**
+ * input / drop で受け取ったファイル群から、呼び出し側に渡す配列を作る。
+ * multiple=false のときは先頭の1件だけを返す。空なら空配列。
+ */
+export function selectFiles(list: ArrayLike<File> | null | undefined, multiple: boolean): File[] {
+  if (!list || list.length === 0) return []
+  const files = Array.from(list)
+  return multiple ? files : files.slice(0, 1)
+}
+
 export interface DropZoneProps {
   /** ファイルが選ばれたとき。multiple=false のときは常に1件 */
   onFiles: (files: File[]) => void
@@ -53,9 +63,9 @@ export function DropZone({
     if (!disabled) inputRef.current?.click()
   }
 
-  const emit = (list: FileList | null | undefined) => {
-    if (!list || list.length === 0) return
-    onFiles(multiple ? Array.from(list) : [list[0]])
+  const emit = (list: ArrayLike<File> | null | undefined) => {
+    const files = selectFiles(list, multiple)
+    if (files.length > 0) onFiles(files)
   }
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -118,6 +128,7 @@ export function DropZone({
         aria-label="ファイルを選択"
         disabled={disabled}
         onClick={(e) => {
+          // ゾーン全体の onClick と二重にダイアログを開かない
           e.stopPropagation()
           openPicker()
         }}

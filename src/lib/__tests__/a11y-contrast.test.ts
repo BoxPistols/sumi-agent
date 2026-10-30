@@ -180,3 +180,69 @@ describe('A11y コントラスト比（WCAG A レベル）', () => {
     })
   })
 })
+
+/** 半透明の前景色を背景に合成した結果の hex を返す（Dim 系トークンの実効色） */
+function blend(fgHex: string, alpha: number, bgHex: string): string {
+  const fg = hexToRgb(fgHex)
+  const bg = hexToRgb(bgHex)
+  const mix = fg.map((c, i) => Math.round(c * alpha + bg[i] * (1 - alpha)))
+  return '#' + mix.map((c) => c.toString(16).padStart(2, '0')).join('')
+}
+
+describe('初見ユーザー向けUI（取り込む / 確認する画面）', () => {
+  const AMBER = '#D97706'
+  // --rp-warn（要確認・注意の文字色）。ライトは #D97706 だと 2.9:1 で不合格のため濃い amber
+  const WARN_LIGHT = '#92400E'
+  const WARN_DARK = '#F59E0B'
+  const TEXT3_LIGHT = '#78716C'
+  const TEXT3_DARK = '#78716C'
+
+  describe('取り込みゾーンの主ボタン（accent 塗り + bg 文字）', () => {
+    it('ライト: 和紙色の文字が墨色の塗りに対して AA を満たす', () => {
+      expect(contrastRatio(LIGHT.bg, LIGHT.accent)).toBeGreaterThanOrEqual(4.5)
+    })
+    it('ダーク: 墨色の文字が和紙色の塗りに対して AA を満たす', () => {
+      expect(contrastRatio(DARK.bg, DARK.accent)).toBeGreaterThanOrEqual(4.5)
+    })
+  })
+
+  describe('確認画面の初回案内（accentDim を bg2 に重ねた面 + text2 文字）', () => {
+    it('ライト', () => {
+      const surface = blend(LIGHT.accent, 0.06, LIGHT.bg2)
+      expect(contrastRatio(LIGHT.text2, surface)).toBeGreaterThanOrEqual(4.5)
+    })
+    it('ダーク', () => {
+      const surface = blend(DARK.accent, 0.1, DARK.bg2)
+      expect(contrastRatio(DARK.text2, surface)).toBeGreaterThanOrEqual(4.5)
+    })
+    it('閉じるボタン（text2）は両テーマで読める', () => {
+      expect(
+        contrastRatio(LIGHT.text2, blend(LIGHT.accent, 0.06, LIGHT.bg2)),
+      ).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(DARK.text2, blend(DARK.accent, 0.1, DARK.bg2))).toBeGreaterThanOrEqual(
+        4.5,
+      )
+    })
+  })
+
+  describe('「要確認」バッジ（--rp-warn 文字 + amberDim 背景）', () => {
+    it('ライト: 本文基準 4.5:1 以上', () => {
+      expect(contrastRatio(WARN_LIGHT, blend(AMBER, 0.1, LIGHT.bg2))).toBeGreaterThanOrEqual(4.5)
+    })
+    it('ダーク: 本文基準 4.5:1 以上', () => {
+      expect(contrastRatio(WARN_DARK, blend(AMBER, 0.1, DARK.bg2))).toBeGreaterThanOrEqual(4.5)
+    })
+    it('退行防止: ライトで #D97706 をそのまま文字色にすると 3:1 を下回る', () => {
+      expect(contrastRatio(AMBER, blend(AMBER, 0.1, LIGHT.bg2))).toBeLessThan(3)
+    })
+  })
+
+  describe('補足テキスト（text3）は UI 境界基準 3:1 を満たす', () => {
+    it('ライト: 対応形式・Pro誘導の文字 on bg2', () => {
+      expect(contrastRatio(TEXT3_LIGHT, LIGHT.bg2)).toBeGreaterThanOrEqual(3)
+    })
+    it('ダーク: 対応形式・Pro誘導の文字 on bg2', () => {
+      expect(contrastRatio(TEXT3_DARK, DARK.bg2)).toBeGreaterThanOrEqual(3)
+    })
+  })
+})

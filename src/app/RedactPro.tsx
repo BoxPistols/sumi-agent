@@ -54,7 +54,7 @@ import { getCurrentFlowStep, FLOW_EVENT_SET_EXPORT, FLOW_EVENT_EXPORT_STATE, FLO
 
 // ═══ Theme System (CSS Custom Properties) ═══
 const C={accent:"#1C1917",accentDim:"rgba(28,25,23,0.08)",red:"#DC2626",redDim:"rgba(220,38,38,0.1)",green:"#059669",greenDim:"rgba(5,150,105,0.1)",amber:"#D97706",amberDim:"rgba(217,119,6,0.1)",purple:"#9B6DFF",purpleDim:"rgba(155,109,255,0.1)",cyan:"#22D3EE",cyanDim:"rgba(34,211,238,0.1)",sumi:"#1C1917",washi:"#FAF9F6",stamp:"#DC2626",font:"'Noto Sans JP','DM Sans',system-ui,sans-serif",mono:"'JetBrains Mono','Fira Code',monospace"};
-const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(--rp-bg)",bg2:"var(--rp-bg2)",surface:"var(--rp-surface)",surfaceAlt:"var(--rp-surfaceAlt)",border:"var(--rp-border)",text:"var(--rp-text)",text2:"var(--rp-text2)",text3:"var(--rp-text3)",diffAdd:"var(--rp-diffAdd)",diffDel:"var(--rp-diffDel)",diffAddBorder:"var(--rp-diffAddBorder)",diffDelBorder:"var(--rp-diffDelBorder)"};
+const T={...C,accent:"var(--rp-accent)",accentDim:"var(--rp-accentDim)",bg:"var(--rp-bg)",bg2:"var(--rp-bg2)",surface:"var(--rp-surface)",surfaceAlt:"var(--rp-surfaceAlt)",border:"var(--rp-border)",text:"var(--rp-text)",text2:"var(--rp-text2)",text3:"var(--rp-text3)",diffAdd:"var(--rp-diffAdd)",diffDel:"var(--rp-diffDel)",diffAddBorder:"var(--rp-diffAddBorder)",diffDelBorder:"var(--rp-diffDelBorder)",warn:"var(--rp-warn)"};
 
 // ═══ Multi-Provider AI Models ═══
 // Geminiは2.5 Flashが新規の利用者に404を返すため外した。保存済みのgoogleはmigrateProviderIdでopenaiへ戻る
@@ -1650,8 +1650,8 @@ async function aiReformat(redactedText,instruction,apiKey,model){
 function fileTimestamp(){const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;}
 
 // ═══ Batch processing: standalone file processor ═══
-async function processFileEntry(file,maskConfig,settings,callbacks,customKeywords){
-  const {onStage,onProgress,signal,isLite=false}=callbacks||{};
+async function processFileEntry(file,maskConfig,settings,options,customKeywords){
+  const {onStage,onProgress,signal,isLite=false}=options||{};
   // Lite版はAIを使わない。呼び出し側に頼らず関数自身でも不変条件を守る（UploadScreen と同じ）
   const aiOn=!isLite&&settings?.aiDetect!==false;
   const runModels=aiOn?getModelsForRun(settings):null;
@@ -1847,9 +1847,9 @@ function generateExport(rawContent,format,baseName,meta){
 function triggerDownload(ex){try{if(ex.isPrintPdf){const blob=new Blob([ex.data],{type:ex.mime});const url=URL.createObjectURL(blob);const win=window.open(url,"_blank");if(win)win.focus();return;}const a=document.createElement("a");a.href=ex.dataUri||("data:"+ex.mime+","+encodeURIComponent(ex.data));a.download=ex.name;document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){}}
 
 // ═══ UI primitives ═══
-function Badge({ children, color, bg, style: sx }) {
+function Badge({ children, color, bg, style: sx, ...rest }) {
     return (
-        <span className={s.badge} style={{ color, background: bg, ...sx }}>
+        <span {...rest} className={s.badge} style={{ color, background: bg, ...sx }}>
             {children}
         </span>
     )
@@ -4753,6 +4753,8 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                   <div>
                       {!isLite && <div
                           data-intro="input-tabs"
+                          role="tablist"
+                          aria-label="取り込み方法"
                           className={`rp-input-tabs ${s['up-input-tabs']}`}
                       >
                           {[
@@ -4775,6 +4777,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                       </div>}
                       <div
                           className={isLite ? undefined : s['up-input-body']}
+                          role={isLite ? undefined : 'tabpanel'}
                           data-top={isLite ? 'none' : 'file'}
                           style={isLite ? undefined : {borderTop:'none'}}
                       >
@@ -6028,8 +6031,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       );
                   })}
                   <span style={{flex:1}}/>
-                  <button title='すべての検出を有効にする' aria-label='すべての検出を有効にする' onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>すべてON</button>
-                  <button title='すべての検出を無効にする' aria-label='すべての検出を無効にする' onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>すべてOFF</button>
+                  <button type="button" title='すべての検出を有効にする' aria-label='すべてON' onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>すべてON</button>
+                  <button type="button" title='すべての検出を無効にする' aria-label='すべてOFF' onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>すべてOFF</button>
               </div>
               )}
               {advisorDraft ? (
@@ -6469,6 +6472,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   <div style={{ display: 'flex', gap: 6 }}>
                       <Btn
                           title='すべての検出を有効にする'
+                          aria-label='すべてON'
                           variant='ghost'
                           onClick={enableAll}
                           style={{
@@ -6481,6 +6485,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       </Btn>
                       <Btn
                           title='すべての検出を無効にする'
+                          aria-label='すべてOFF'
                           variant='ghost'
                           onClick={disableAll}
                           style={{
@@ -6613,7 +6618,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                                   {item.confidence &&
                                                       item.confidence < 0.9 && (
                                                           <Badge
-                                                              color={T.amber}
+                                                              color={T.warn}
                                                               bg={T.amberDim}
                                                               style={{
                                                                   fontSize: 11,
@@ -7366,10 +7371,12 @@ export default function App(){
                       onClick={() => setShowSettings(true)}
                       className={s['app-settings-btn']}
                   >
-                      <span
-                          className={s['app-settings-dot']}
-                          style={{ background: curProv.color }}
-                      />
+                      {!isLite && (
+                          <span
+                              className={s['app-settings-dot']}
+                              style={{ background: curProv.color }}
+                          />
+                      )}
                       <span>{isLite?'設定':(settings.aiProfile==='balanced'?'Auto':curModel?.label || '設定')}</span>
                       <svg
                           width='16'
