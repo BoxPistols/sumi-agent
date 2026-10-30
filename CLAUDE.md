@@ -20,7 +20,7 @@ Sumi -- 経歴書の個人情報 自動検出・マスキングツール。個�
 | ----------------- | ---------------------------------------------------------- |
 | `pnpm dev`        | 開発サーバー（portless経由、`http://sumi.localhost:1355`） |
 | `pnpm build`      | プロダクションビルド（distDir: `.next-build`）             |
-| `pnpm test`       | Vitest テスト実行（526テスト）                             |
+| `pnpm test`       | Vitest テスト実行（534テスト）                             |
 | `pnpm test:watch` | Vitest ウォッチモード                                      |
 | `pnpm lint`       | ESLint                                                     |
 | `pnpm type-check` | `tsc --noEmit`                                             |
@@ -70,7 +70,7 @@ src/
     flow-steps.ts         -- ステップ定義・getFlowStepAction・画面間イベント名
     detection.ts          -- PII検出エンジン（正規表現 + 辞書 + ヒューリスティクス）
     redaction.ts          -- マスキングエンジン
-    __tests__/            -- Vitest テスト（13ファイル。components/__tests__ と app/__tests__ にも各1ファイル）
+    __tests__/            -- Vitest テスト（13ファイル。components/__tests__ に2、app/__tests__ に1ファイル）
 ```
 
 ### RedactPro.tsx 内部構造（主要コンポーネント）

@@ -41,8 +41,15 @@ export interface DropZoneProps {
   size?: 'md' | 'lg'
   /** タブ付きボックスの中に置くときは外枠を描かない */
   embedded?: boolean
+  /**
+   * 送信先についての注記。既定は Lite の「ブラウザ内で処理・サーバー保存なし」。
+   * Pro のように AI やサーバー抽出へ送る場合は、その例外を正確に書いた文を渡す
+   */
+  privacyNote?: string
   disabled?: boolean
 }
+
+export const DEFAULT_PRIVACY_NOTE = 'ファイルはブラウザ内で処理され、サーバーには保存されません。'
 
 /**
  * ファイル取り込みゾーン。
@@ -54,6 +61,7 @@ export function DropZone({
   multiple = false,
   size = 'md',
   embedded = false,
+  privacyNote = DEFAULT_PRIVACY_NOTE,
   disabled = false,
 }: DropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -138,7 +146,7 @@ export function DropZone({
       <p className={styles.title}>または、ここにファイルをドラッグ＆ドロップ</p>
       <p className={styles.desc}>
         {multiple ? '複数ファイルをまとめて選ぶと一括で処理します。' : ''}
-        ファイルはブラウザ内で処理され、サーバーには保存されません。
+        {privacyNote}
       </p>
       <p className={styles.formats}>対応形式: {ACCEPTED_FORMAT_LABELS.join(' / ')}</p>
     </div>

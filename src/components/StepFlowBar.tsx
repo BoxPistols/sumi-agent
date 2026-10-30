@@ -74,7 +74,7 @@ export function StepFlowBar({
                       ? '解析が完了すると進めます'
                       : step.id === 'export' && canExport
                         ? 'エクスポート画面を開く'
-                        : step.action
+                        : getFlowStepAction(step.id, { isLite })
               }
               onClick={() => {
                 if (clickable) onStepClick(step.id)

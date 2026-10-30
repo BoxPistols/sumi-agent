@@ -12,6 +12,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import {
   ACCEPTED_EXTENSIONS,
   ACCEPTED_FORMAT_LABELS,
+  DEFAULT_PRIVACY_NOTE,
   DropZone,
   selectFiles,
 } from '../upload/DropZone'
@@ -81,8 +82,16 @@ describe('DropZone の描画', () => {
     for (const label of ACCEPTED_FORMAT_LABELS) expect(html).toContain(label)
   })
 
-  it('ブラウザ内処理の説明を含む（信頼の根拠を取り込み口にも示す）', () => {
+  it('既定（Lite）ではブラウザ内処理・サーバー保存なしの説明を含む', () => {
+    expect(render()).toContain(DEFAULT_PRIVACY_NOTE)
     expect(render()).toContain('サーバーには保存されません')
+  })
+
+  it('privacyNote を渡すと送信先の例外（Pro）を正確に説明できる', () => {
+    const note = 'AI検出ではサーバーに送信しますが、保存はしません。'
+    const html = render({ multiple: true, privacyNote: note })
+    expect(html).toContain(note)
+    expect(html).not.toContain(DEFAULT_PRIVACY_NOTE)
   })
 
   it('size / embedded / disabled が data 属性に反映される', () => {

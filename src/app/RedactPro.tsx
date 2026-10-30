@@ -2163,12 +2163,12 @@ function ShortcutsModal({onClose,hasEditorContext}){
       {key:'Esc',desc:'ダイアログを閉じる'},
     ]},
     {title:'ビュー切替',pro:true,editor:true,shortcuts:[
-      {key:'1',desc:'マスク'},
-      {key:'2',desc:'Diff'},
-      {key:'3',desc:'Raw'},
-      {key:'4',desc:'Raw Diff'},
+      {key:'1',desc:'マスク後'},
+      {key:'2',desc:'差分'},
+      {key:'3',desc:'生テキスト'},
+      {key:'4',desc:'生テキストとの差分'},
       {key:'5',desc:'AI整形'},
-      {key:'6',desc:'AI Diff'},
+      {key:'6',desc:'AI整形との差分'},
     ]},
     {title:'エディタ操作',pro:true,editor:true,shortcuts:[
       {key:'M',desc:'マスク / 元文 切替'},
@@ -2351,10 +2351,10 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                           <ul className={s['help-feature-desc']}>
                               <li><strong>マスク後</strong> — マスキング済みテキストを表示</li>
                               <li><strong>差分</strong> — 元テキストとマスク後を並べて比較</li>
-                              <li><strong>Raw</strong> — ファイルから抽出した生テキスト</li>
-                              <li><strong>Raw Diff</strong> — 生テキストとAI整形後の差分</li>
+                              <li><strong>生テキスト</strong> — ファイルから抽出したままのテキスト</li>
+                              <li><strong>生テキストとの差分</strong> — 抽出したままのテキストとAI整形後の差分</li>
                               <li><strong>AI整形</strong> — AIが読みやすく整形したテキスト</li>
-                              <li><strong>AI Diff</strong> — マスク結果とAI整形後の差分</li>
+                              <li><strong>AI整形との差分</strong> — マスク結果とAI整形後の差分</li>
                           </ul>
                       </div>
 
@@ -2478,10 +2478,10 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                           <div className={s['help-kbd-grid']} style={{paddingLeft:22}}>
                               <kbd className={s['help-kbd']}>1</kbd><span>マスク後を表示</span>
                               <kbd className={s['help-kbd']}>2</kbd><span>差分を表示</span>
-                              <kbd className={s['help-kbd']}>3</kbd><span>Raw表示</span>
-                              <kbd className={s['help-kbd']}>4</kbd><span>Raw Diff表示</span>
+                              <kbd className={s['help-kbd']}>3</kbd><span>生テキストを表示</span>
+                              <kbd className={s['help-kbd']}>4</kbd><span>生テキストとの差分を表示</span>
                               <kbd className={s['help-kbd']}>5</kbd><span>AI整形表示</span>
-                              <kbd className={s['help-kbd']}>6</kbd><span>AI Diff表示</span>
+                              <kbd className={s['help-kbd']}>6</kbd><span>AI整形との差分を表示</span>
                               <kbd className={s['help-kbd']}>M</kbd><span>マスク / 元文 切替</span>
                               <kbd className={s['help-kbd']}>P</kbd><span>プレビュー表示切替</span>
                               <kbd className={s['help-kbd']}>W</kbd><span>編集モード切替</span>
@@ -4056,7 +4056,7 @@ function DiffView({original,modified,label,modifiedLabel}){
       <div className={s['diff-wrap']}>
           <div className={s['diff-header']}>
               <span className={s['diff-header-label']}>
-                  Diff: {label || '変更箇所'}
+                  差分: {label || '変更箇所'}
               </span>
               {chunks.length>0&&(
                 <div className={s['diff-nav']}>
@@ -4220,8 +4220,9 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
     let originalRaw=rawText||text;
     const runModels = aiOn ? getModelsForRun(settings) : null
 
-    // サーバーサイド pdftotext フォールバック（pdf.js CIDフォント問題対策）
-    if(format==="PDF"&&pdfData&&sparsePages&&sparsePages.length>0&&pageCount>0){
+    // サーバーサイド pdftotext フォールバック（pdf.js CIDフォント問題対策）。
+    // PDF全体を /api/pdf/extract に送るため、ブラウザ内完結を約束する Lite では使わない（Pro のみ）
+    if(!isLite&&format==="PDF"&&pdfData&&sparsePages&&sparsePages.length>0&&pageCount>0){
       const sparseRatio=sparsePages.length/pageCount;
       if(sparseRatio>=0.3){
         try{
@@ -4344,7 +4345,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
       const analysisMs=startAtRef.current?Date.now()-startAtRef.current:0;
       onAnalyze({file_name:name,file_format:format,page_count:pageCount,text_preview:workText.slice(0,8000),fullText:workText,rawText:originalRaw,sparsePageCount:sparsePages?.length||0,detections:wm,stats:{total:wm.length,regex:wm.filter(d=>d.source==="regex").length,dict:wm.filter(d=>d.source==="dict").length,ai:wm.filter(d=>d.source==="ai").length,heuristic:wm.filter(d=>d.source==="heuristic").length},fileSize,isDemo:fileSize==="DEMO",analysis_ms:analysisMs,maskOpts:{keepPrefecture:!!mask.keepPrefecture,nameInitial:!!mask.nameInitial},xlMeta:xlMeta||null});
     },200);
-  },[onAnalyze,mask,settings,aiOn,customKeywords]);
+  },[onAnalyze,mask,settings,aiOn,customKeywords,isLite]);
 
   const handleFile=useCallback(async(file)=>{if(!file)return;startAtRef.current=Date.now();setElapsedMs(0);setAiStatus("");setLoading(true);setError(null);setFileName(file.name);setStage(0);try{setStage(1);const p=await parseFile(file,(msg)=>setAiStatus(msg));await processText(p.text,file.name,p.format,p.pageCount,`${(file.size/1024).toFixed(1)} KB`,p.text,p.sparsePages,p.pdfData,p.xlMeta);}catch(e){setError(e.message);setLoading(false);}},[processText]);
   const handleDemo=useCallback(async(type)=>{const s=SAMPLES[type];if(!s)return;startAtRef.current=Date.now();setElapsedMs(0);setAiStatus("");setError(null);setLoading(true);setFileName(s.name);setStage(0);setTimeout(async()=>{setStage(1);setTimeout(async()=>{await processText(s.text,s.name,s.format,s.pageCount,"DEMO");},80);},80);},[processText]);
@@ -4510,8 +4511,8 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
               {/* セキュリティ根拠バッジ（文言は実装と一致させる: LiteはAI不使用） */}
               <div className={s['up-badges']}>
                   {[
-                      {text:'ブラウザ内で処理',tip:'ファイルの読み取りと個人情報の検出はブラウザ内で行います。サーバーへのアップロードはありません'},
-                      {text:'サーバー保存なし',tip:'データベースは使いません。処理結果はブラウザのメモリ上にだけ存在し、タブを閉じると消えます'},
+                      {text:'ブラウザ内で処理',tip:'ファイルの読み取りと個人情報の検出はブラウザ内で行います。Lite版はサーバーに一切送信しません。Pro版ではAI機能と、文字を取り出しにくいPDFのサーバー抽出を使うときだけ送信します'},
+                      {text:'サーバー保存なし',tip:'データベースには保存しません。処理結果はブラウザのメモリ上にだけ存在し、タブを閉じると消えます。Pro版のサーバー抽出で使う一時ファイルも処理後に削除されます'},
                       {text:'AIは任意（Pro版）',tip:'AI検出・AI整形はPro版で有効にした場合のみ動作します。Lite版はAIを使いません'},
                       {text:'AI学習に不使用',tip:'AI利用時のみテキストをAPIに送信しますが、各社の規約によりモデルの学習には使われません'},
                   ].map((b,i)=>(
@@ -4786,6 +4787,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                   multiple={!isLite}
                                   size={isLite ? 'lg' : 'md'}
                                   embedded={!isLite}
+                                  privacyNote={isLite ? undefined : 'AI検出や、文字を取り出しにくいPDFの抽出ではサーバーに送信しますが、保存はしません。'}
                                   onFiles={(files) => {
                                       if(!isLite&&files.length>1&&onSubmitBatch){onSubmitBatch(files,mask,customKeywords);return;}
                                       handleFile(files[0]);
@@ -5878,56 +5880,72 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           {!isLite && hasRawText && (
                               <>
                                   <button
-                                      title='Raw: ファイルから抽出した生テキストを表示'
-                                      aria-label='Raw: ファイルから抽出した生テキストを表示'
+                                      type="button"
+                                      title='生テキスト: ファイルから抽出したままのテキストを表示'
+                                      aria-label='生テキスト: ファイルから抽出したままのテキストを表示'
+                                      aria-pressed={viewMode === 'raw'}
                                       onClick={() => setViewMode('raw')}
                                       className={s['ed-view-tab']}
                                       style={{
+                                          display: 'flex', alignItems: 'center', gap: 5,
                                           background: viewMode === 'raw' ? T.redDim : 'transparent',
                                           color: viewMode === 'raw' ? T.red : T.text3,
                                       }}
                                   >
                                       <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M4 1.5h5l4 4v9H4a1 1 0 01-1-1v-11a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M9 1.5v4h4" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+                                      <span>生テキスト</span>
                                   </button>
                                   <button
-                                      title='Raw Diff: 生テキストとAI整形後の違いを比較'
-                                      aria-label='Raw Diff: 生テキストとAI整形後の違いを比較'
+                                      type="button"
+                                      title='生テキストとの差分: 抽出したままのテキストとAI整形後を並べて比較'
+                                      aria-label='生テキストとの差分: 抽出したままのテキストとAI整形後を並べて比較'
+                                      aria-pressed={viewMode === 'raw-diff'}
                                       onClick={() => setViewMode('raw-diff')}
                                       className={s['ed-view-tab']}
                                       style={{
+                                          display: 'flex', alignItems: 'center', gap: 5,
                                           background: viewMode === 'raw-diff' ? 'rgba(240,86,86,0.15)' : 'transparent',
                                           color: viewMode === 'raw-diff' ? T.red : T.text3,
                                       }}
                                   >
                                       <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M3 1.5h4l3 3v4H3a1 1 0 01-1-1v-5a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M7 1.5v3h3" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M11 8v5a1 1 0 01-1 1H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M13 10l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      <span>生テキストとの差分</span>
                                   </button>
                               </>
                           )}
                           {!isLite && aiResult && (
                               <>
                                   <button
+                                      type="button"
                                       title='AI整形: AIが読みやすく整形したテキストを表示'
                                       aria-label='AI整形: AIが読みやすく整形したテキストを表示'
+                                      aria-pressed={viewMode === 'ai'}
                                       onClick={() => setViewMode('ai')}
                                       className={s['ed-view-tab']}
                                       style={{
+                                          display: 'flex', alignItems: 'center', gap: 5,
                                           background: viewMode === 'ai' ? T.purpleDim : 'transparent',
                                           color: viewMode === 'ai' ? T.purple : T.text3,
                                       }}
                                   >
-                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
+                                      <span>AI整形</span>
                                   </button>
                                   <button
-                                      title='AI Diff: マスク結果とAI整形後の違いを比較'
-                                      aria-label='AI Diff: マスク結果とAI整形後の違いを比較'
+                                      type="button"
+                                      title='AI整形との差分: マスク結果とAI整形後を並べて比較'
+                                      aria-label='AI整形との差分: マスク結果とAI整形後を並べて比較'
+                                      aria-pressed={viewMode === 'ai-diff'}
                                       onClick={() => setViewMode('ai-diff')}
                                       className={s['ed-view-tab']}
                                       style={{
+                                          display: 'flex', alignItems: 'center', gap: 5,
                                           background: viewMode === 'ai-diff' ? T.cyanDim : 'transparent',
                                           color: viewMode === 'ai-diff' ? T.cyan : T.text3,
                                       }}
                                   >
-                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 2l1 3L10 6l-3 1L6 10 5 7 2 6l3-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M11 8v5a1 1 0 01-1 1H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M13 10l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 2l1 3L10 6l-3 1L6 10 5 7 2 6l3-1z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M11 8v5a1 1 0 01-1 1H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M13 10l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      <span>AI整形との差分</span>
                                   </button>
                               </>
                           )}
@@ -5935,11 +5953,14 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       {!isLite && !showDiff && !showAiDiff && viewMode !== 'raw-diff' && !editMode && (
                           <button
                               data-intro="mask-toggle"
-                              title={showRedacted ? 'マスク済みテキストを表示中（クリックで元文に切替）' : '元のテキストを表示中（クリックでマスク表示に切替）'}
-                              aria-label={showRedacted ? 'マスク済みテキスト表示中' : '元テキスト表示中'}
+                              type="button"
+                              title={showRedacted ? '元のテキストを表示する（マスクを一時的に外して見比べる）' : 'マスク済みテキストに戻す'}
+                              aria-label='元文を表示'
+                              aria-pressed={!showRedacted}
                               onClick={() => setShowRedacted(!showRedacted)}
                               className={s['ed-view-tab']}
                               style={{
+                                  display: 'flex', alignItems: 'center', gap: 5,
                                   background: showRedacted ? T.redDim : 'transparent',
                                   color: showRedacted ? T.red : T.text3,
                                   borderRadius: 8,
@@ -5950,12 +5971,15 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                 ? <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M6.5 6.5a2.5 2.5 0 003 3" stroke="currentColor" strokeWidth="1.2"/><path d="M2 7.5C3.3 5 5.5 3.5 8 3.5c1 0 1.9.2 2.8.6M14 7.5c-.6 1.2-1.4 2.2-2.4 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
                                 : <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 3.5C5.5 3.5 3.3 5 2 7.5c1.3 2.5 3.5 4 6 4s4.7-1.5 6-4c-1.3-2.5-3.5-4-6-4z" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.2"/></svg>
                               }
+                              <span>元文を表示</span>
                           </button>
                       )}
                       {!isLite && <button
                           data-intro="edit-button"
+                          type="button"
                           title='編集: テキストを直接編集してA4プレビューに即反映'
-                          aria-label={editMode ? '編集完了' : '編集'}
+                          aria-label={editMode ? '編集を終了' : '編集'}
+                          aria-pressed={editMode}
                           onClick={() => {
                               if(!editMode){
                                   setEditedText(viewMode==="ai"&&aiResult?aiResult:redacted);
@@ -5968,13 +5992,15 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           }}
                           className={s['ed-view-tab']}
                           style={{
+                              display: 'flex', alignItems: 'center', gap: 5,
                               background: editMode ? T.accentDim : 'transparent',
                               color: editMode ? T.accent : T.text3,
                               borderRadius: 8,
                               border: `1px solid ${editMode ? T.accent : T.border}`,
                           }}
                       >
-                          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M11.5 2.5l2 2L5 13H3v-2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M9.5 4.5l2 2" stroke="currentColor" strokeWidth="1.2"/></svg>
+                          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11.5 2.5l2 2L5 13H3v-2z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/><path d="M9.5 4.5l2 2" stroke="currentColor" strokeWidth="1.2"/></svg>
+                          <span>{editMode ? '編集を終了' : '編集'}</span>
                       </button>}
                       {!isLite && <>
                       <div style={{width:1,height:20,background:T.border,marginLeft:4,marginRight:2,flexShrink:0}}/>
@@ -6062,7 +6088,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   <DiffView
                       original={data.rawText.slice(0, 8000)}
                       modified={data.text_preview}
-                      label='AI テキスト再構成 (Raw → Clean)'
+                      label='AI テキスト再構成（抽出したまま → 整形後）'
                   />
               ) : showAiDiff && aiResult ? (
                   <DiffView
@@ -7461,7 +7487,7 @@ export default function App(){
           <footer className={s['app-footer']}>
             <span>© {new Date().getFullYear()} Sumi</span>
             <span>|</span>
-            <span className={s['app-footer-privacy']} title="個人情報はブラウザの外に出ません。サーバーやDBへの保存・送信は一切行いません。AI機能利用時のみAPIに送信されますが、各社のAPI利用規約によりトレーニングには使用されません。"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>個人情報はブラウザの外に出ません</span>
+            <span className={s['app-footer-privacy']} title="Lite版は個人情報をブラウザの外に出しません。Pro版ではAI機能と、文字を取り出しにくいPDFのサーバー抽出を使うときだけ送信します（保存はせず、一時ファイルは処理後に削除）。AIへ送った内容は各社のAPI利用規約によりトレーニングには使用されません。"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>個人情報はブラウザの外に出ません</span>
             <a href="https://github.com/BoxPistols/sumi-agent" target="_blank" rel="noopener noreferrer" className={s['app-footer-link']}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
               GitHub
