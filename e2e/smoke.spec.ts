@@ -38,13 +38,13 @@ test.describe('TOP画面', () => {
     await proRadio.click()
     // Pro切替後のツアーを除去
     await dismissTour(page)
-    // Pro版にはURLスクレイピングタブがある
-    await expect(page.getByText('URLスクレイピング')).toBeVisible()
+    // Pro版には「URLから取り込む」タブがある
+    await expect(page.getByText('URLから取り込む')).toBeVisible()
 
     // Liteに戻す
     const liteRadio = page.getByRole('radio', { name: /Lite/ })
     await liteRadio.click()
-    await expect(page.getByText('URLスクレイピング')).not.toBeVisible()
+    await expect(page.getByText('URLから取り込む')).not.toBeVisible()
   })
 
   test('テーマ切替', async ({ page }) => {
@@ -94,5 +94,54 @@ test.describe('PreviewModal', () => {
     await expect(expandBtn).toBeVisible()
     await expandBtn.click()
     await expect(dialog.getByRole('button', { name: '縮小' })).toBeVisible()
+  })
+})
+
+test.describe('初見ユーザー導線（サンプルで試す）', () => {
+  test('取り込みゾーンに主ボタン「ファイルを選択」がある', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('button', { name: 'ファイルを選択' })).toBeVisible()
+    await expect(page.getByText('または、ここにファイルをドラッグ＆ドロップ')).toBeVisible()
+  })
+
+  test('サンプル → 確認する（案内を閉じると記憶）→ 整える → 書き出す', async ({ page }) => {
+    await page.goto('/')
+
+    // ファイルがなくてもサンプルで流れを体験できる
+    await page.getByRole('button', { name: /経歴書サンプル（PDF）/ }).click()
+    await expect(page.getByText('検出結果')).toBeVisible({ timeout: 15000 })
+    await dismissTour(page)
+
+    // 初回案内: スイッチの意味を1文で説明し、閉じると記憶される
+    const note = page.getByRole('note')
+    await expect(note).toBeVisible()
+    await expect(note).toContainText('オンの項目がマスクされます')
+    await page.getByRole('button', { name: 'この案内を閉じる' }).click()
+    await expect(note).toHaveCount(0)
+    expect(await page.evaluate(() => localStorage.getItem('rp_hint_review_done'))).toBe('1')
+
+    // 件数が「n件をマスク」で読める
+    await expect(page.getByText(/\d+件をマスク/)).toBeVisible()
+
+    // 表示切替は文字ラベル付き
+    await expect(page.getByRole('button', { name: /^マスク後/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^差分/ })).toBeVisible()
+
+    // 整える → 書き出す
+    await page.getByRole('button', { name: '次へ: 整える' }).click()
+    await expect(page.getByText('A4 プレビュー')).toBeVisible()
+    await page.getByRole('button', { name: '次へ: 書き出す' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+  })
+
+  test('Pro版の入力タブは平易な文言で tablist になっている', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('radio', { name: /Pro/ }).click()
+    await dismissTour(page)
+    const tablist = page.getByRole('tablist', { name: '取り込み方法' })
+    await expect(tablist.getByRole('tab', { name: 'ファイル' })).toBeVisible()
+    await expect(tablist.getByRole('tab', { name: 'URLから取り込む' })).toBeVisible()
+    await expect(tablist.getByRole('tab', { name: 'テキストを貼り付け' })).toBeVisible()
+    await expect(page.getByText('サンプルで試す', { exact: true })).toBeVisible()
   })
 })

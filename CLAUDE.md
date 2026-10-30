@@ -20,7 +20,7 @@ Sumi -- 経歴書の個人情報 自動検出・マスキングツール。個�
 | ----------------- | ---------------------------------------------------------- |
 | `pnpm dev`        | 開発サーバー（portless経由、`http://sumi.localhost:1355`） |
 | `pnpm build`      | プロダクションビルド（distDir: `.next-build`）             |
-| `pnpm test`       | Vitest テスト実行（359テスト）                             |
+| `pnpm test`       | Vitest テスト実行（534テスト）                             |
 | `pnpm test:watch` | Vitest ウォッチモード                                      |
 | `pnpm lint`       | ESLint                                                     |
 | `pnpm type-check` | `tsc --noEmit`                                             |
@@ -61,11 +61,16 @@ src/
     RedactPro.tsx         -- メインUI（~8400行モノリス、@ts-nocheck）
     api/ai/route.ts       -- AIプロキシ（レートリミット付き）
     api/scrape/route.ts   -- スクレイピングプロキシ（SSRF対策済み）
+  components/
+    StepFlowBar.tsx       -- 4ステップの現在地バー（Lite/Proで説明文を出し分け）
+    upload/DropZone.tsx   -- 取り込みゾーン（「ファイルを選択」が画面の主アクション）
+    upload/SampleCard.tsx -- 「サンプルで試す」カード
   lib/
     constants.ts          -- 定数・型定義・AIプロバイダ設定
+    flow-steps.ts         -- ステップ定義・getFlowStepAction・画面間イベント名
     detection.ts          -- PII検出エンジン（正規表現 + 辞書 + ヒューリスティクス）
     redaction.ts          -- マスキングエンジン
-    __tests__/            -- Vitest テスト（9ファイル）
+    __tests__/            -- Vitest テスト（13ファイル。components/__tests__ に2、app/__tests__ に1ファイル）
 ```
 
 ### RedactPro.tsx 内部構造（主要コンポーネント）
@@ -97,7 +102,7 @@ src/
 
 `edition` state (`'lite'`|`'pro'`) で切替。`isLite` boolean propを各コンポーネントに伝播。
 
-- Lite: ファイルアップロード＋自動検出＋プレビュー＋エクスポートのみ
+- Lite: ファイルアップロード＋自動検出＋プレビュー＋エクスポートのみ。**AIは一切使わない**（`UploadScreen` の `aiOn` は `!isLite` を条件に含む。信頼バッジ・設定モーダルの文言と一致させること）
 - Pro: AI検出、URL取込、バッチ処理、カスタムキーワード、PDF編集、検出レポート、チャットウィジェット
 - 共通コンポーネントを最大化し、`{!isLite && ...}` で機能を出し分ける
 

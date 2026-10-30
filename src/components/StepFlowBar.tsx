@@ -1,7 +1,13 @@
 'use client'
 
 import { Fragment } from 'react'
-import { FLOW_GOAL, FLOW_STEPS, getFlowStepStatus, type FlowStepId } from '@/lib/flow-steps'
+import {
+  FLOW_GOAL,
+  FLOW_STEPS,
+  getFlowStepAction,
+  getFlowStepStatus,
+  type FlowStepId,
+} from '@/lib/flow-steps'
 import styles from './StepFlowBar.module.css'
 
 export interface StepFlowBarProps {
@@ -13,6 +19,8 @@ export interface StepFlowBarProps {
   analyzing?: boolean
   /** 整える/書き出すへ進める状態か（省略時は hasData と同じ）。バッチ処理中など編集画面が未表示の間は false にする */
   canExport?: boolean
+  /** Lite版か（「整える」の説明文が変わる） */
+  isLite?: boolean
   onStepClick: (id: FlowStepId) => void
 }
 
@@ -26,13 +34,14 @@ export function StepFlowBar({
   hasData,
   analyzing = false,
   canExport = hasData,
+  isLite = false,
   onStepClick,
 }: StepFlowBarProps) {
-  const currentStep = FLOW_STEPS.find((s) => s.id === current)
+  const currentAction = getFlowStepAction(current, { isLite })
   const hint =
     analyzing && current === 'input'
       ? '解析中です。完了すると自動で次のステップに進みます'
-      : (currentStep?.action ?? '')
+      : currentAction
 
   return (
     <nav aria-label="作業ステップ" data-intro="step-flow" className={styles.bar}>
@@ -58,14 +67,14 @@ export function StepFlowBar({
               disabled={!clickable && status !== 'current'}
               title={
                 status === 'current'
-                  ? step.action
+                  ? currentAction
                   : step.id === 'input' && hasData
                     ? '最初からやり直す'
                     : needsEditor && hasData && !canExport
                       ? '解析が完了すると進めます'
                       : step.id === 'export' && canExport
                         ? 'エクスポート画面を開く'
-                        : step.action
+                        : getFlowStepAction(step.id, { isLite })
               }
               onClick={() => {
                 if (clickable) onStepClick(step.id)

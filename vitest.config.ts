@@ -7,6 +7,8 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  // 新しい JSX 変換（React の import なしで .tsx を描画テストできるようにする）
+  esbuild: { jsx: 'automatic' },
   test: {
     include: ['src/**/*.test.ts'],
     environment: 'node',

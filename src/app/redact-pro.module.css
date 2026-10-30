@@ -1965,7 +1965,8 @@
 }
 
 .up-trust-badge-icon {
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .up-card {
@@ -2132,33 +2133,6 @@
   flex-wrap: wrap;
 }
 
-.up-pro-cta {
-  margin-top: 12px;
-  padding: 12px 16px;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: all 0.2s;
-}
-
-.up-pro-cta:hover {
-  border-color: rgba(28, 25, 23, 0.25);
-}
-
-.up-pro-cta-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rp-text);
-}
-
-.up-pro-cta-desc {
-  font-size: 11px;
-  color: var(--rp-text3);
-  margin-top: 2px;
-}
-
 .up-input-tabs {
   display: flex;
   gap: 0;
@@ -2209,35 +2183,6 @@
 
 .up-input-body[data-top='none'] {
   border-radius: 14px;
-}
-
-.up-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  cursor: pointer;
-  transition: all 0.25s;
-}
-
-.up-zone[data-drag='true'] {
-  background: var(--rp-accentDim);
-}
-
-.up-zone[data-drag='false'] {
-  background: var(--rp-bg2);
-}
-
-.up-zone-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--rp-text);
-}
-
-.up-zone-desc {
-  font-size: 12px;
-  color: var(--rp-text3);
-  margin-top: 4px;
 }
 
 .up-section-pad {
@@ -2327,94 +2272,6 @@
   background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
   font-size: 13px;
-}
-
-.up-sample-btn {
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--rp-border);
-  background: var(--rp-bg2);
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.up-sample-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.up-sample-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rp-text);
-}
-
-.up-sample-desc {
-  font-size: 12px;
-  color: var(--rp-text3);
-}
-
-.up-sample-sub {
-  font-size: 12px;
-  color: var(--rp-text3);
-  font-weight: 400;
-}
-
-.up-samples-card {
-  background: var(--rp-surface);
-  border: 1px solid var(--rp-border);
-  border-radius: 14px;
-  padding: 16px 20px;
-}
-
-.up-samples-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rp-text2);
-  margin-bottom: 12px;
-}
-
-.up-samples-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.up-zip-link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--rp-border);
-  background: var(--rp-bg2);
-  cursor: pointer;
-  text-decoration: none;
-  transition: all 0.15s;
-  font-size: 12px;
-  color: var(--rp-text2);
-}
-
-.up-zip-link:hover {
-  border-color: var(--rp-accent);
-  color: var(--rp-accent);
-}
-
-.up-zip-title {
-  font-weight: 600;
-  color: inherit;
-}
-
-.up-zip-desc {
-  font-size: 11px;
-  color: var(--rp-text3);
 }
 
 .up-guide-overlay {
@@ -3223,5 +3080,65 @@
 }
 
 .app-footer-link:hover {
+  color: var(--rp-text);
+}
+
+/* ═══ Upload: Lite の Pro 誘導（設定カードの外・控えめな一行） ═══ */
+.up-pro-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rp-text3);
+  text-align: center;
+}
+
+.up-pro-link {
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--rp-text2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.up-pro-link:hover {
+  color: var(--rp-accent);
+}
+
+/* ═══ Editor: 確認ステップの初回案内（閉じたら記憶） ═══ */
+.ed-review-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--rp-border);
+  border-radius: 8px;
+  background: var(--rp-accentDim);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rp-text2);
+}
+
+.ed-review-hint-close {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rp-text2);
+  cursor: pointer;
+}
+
+.ed-review-hint-close:hover {
   color: var(--rp-text);
 }

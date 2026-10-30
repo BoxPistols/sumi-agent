@@ -30,13 +30,14 @@ export const UPLOAD_STEPS_LITE: IntroStep[] = [
     element: '[data-intro="upload-zone"]',
     title: 'ファイルアップロード',
     intro:
-      'ファイルをドラッグ＆ドロップ、またはクリックして選択。PDF、Word、Excelなど多数の形式に対応しています。',
+      '「ファイルを選択」を押すか、ここにファイルをドラッグ＆ドロップ。PDF、Word、Excelなど多数の形式に対応しています。',
     position: 'bottom',
   },
   {
     element: '[data-intro="mask-presets"]',
-    title: 'マスキングプリセット',
-    intro: '「基本」「標準」「厳格」の3段階。用途に応じて検出の厳しさを選べます。',
+    title: 'マスクする項目',
+    intro:
+      '「基本」「標準」「厳格」の3段階。迷ったら「標準」のままでOK。あとから確認画面でも個別に変えられます。',
     position: 'bottom',
   },
   {
@@ -61,7 +62,7 @@ export const UPLOAD_STEPS_PRO: IntroStep[] = [
   {
     element: '[data-intro="upload-zone"]',
     title: 'ファイルアップロード',
-    intro: 'ファイルをドラッグ＆ドロップ。複数ファイルでバッチ処理も可能です。',
+    intro: '「ファイルを選択」またはドラッグ＆ドロップ。複数ファイルを選ぶと一括で処理できます。',
     position: 'bottom',
   },
   {
@@ -72,8 +73,8 @@ export const UPLOAD_STEPS_PRO: IntroStep[] = [
   },
   {
     element: '[data-intro="mask-presets"]',
-    title: 'マスキングプリセット',
-    intro: '基本・標準・厳格の3段階プリセット。',
+    title: 'マスクする項目',
+    intro: '基本・標準・厳格の3段階。迷ったら「標準」のままでOK。',
     position: 'bottom',
   },
   {
@@ -102,8 +103,8 @@ export const UPLOAD_STEPS_PRO: IntroStep[] = [
   },
   {
     element: '[data-intro="sample-files"]',
-    title: 'テストサンプル',
-    intro: 'サンプルファイルで動作を確認できます。',
+    title: 'サンプルで試す',
+    intro: '手元にファイルがなくても、サンプルで検出から書き出しまでの流れを体験できます。',
     position: 'top',
   },
 ]
@@ -122,19 +123,20 @@ export const EDITOR_STEPS_LITE: IntroStep[] = [
   {
     element: '[data-intro="view-tabs"]',
     title: '表示モード',
-    intro: '「マスク」で置換後テキスト、「Diff」で変更前後の差分を確認できます。',
+    intro: '「マスク後」で置き換え後のテキスト、「差分」で変更前後を並べて比較できます。',
     position: 'bottom',
   },
   {
     element: '[data-intro="category-filter"]',
-    title: 'カテゴリフィルタ',
-    intro: 'カテゴリをクリックして一括ON/OFF。不要な検出カテゴリをまとめて無効化できます。',
+    title: 'カテゴリごとにマスク',
+    intro: '種類ごとにまとめてON/OFF。不要なカテゴリはここで一度に外せます。',
     position: 'bottom',
   },
   {
     element: '[data-intro="detection-list"]',
     title: '検出結果リスト',
-    intro: '検出された個人情報の一覧。各項目のトグルで個別にマスクのON/OFFを切り替えられます。',
+    intro:
+      '検出された個人情報の一覧。スイッチがオンの項目がマスクされます。残したい情報はオフにしてください。',
     position: 'left',
   },
   {
@@ -160,7 +162,7 @@ export const EDITOR_STEPS_PRO: IntroStep[] = [
   {
     element: '[data-intro="view-tabs"]',
     title: '表示モード',
-    intro: '「マスク」「Diff」に加え、AI処理結果やAI Diffも確認できます。',
+    intro: '「マスク後」「差分」に加え、AI処理結果との比較も確認できます。',
     position: 'bottom',
   },
   {
@@ -177,14 +179,15 @@ export const EDITOR_STEPS_PRO: IntroStep[] = [
   },
   {
     element: '[data-intro="category-filter"]',
-    title: 'カテゴリフィルタ',
-    intro: 'カテゴリをクリックして一括ON/OFF。不要な検出カテゴリをまとめて無効化できます。',
+    title: 'カテゴリごとにマスク',
+    intro: '種類ごとにまとめてON/OFF。不要なカテゴリはここで一度に外せます。',
     position: 'bottom',
   },
   {
     element: '[data-intro="detection-list"]',
     title: '検出結果リスト',
-    intro: '検出された個人情報の一覧。各項目のトグルで個別にマスクのON/OFFを切り替えられます。',
+    intro:
+      '検出された個人情報の一覧。スイッチがオンの項目がマスクされます。残したい情報はオフにしてください。',
     position: 'left',
   },
   {
