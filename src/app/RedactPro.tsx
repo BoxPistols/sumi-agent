@@ -1651,8 +1651,9 @@ function fileTimestamp(){const d=new Date();return `${d.getFullYear()}${String(d
 
 // ═══ Batch processing: standalone file processor ═══
 async function processFileEntry(file,maskConfig,settings,callbacks,customKeywords){
-  const {onStage,onProgress,signal}=callbacks||{};
-  const aiOn=settings?.aiDetect!==false;
+  const {onStage,onProgress,signal,isLite=false}=callbacks||{};
+  // Lite版はAIを使わない。呼び出し側に頼らず関数自身でも不変条件を守る（UploadScreen と同じ）
+  const aiOn=!isLite&&settings?.aiDetect!==false;
   const runModels=aiOn?getModelsForRun(settings):null;
   const startAt=Date.now();
   let workText,originalRaw,format,pageCount,sparsePages,pdfData;
@@ -7174,6 +7175,7 @@ export default function App(){
           onProgress:(pct)=>setBatchFiles(prev=>prev.map(f=>f.id===entry.id?{...f,progress:pct}:f)),
           onStage:(s)=>setBatchFiles(prev=>prev.map(f=>f.id===entry.id?{...f,stage:s}:f)),
           signal:entry.abortController.signal,
+          isLite,
         },batchCustomKeywords);
         setBatchFiles(prev=>prev.map(f=>f.id===entry.id?{...f,status:'done',data:result,progress:100}:f));
         // Auto-select first done file
@@ -7192,7 +7194,7 @@ export default function App(){
       // Rate limit delay between files
       if(i<entries.length-1&&settings?.aiDetect!==false)await new Promise(r=>setTimeout(r,500));
     }
-  },[settings]);
+  },[settings,isLite]);
 
   const handleBatchExport=useCallback(async()=>{
     const JSZip=(await import('jszip')).default;
