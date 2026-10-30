@@ -1,0 +1,95 @@
+.zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 40px 32px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--rp-bg2);
+  border: 1.5px dashed var(--rp-border);
+  border-radius: 14px;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.zone[data-size='lg'] {
+  padding: 52px 32px;
+}
+
+.zone[data-embedded='true'] {
+  border: none;
+  border-radius: 0;
+}
+
+.zone:hover {
+  border-color: var(--rp-text3);
+}
+
+.zone[data-drag='true'] {
+  background: var(--rp-accentDim);
+  border-color: var(--rp-accent);
+}
+
+.zone[data-disabled='true'] {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.input {
+  display: none;
+}
+
+.icon {
+  color: var(--rp-accent);
+  margin-bottom: 4px;
+}
+
+/* 画面で唯一の Primary（docs/DESIGN.md §6） */
+.primary {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  background: var(--rp-accent);
+  color: var(--rp-bg);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.primary:hover {
+  opacity: 0.9;
+}
+
+.primary:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.title {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rp-text);
+}
+
+.desc {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--rp-text2);
+}
+
+.formats {
+  font-size: 11px;
+  color: var(--rp-text3);
+}
+
+@media (max-width: 640px) {
+  .zone,
+  .zone[data-size='lg'] {
+    padding: 32px 16px;
+  }
+}

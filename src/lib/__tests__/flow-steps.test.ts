@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { FLOW_STEPS, FLOW_GOAL, getCurrentFlowStep, getFlowStepStatus } from '../flow-steps'
+import {
+  FLOW_STEPS,
+  FLOW_GOAL,
+  getCurrentFlowStep,
+  getFlowStepAction,
+  getFlowStepStatus,
+} from '../flow-steps'
 
 describe('FLOW_STEPS', () => {
   it('取り込む→確認する→整える→書き出すの4ステップが順番に定義されている', () => {
@@ -71,5 +77,27 @@ describe('getFlowStepStatus', () => {
     expect(getFlowStepStatus('review', 'export')).toBe('done')
     expect(getFlowStepStatus('format', 'export')).toBe('done')
     expect(getFlowStepStatus('export', 'export')).toBe('current')
+  })
+})
+
+describe('getFlowStepAction', () => {
+  it('Pro では FLOW_STEPS の action をそのまま返す', () => {
+    for (const step of FLOW_STEPS) {
+      expect(getFlowStepAction(step.id)).toBe(step.action)
+      expect(getFlowStepAction(step.id, { isLite: false })).toBe(step.action)
+    }
+  })
+
+  it('Lite の「整える」は編集できない旨を含む説明に置き換わる', () => {
+    const action = getFlowStepAction('format', { isLite: true })
+    expect(action).not.toBe(FLOW_STEPS.find((s) => s.id === 'format')?.action)
+    expect(action).toContain('A4プレビュー')
+    expect(action).toContain('Pro')
+  })
+
+  it('Lite でも整える以外は Pro と同じ説明', () => {
+    for (const id of ['input', 'review', 'export'] as const) {
+      expect(getFlowStepAction(id, { isLite: true })).toBe(getFlowStepAction(id))
+    }
   })
 })

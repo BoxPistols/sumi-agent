@@ -38,13 +38,13 @@ test.describe('TOP画面', () => {
     await proRadio.click()
     // Pro切替後のツアーを除去
     await dismissTour(page)
-    // Pro版にはURLスクレイピングタブがある
-    await expect(page.getByText('URLスクレイピング')).toBeVisible()
+    // Pro版には「URLから取り込む」タブがある
+    await expect(page.getByText('URLから取り込む')).toBeVisible()
 
     // Liteに戻す
     const liteRadio = page.getByRole('radio', { name: /Lite/ })
     await liteRadio.click()
-    await expect(page.getByText('URLスクレイピング')).not.toBeVisible()
+    await expect(page.getByText('URLから取り込む')).not.toBeVisible()
   })
 
   test('テーマ切替', async ({ page }) => {

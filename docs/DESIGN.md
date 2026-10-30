@@ -124,6 +124,13 @@ Sumi のUIを一貫させ、可読性を保証するための規約。**UIを変
 - ステップ型UI: **必ず「現在地 / 全体数」を数字で示す**（`7 / 12`）。進捗バーだけでは残量が読めない
 - 空・エラー: 何が起きたか + 次にできることを1文で
 
+### 初見ユーザー向けの案内
+
+- 操作の意味が自明でないUI（検出結果のスイッチ等）には、**何が起きるか + 次にすべきこと**を1文で添える。閉じられるようにし、閉じた状態は `localStorage`（`rp_hint_*`）に記憶する
+- アイコンだけのタブ・切替ボタンは避け、**短い文字ラベルを併記**する（例: 「マスク後」「差分」）。アイコンのみを許すのはツールバーの副次操作まで
+- 取り込みゾーンは「ファイルを選択」ボタンを Primary として置き、ドラッグ＆ドロップは補助手段として案内する（`src/components/upload/DropZone.tsx`）
+- 「DEMO」「スクレイピング」「Diff」などの用語は画面上では使わず、「サンプル」「URLから取り込む」「差分」と言い換える
+
 ### モーダル・オーバーレイ
 
 - `role="dialog"` + `aria-modal="true"` + `aria-label`
@@ -169,7 +176,8 @@ Sumi のUIを一貫させ、可読性を保証するための規約。**UIを変
 
 - 実装: `src/app/RedactPro.tsx`（`C` / `T` 定義）、`src/app/redact-pro.module.css`
 - ツアー: `src/lib/intro-steps.ts`、`src/styles/introjs-overrides.css`
-- フロー定義: `src/lib/flow-steps.ts`（取り込む → 確認する → 整える → 書き出す）
+- フロー定義: `src/lib/flow-steps.ts`（取り込む → 確認する → 整える → 書き出す。`getFlowStepAction` で Lite/Pro の説明を出し分け）
+- 取り込み系コンポーネント: `src/components/upload/DropZone.tsx` / `SampleCard.tsx`
 - モデル定義: `src/lib/constants.ts` / テスト `src/lib/__tests__/model-lineup.test.ts`
 - コントラストテスト: `src/lib/__tests__/a11y-contrast.test.ts`
 - ダークモード実機テスト: `e2e/dark-mode-contrast.spec.ts`

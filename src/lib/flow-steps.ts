@@ -50,6 +50,24 @@ export const FLOW_STEPS: FlowStep[] = [
   },
 ]
 
+export interface FlowStepContext {
+  /** Lite版かどうか。Lite は「整える」で編集できないため説明文が変わる */
+  isLite?: boolean
+}
+
+/** Lite版で差し替える「いまやること」の説明 */
+const LITE_ACTION_OVERRIDES: Partial<Record<FlowStepId, string>> = {
+  format: 'A4プレビューで仕上がりを確認する（レイアウト編集はPro版）',
+}
+
+/** 現在ステップの「いまやること」を返す（Lite/Pro で説明を出し分ける） */
+export function getFlowStepAction(stepId: FlowStepId, ctx: FlowStepContext = {}): string {
+  const step = FLOW_STEPS.find((s) => s.id === stepId)
+  if (!step) return ''
+  const override = ctx.isLite ? LITE_ACTION_OVERRIDES[stepId] : undefined
+  return override ?? step.action
+}
+
 /** アプリ状態から現在のステップを判定する */
 export function getCurrentFlowStep(state: {
   hasData: boolean

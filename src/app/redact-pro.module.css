@@ -3225,3 +3225,63 @@
 .app-footer-link:hover {
   color: var(--rp-text);
 }
+
+/* ═══ Upload: Lite の Pro 誘導（設定カードの外・控えめな一行） ═══ */
+.up-pro-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 2px 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rp-text3);
+  text-align: center;
+}
+
+.up-pro-link {
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--rp-text2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.up-pro-link:hover {
+  color: var(--rp-accent);
+}
+
+/* ═══ Editor: 確認ステップの初回案内（閉じたら記憶） ═══ */
+.ed-review-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--rp-border);
+  border-radius: 8px;
+  background: var(--rp-accentDim);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rp-text2);
+}
+
+.ed-review-hint-close {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--rp-text3);
+  cursor: pointer;
+}
+
+.ed-review-hint-close:hover {
+  color: var(--rp-text);
+}

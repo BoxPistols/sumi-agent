@@ -48,6 +48,8 @@ import * as Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { clearAllSiteData } from "../lib/storage";
 import { StepFlowBar } from "@/components/StepFlowBar";
+import { DropZone } from "@/components/upload/DropZone";
+import { SampleCard } from "@/components/upload/SampleCard";
 import { getCurrentFlowStep, FLOW_EVENT_SET_EXPORT, FLOW_EVENT_EXPORT_STATE, FLOW_EVENT_ANALYZING, FLOW_EVENT_SET_MODE, FLOW_EVENT_MODE_STATE } from "@/lib/flow-steps";
 
 // ═══ Theme System (CSS Custom Properties) ═══
@@ -2254,10 +2256,10 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                               クイックスタート
                           </div>
                           <div className={s['help-steps-wrap']}>
-                              <div className={s['help-step']}><span className={s['help-step-num']}>1</span><span>ファイルをドラッグ＆ドロップ、またはテキストを貼り付け</span></div>
-                              <div className={s['help-step']}><span className={s['help-step-num']}>2</span><span>自動で個人情報（PII）を検出・ハイライト表示</span></div>
-                              <div className={s['help-step']}><span className={s['help-step-num']}>3</span><span>カテゴリ別にマスク設定を調整</span></div>
-                              <div className={s['help-step']}><span className={s['help-step-num']}>4</span><span>マスク済みテキストをコピー or エクスポート</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>1</span><span><strong>取り込む</strong>: 「ファイルを選択」またはドラッグ＆ドロップ（まずはサンプルでもOK）</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>2</span><span><strong>確認する</strong>: 自動検出された個人情報を確認し、残したい項目はスイッチをオフに</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>3</span><span><strong>整える</strong>: A4プレビューで仕上がりを確認（Pro版はテキスト編集・AI整形も）</span></div>
+                              <div className={s['help-step']}><span className={s['help-step-num']}>4</span><span><strong>書き出す</strong>: テキスト・Word・PDFなど形式を選んで保存、またはコピー</span></div>
                           </div>
                       </div>
 
@@ -2346,8 +2348,8 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                               ビューモード切替
                           </div>
                           <ul className={s['help-feature-desc']}>
-                              <li><strong>マスク</strong> — マスキング済みテキストを表示</li>
-                              <li><strong>Diff</strong> — 元テキストとマスク後を並べて比較</li>
+                              <li><strong>マスク後</strong> — マスキング済みテキストを表示</li>
+                              <li><strong>差分</strong> — 元テキストとマスク後を並べて比較</li>
                               <li><strong>Raw</strong> — ファイルから抽出した生テキスト</li>
                               <li><strong>Raw Diff</strong> — 生テキストとAI整形後の差分</li>
                               <li><strong>AI整形</strong> — AIが読みやすく整形したテキスト</li>
@@ -2473,8 +2475,8 @@ function HelpModal({onClose,onStartTour,onShowVideo}){
                               エディタ用ショートカット
                           </div>
                           <div className={s['help-kbd-grid']} style={{paddingLeft:22}}>
-                              <kbd className={s['help-kbd']}>1</kbd><span>マスク表示</span>
-                              <kbd className={s['help-kbd']}>2</kbd><span>Diff表示</span>
+                              <kbd className={s['help-kbd']}>1</kbd><span>マスク後を表示</span>
+                              <kbd className={s['help-kbd']}>2</kbd><span>差分を表示</span>
                               <kbd className={s['help-kbd']}>3</kbd><span>Raw表示</span>
                               <kbd className={s['help-kbd']}>4</kbd><span>Raw Diff表示</span>
                               <kbd className={s['help-kbd']}>5</kbd><span>AI整形表示</span>
@@ -4151,8 +4153,16 @@ function formatDuration(ms){
 }
 
 // ═══ Upload Screen ═══
+// 「サンプルで試す」の一覧。Lite は先頭1件のみ表示
+const SAMPLE_ITEMS=[
+  {type:'pdf',label:'経歴書サンプル（PDF）',desc:'2ページ・氏名や連絡先を含む',color:C.red},
+  {type:'xlsx',label:'社員一覧サンプル（Excel）',desc:'5名分の名簿',color:C.green},
+  {type:'csv',label:'応募者リスト（CSV）',desc:'応募者の一覧表',color:C.amber},
+  {type:'text',label:'詳細経歴書（テキスト）',desc:'3社分の職務経歴',color:C.purple},
+];
+
 function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
-  const[dragOver,setDragOver]=useState(false);const[loading,setLoading]=useState(false);const[error,setError]=useState(null);const[fileName,setFileName]=useState("");const[stage,setStage]=useState(0);const[mask,setMask]=useState({...DEFAULT_MASK});const inputRef=useRef(null);
+  const[loading,setLoading]=useState(false);const[error,setError]=useState(null);const[fileName,setFileName]=useState("");const[stage,setStage]=useState(0);const[mask,setMask]=useState({...DEFAULT_MASK});
   const[customKeywords,setCustomKeywords]=useState([]);const[customInput,setCustomInput]=useState("");const kwLoadedRef=useRef(false);
   const[aiStatus,setAiStatus]=useState("");
   const[elapsedMs,setElapsedMs]=useState(0);
@@ -4161,7 +4171,8 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
   const urlHelpTriggerRef = useRef(null)
   const urlHelpCloseRef = useRef(null)
   const activePreset=MASK_PRESETS.findIndex(p=>Object.entries(p.mask).every(([k,v])=>mask[k]===v));
-  const aiOn=settings?.aiDetect!==false;
+  // Lite版はAIを使わない（ブラウザ内完結）。AI検出はPro版で有効化した場合のみ
+  const aiOn=!isLite&&settings?.aiDetect!==false;
   const STAGES=["ファイル読み込み","テキスト抽出",aiOn?"AI OCR (画像ページ)":"--",aiOn?"AI テキスト再構成":"--","正規表現マッチ","日本人名辞書照合",aiOn?"AI PII検出":"--","完了"];
   const lc=[null,T.green,T.amber,T.red];
   const closeUrlHelp = useCallback(() => {
@@ -4495,16 +4506,19 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
               <p className={s['up-subtitle']}>
                   {isLite ? 'ファイルをアップロードするだけで個人情報を自動検出・マスキング' : '個人情報の自動検出 + AIアドバイザーで経歴書の壁打ち・ブラッシュアップまで'}
               </p>
-              {/* セキュリティ根拠バッジ */}
+              {/* セキュリティ根拠バッジ（文言は実装と一致させる: LiteはAI不使用） */}
               <div className={s['up-badges']}>
                   {[
-                      {icon:'\u{1F512}',text:'ブラウザ内完結',tip:'ファイルはサーバーに送信されません。すべてブラウザ内で処理されます'},
-                      {icon:'\u{1F6AB}',text:'DB保存なし',tip:'データベースは一切使用しません。処理結果はブラウザのメモリ上のみに存在します'},
-                      {icon:'\u2699',text:'AI利用は任意',tip:'AI検出・AI整形はユーザーが有効にした場合のみ動作します（デフォルトOFF）'},
-                      {icon:'\u2705',text:'AI API学習除外',tip:'OpenAI / Anthropic / Google のAPIはトレーニングデータに使用されません（オプトアウト済み）'},
+                      {text:'ブラウザ内で処理',tip:'ファイルの読み取りと個人情報の検出はブラウザ内で行います。サーバーへのアップロードはありません'},
+                      {text:'サーバー保存なし',tip:'データベースは使いません。処理結果はブラウザのメモリ上にだけ存在し、タブを閉じると消えます'},
+                      {text:'AIは任意（Pro版）',tip:'AI検出・AI整形はPro版で有効にした場合のみ動作します。Lite版はAIを使いません'},
+                      {text:'AI学習に不使用',tip:'AI利用時のみテキストをAPIに送信しますが、各社の規約によりモデルの学習には使われません'},
                   ].map((b,i)=>(
                       <span key={i} title={b.tip} className={s['up-trust-badge']}>
-                          <span className={s['up-trust-badge-icon']}>{b.icon}</span>{b.text}
+                          <span className={s['up-trust-badge-icon']} aria-hidden="true">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                          </span>
+                          {b.text}
                       </span>
                   ))}
               </div>
@@ -4514,15 +4528,17 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
           >
               <div className={s['up-card']}>
                   <div className={s['up-card-title']}>
-                      マスキング設定{' '}
-                      {!isLite && <span className={s['up-card-title-sub']}>
-                          -- アップロード前に対象を選択
-                      </span>}
+                      マスクする項目{' '}
+                      <span className={s['up-card-title-sub']}>
+                          迷ったら「標準」のままでOK。あとから確認画面でも個別に変えられます
+                      </span>
                   </div>
-                  <div data-intro="mask-presets" className={s['up-presets']}>
+                  <div data-intro="mask-presets" className={s['up-presets']} role="group" aria-label="マスクの強さ">
                       {MASK_PRESETS.map((p, i) => (
                           <button
                               key={p.id}
+                              type="button"
+                              aria-pressed={activePreset === i}
                               onClick={() => setMask({ ...p.mask })}
                               className={s['up-preset-btn']}
                               style={{
@@ -4547,6 +4563,11 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                       style={{ background: lc[p.level] }}
                                   />
                                   {p.label}
+                                  {activePreset === i && (
+                                      <span aria-hidden="true" style={{ marginLeft: 'auto', fontSize: 12 }}>
+                                          ✓
+                                      </span>
+                                  )}
                               </div>
                               <div className={s['up-preset-desc']}>
                                   {p.desc}
@@ -4709,30 +4730,21 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                           </Badge>
                       )}
                   </div>}
-                  {isLite && (
-                    <div
-                      data-intro="edition-toggle"
-                      role="button" tabIndex={0}
-                      onClick={()=>{if(onSwitchPro)onSwitchPro();}}
-                      onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&onSwitchPro){e.preventDefault();onSwitchPro();}}}
-                      className={s['up-pro-cta']}
-                      style={{
-                        background:`${C.accent}10`,
-                        border:`1px solid ${C.accent}20`,
-                      }}
-                    >
-                      <div style={{flex:1}}>
-                        <div className={s['up-pro-cta-title']}>
-                          Pro版に切替
-                        </div>
-                        <div className={s['up-pro-cta-desc']}>
-                          AI検出・URL取込・バッチ処理・カスタムキーワード等
-                        </div>
-                      </div>
-                      <span style={{fontSize:16,color:C.accent}}>&rarr;</span>
-                    </div>
-                  )}
               </div>
+              {/* Lite: Pro版への誘導は設定カードの外に控えめに置く（設定項目と混同させない） */}
+              {isLite && (
+                <div data-intro="edition-toggle" className={s['up-pro-hint']}>
+                  <span>AI検出・URLからの取り込み・複数ファイルの一括処理が必要なら</span>
+                  <button
+                    type="button"
+                    onClick={()=>{if(onSwitchPro)onSwitchPro();}}
+                    className={s['up-pro-link']}
+                    aria-label="Pro版に切り替える"
+                  >
+                    Pro版に切り替える &rarr;
+                  </button>
+                </div>
+              )}
               {/* Right Column: Input + Samples */}
               <div
                   style={{ display: 'flex', flexDirection: 'column', gap: 20, order: isLite ? -1 : 0 }}
@@ -4743,100 +4755,43 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                           className={`rp-input-tabs ${s['up-input-tabs']}`}
                       >
                           {[
-                              {
-                                  id: 'file',
-                                  icon: '\u{1F4C1}',
-                                  label: 'ファイル',
-                              },
-                              {
-                                  id: 'url',
-                                  icon: '\u{1F310}',
-                                  label: 'URLスクレイピング',
-                              },
-                              {
-                                  id: 'paste',
-                                  icon: '\u{1F4CB}',
-                                  label: 'テキスト/HTML貼付',
-                              },
+                              { id: 'file', label: 'ファイル' },
+                              { id: 'url', label: 'URLから取り込む' },
+                              { id: 'paste', label: 'テキストを貼り付け' },
                           ].map((tab) => (
                               <button
                                   key={tab.id}
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={inputMode === tab.id}
                                   onClick={() => setInputMode(tab.id)}
                                   className={s['up-input-tab']}
                                   data-active={inputMode === tab.id}
                               >
-                                  {tab.icon} {tab.label}
+                                  {tab.label}
                               </button>
                           ))}
                       </div>}
                       <div
-                          className={s['up-input-body']}
+                          className={isLite ? undefined : s['up-input-body']}
                           data-top={isLite ? 'none' : 'file'}
                           style={isLite ? undefined : {borderTop:'none'}}
                       >
                           {(isLite || inputMode === 'file') && (
-                              <div
-                                  data-intro="upload-zone"
-                                  onClick={() => inputRef.current?.click()}
-                                  onDragOver={(e) => {
-                                      e.preventDefault()
-                                      setDragOver(true)
+                              <DropZone
+                                  multiple={!isLite}
+                                  size={isLite ? 'lg' : 'md'}
+                                  embedded={!isLite}
+                                  onFiles={(files) => {
+                                      if(!isLite&&files.length>1&&onSubmitBatch){onSubmitBatch(files,mask,customKeywords);return;}
+                                      handleFile(files[0]);
                                   }}
-                                  onDragLeave={() => setDragOver(false)}
-                                  onDrop={(e) => {
-                                      e.preventDefault()
-                                      setDragOver(false)
-                                      const fl=e.dataTransfer?.files;
-                                      if(!isLite&&fl&&fl.length>1&&onSubmitBatch){onSubmitBatch(Array.from(fl),mask,customKeywords);return;}
-                                      handleFile(fl?.[0]);
-                                  }}
-                                  className={s['up-zone']}
-                                  data-drag={dragOver}
-                                  style={{ padding: isLite ? '56px 32px' : '44px 32px' }}
-                              >
-                                  <input
-                                      aria-label="ファイルを選択"
-                                      ref={inputRef}
-                                      type='file'
-                                      multiple
-                                      accept='.pdf,.docx,.doc,.xlsx,.xls,.ods,.csv,.txt,.tsv,.md,.markdown,.html,.htm,.rtf,.json,.odt'
-                                      onChange={(e) => {
-                                          const fl=e.target.files;
-                                          if(!isLite&&fl&&fl.length>1&&onSubmitBatch){onSubmitBatch(Array.from(fl),mask,customKeywords);return;}
-                                          handleFile(fl?.[0]);
-                                      }}
-                                      style={{ display: 'none' }}
-                                  />
-                                  <svg
-                                      width='40'
-                                      height='40'
-                                      viewBox='0 0 24 24'
-                                      fill='none'
-                                      stroke={T.accent}
-                                      strokeWidth='2'
-                                      strokeLinecap='round'
-                                      strokeLinejoin='round'
-                                  >
-                                      <path d='M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4' />
-                                      <polyline points='17 8 12 3 7 8' />
-                                      <line x1='12' y1='3' x2='12' y2='15' />
-                                  </svg>
-                                  <div style={{ textAlign: 'center' }}>
-                                      <p className={s['up-zone-title']}>
-                                          ファイルをドラッグ＆ドロップ
-                                      </p>
-                                      <p className={s['up-zone-desc']}>
-                                          PDF / Word / Excel / ODS / CSV /
-                                          Markdown / HTML / RTF / JSON / ODT /
-                                          TXT
-                                      </p>
-                                  </div>
-                              </div>
+                              />
                           )}
                           {inputMode === 'url' && (
                               <div className={s['up-section-pad']}>
                                   <div className={s['up-section-title']}>
-                                      URLからスクレイピング
+                                      URLから取り込む
                                   </div>
                                   <p className={s['up-section-desc']} style={{ marginBottom: 10 }}>
                                       Webページの職務経歴書・ポートフォリオをそのまま取得してマスキングします
@@ -4906,7 +4861,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                                   ? T.accent
                                                   : T.border,
                                               color: urlValue.trim()
-                                                  ? '#fff'
+                                                  ? T.bg
                                                   : T.text3,
                                               cursor: urlValue.trim()
                                                   ? 'pointer'
@@ -4995,7 +4950,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                           {inputMode === 'paste' && (
                               <div className={s['up-section-pad']}>
                                   <div className={s['up-section-title']}>
-                                      テキストまたはHTMLソースを貼付
+                                      テキストを貼り付けて取り込む
                                   </div>
                                   <p className={s['up-section-desc']} style={{ marginBottom: 14 }}>
                                       職務経歴書のテキストをコピー＆ペースト、またはHTMLソースを貼り付けてください
@@ -5054,7 +5009,7 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                                                   ? T.accent
                                                   : T.border,
                                               color: pasteValue.trim()
-                                                  ? '#fff'
+                                                  ? T.bg
                                                   : T.text3,
                                               cursor: pasteValue.trim()
                                                   ? 'pointer'
@@ -5073,105 +5028,12 @@ function UploadScreen({onAnalyze,onSubmitBatch,settings,isLite,onSwitchPro}){
                           ! {error}
                       </div>
                   )}
-                  {isLite && (
-                      <button
-                          data-intro="sample-demo"
-                          onClick={() => handleDemo('pdf')}
-                          style={{
-                              padding: '12px 16px',
-                              borderRadius: 10,
-                              border: `1px solid ${T.border}`,
-                              background: T.bg2,
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              transition: 'all .15s',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 10,
-                              width: '100%',
-                          }}
-                      >
-                          <span style={{width:8,height:8,borderRadius:4,background:C.red,flexShrink:0}}/>
-                          <div>
-                              <div style={{fontSize:12,fontWeight:600,color:T.text}}>
-                                  PDF DEMO <span style={{fontSize:11,color:T.text3,fontWeight:400}}>経歴書 2ページ</span>
-                              </div>
-                          </div>
-                      </button>
-                  )}
-                  {!isLite && <div
-                      data-intro="sample-files"
-                      className={s['up-samples-card']}
-                  >
-                      <div className={s['up-samples-title']}>
-                          テストサンプルで動作確認
-                      </div>
-                      <div
-                          className={`rp-upload-grid ${s['up-samples-grid']}`}
-                      >
-                          {[
-                              {
-                                  type: 'pdf',
-                                  label: 'PDF',
-                                  desc: '経歴書 2ページ',
-                                  color: C.red,
-                              },
-                              {
-                                  type: 'xlsx',
-                                  label: 'Excel',
-                                  desc: '社員一覧 5名分',
-                                  color: C.green,
-                              },
-                              {
-                                  type: 'csv',
-                                  label: 'CSV',
-                                  desc: '応募者リスト',
-                                  color: C.amber,
-                              },
-                              {
-                                  type: 'text',
-                                  label: 'Text',
-                                  desc: '詳細経歴書 3社分',
-                                  color: C.purple,
-                              },
-                          ].map((sm) => (
-                              <button
-                                  key={sm.type}
-                                  onClick={() => handleDemo(sm.type)}
-                                  className={s['up-sample-btn']}
-                              >
-                                  <span
-                                      className={s['up-sample-dot']}
-                                      style={{ background: sm.color }}
-                                  />
-                                  <div>
-                                      <div className={s['up-sample-label']}>
-                                          {sm.label}{' '}
-                                          <span className={s['up-sample-sub']}>
-                                              DEMO
-                                          </span>
-                                      </div>
-                                      <div className={s['up-sample-desc']}>
-                                          {sm.desc}
-                                      </div>
-                                  </div>
-                              </button>
-                          ))}
-                      </div>
-                      <a
-                          href="/mock-resumes.zip"
-                          download="mock-resumes.zip"
-                          title="モック履歴書一式をダウンロード（ZIP）"
-                          aria-label="モック履歴書一式をダウンロード（ZIP）"
-                          className={s['up-zip-link']}
-                      >
-                          <span style={{fontSize:16}}>&#x1F4E6;</span>
-                          <div>
-                              <div className={s['up-zip-title']}>モック履歴書一式 (ZIP)</div>
-                              <div className={s['up-zip-desc']}>18種 / TXT・CSV・XLSX・HTML・MD・JSON・RTF・DOCX</div>
-                          </div>
-                      </a>
-                  </div>}
+                  <SampleCard
+                      introId={isLite ? 'sample-demo' : 'sample-files'}
+                      items={isLite ? SAMPLE_ITEMS.slice(0, 1) : SAMPLE_ITEMS}
+                      onPick={handleDemo}
+                      zipHref={isLite ? undefined : '/mock-resumes.zip'}
+                  />
               </div>
               {/* end right column */}
           </div>
@@ -5467,7 +5329,11 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
     // localStorageにも保存
     try{const raw=localStorage.getItem("rp_custom_keywords");const arr=raw?JSON.parse(raw):[];if(!arr.includes(kw)){arr.push(kw);localStorage.setItem("rp_custom_keywords",JSON.stringify(arr));}}catch(e){}
   };
-  const[sideSettingsOpen,setSideSettingsOpen]=useState(true);
+  // Pro: 詳細なマスキング設定は既定で畳む（初見では検出一覧に集中させる）
+  const[sideSettingsOpen,setSideSettingsOpen]=useState(false);
+  // 初回だけ表示する「スイッチの意味」の案内（閉じたら記憶）
+  const[showReviewHint,setShowReviewHint]=useState(()=>{try{return typeof window!=='undefined'&&localStorage.getItem('rp_hint_review_done')!=='1'}catch{return true}});
+  const dismissReviewHint=()=>{setShowReviewHint(false);try{localStorage.setItem('rp_hint_review_done','1')}catch{}};
   const[closedCats,setClosedCats]=useState(new Set());
   const toggleCatAccordion=(cat)=>setClosedCats(prev=>{const next=new Set(prev);if(next.has(cat))next.delete(cat);else next.add(cat);return next;});
   // アップロード画面のカスタムキーワードを引き継ぐ
@@ -5943,7 +5809,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       )}
                       {data.isDemo && (
                           <Badge color={C.amber} bg={C.amberDim}>
-                              DEMO
+                              サンプル
                           </Badge>
                       )}
                       {data.stats?.ai > 0 && (
@@ -5974,28 +5840,36 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           }}
                       >
                           <button
-                              title='マスク: 個人情報を隠した結果を表示'
-                              aria-label='マスク: 個人情報を隠した結果を表示'
+                              type="button"
+                              title='マスク後: 個人情報を隠した結果を表示'
+                              aria-label='マスク後: 個人情報を隠した結果を表示'
+                              aria-pressed={viewMode === 'original'}
                               onClick={() => setViewMode('original')}
                               className={s['ed-view-tab']}
                               style={{
+                                  display: 'flex', alignItems: 'center', gap: 5,
                                   background: viewMode === 'original' ? T.accentDim : 'transparent',
                                   color: viewMode === 'original' ? T.accent : T.text3,
                               }}
                           >
-                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.3 3 2 5.5L1.5 6.5C1.2 7.1 1.2 7.9 1.5 8.5L2 9.5C3.3 12 5.5 13.5 8 13.5C10.5 13.5 12.7 12 14 9.5L14.5 8.5C14.8 7.9 14.8 7.1 14.5 6.5L14 5.5C12.7 3 10.5 1.5 8 1.5Z" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.2"/></svg>
+                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5C5.5 1.5 3.3 3 2 5.5L1.5 6.5C1.2 7.1 1.2 7.9 1.5 8.5L2 9.5C3.3 12 5.5 13.5 8 13.5C10.5 13.5 12.7 12 14 9.5L14.5 8.5C14.8 7.9 14.8 7.1 14.5 6.5L14 5.5C12.7 3 10.5 1.5 8 1.5Z" stroke="currentColor" strokeWidth="1.2"/><circle cx="8" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.2"/></svg>
+                              <span>マスク後</span>
                           </button>
                           <button
-                              title='Diff: 元テキストとマスク後の違いを並べて比較'
-                              aria-label='Diff: 元テキストとマスク後の違いを並べて比較'
+                              type="button"
+                              title='差分: 元テキストとマスク後の違いを並べて比較'
+                              aria-label='差分: 元テキストとマスク後の違いを並べて比較'
+                              aria-pressed={viewMode === 'diff'}
                               onClick={() => setViewMode('diff')}
                               className={s['ed-view-tab']}
                               style={{
+                                  display: 'flex', alignItems: 'center', gap: 5,
                                   background: viewMode === 'diff' ? T.amberDim : 'transparent',
                                   color: viewMode === 'diff' ? T.amber : T.text3,
                               }}
                           >
-                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M5 3v10M11 3v10M5 8h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M3 5L5 3l2 2M13 11l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 3v10M11 3v10M5 8h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/><path d="M3 5L5 3l2 2M13 11l-2 2-2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                              <span>差分</span>
                           </button>
                           {!isLite && hasRawText && (
                               <>
@@ -6120,7 +5994,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               {data.sparsePageCount>0&&data.page_count>0&&data.sparsePageCount/data.page_count>=0.5&&!apiKey&&(
               <div style={{padding:"8px 14px",background:"#78350f18",borderBottom:`1px solid #92400e40`,display:"flex",alignItems:"center",gap:8,fontSize:12,color:T.amber||"#f59e0b"}}>
                 <span style={{fontSize:16}}>&#9888;</span>
-                <span>{data.sparsePageCount}/{data.page_count}ページがテキスト未検出（画像PDF）。設定でAPIキーを登録するとAI OCRで画像からテキストを抽出できます。</span>
+                <span>{data.sparsePageCount}/{data.page_count}ページがテキスト未検出（画像PDF）。{isLite?'Pro版に切り替えてAPIキーを登録すると':'設定でAPIキーを登録すると'}AI OCRで画像からテキストを抽出できます。</span>
               </div>
               )}
               {/* カテゴリ別クイックトグル */}
@@ -6130,13 +6004,15 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                   borderBottom:`1px solid ${T.border}`,background:T.bg2,
                   flexWrap:"wrap",flexShrink:0,
               }}>
-                  <span style={{fontSize:11,color:T.text3,fontWeight:600,marginRight:4}}>カテゴリ</span>
+                  <span style={{fontSize:11,color:T.text3,fontWeight:600,marginRight:4}} title="種類ごとにマスクをまとめてON/OFFできます">カテゴリごとにマスク</span>
                   {allCats.map(cat=>{
                       const meta=CATEGORIES[cat]||{label:cat,color:T.text2};
                       const cc=catCounts[cat]||{total:0,enabled:0};
                       const allOn=cc.enabled===cc.total;
                       return (
-                          <button key={cat} onClick={()=>setCatEnabled(cat,!allOn)}
+                          <button key={cat} type="button" aria-pressed={allOn}
+                              title={allOn?`${meta.label}のマスクをまとめて外す`:`${meta.label}をまとめてマスクする`}
+                              onClick={()=>setCatEnabled(cat,!allOn)}
                               style={{
                                   padding:"2px 8px",borderRadius:5,border:`1px solid ${allOn?`${meta.color}30`:T.border}`,
                                   background:allOn?`${meta.color}14`:"transparent",cursor:"pointer",
@@ -6151,8 +6027,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       );
                   })}
                   <span style={{flex:1}}/>
-                  <button title='すべての検出を有効にする' aria-label='すべての検出を有効にする' onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全ON</button>
-                  <button title='すべての検出を無効にする' aria-label='すべての検出を無効にする' onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>全OFF</button>
+                  <button title='すべての検出を有効にする' aria-label='すべての検出を有効にする' onClick={enableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>すべてON</button>
+                  <button title='すべての検出を無効にする' aria-label='すべての検出を無効にする' onClick={disableAll} style={{padding:"2px 8px",borderRadius:5,border:`1px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:11,fontFamily:T.font,color:T.text3}}>すべてOFF</button>
               </div>
               )}
               {advisorDraft ? (
@@ -6385,36 +6261,25 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
               <div className={s['ed-det-header']}>
                   <div
                       className={s['ed-det-top']}
-                      style={{ marginBottom: isLite?12:8 }}
+                      style={{ marginBottom: isLite?8:4 }}
                   >
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
-                          <div>
-                          <span
-                              style={{
-                                  fontSize: isLite?16:14,
-                                  fontWeight: 700,
-                                  color: T.text,
-                              }}
-                          >
-                              {isLite?'検出結果':''}
+                          {isLite && (
+                              <span style={{ fontSize: 16, fontWeight: 700, color: T.text }}>
+                                  検出結果
+                              </span>
+                          )}
+                          <span style={{ fontSize: 13, color: T.text2, fontVariantNumeric: 'tabular-nums' }}>
+                              {detections.length}件
                           </span>
-                          <span
-                              style={{
-                                  fontSize: 13,
-                                  color: T.text2,
-                                  marginLeft: isLite?10:0,
-                              }}
-                          >
-                              {isLite?`${enabledCount}/${detections.length}`:''}
-                          </span>
-                      </div>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:6}}>
                       <Badge
                           color={enabledCount > 0 ? T.green : T.amber}
                           bg={enabledCount > 0 ? T.greenDim : T.amberDim}
+                          style={{ fontVariantNumeric: 'tabular-nums' }}
                       >
-                          {enabledCount > 0 ? '保護中' : '未保護'}
+                          {enabledCount > 0 ? `${enabledCount}件をマスク` : 'マスクなし'}
                       </Badge>
                       {isLite && <button
                           onClick={()=>{setSidebarCollapsed(true);setLeftPct(null);setRightPct(null);}}
@@ -6428,9 +6293,15 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       >&#x276F;</button>}
                       </div>
                   </div>
-                  {isLite && <div style={{display:'flex',gap:6,marginTop:4}}>
-                      <Btn title='すべての検出を有効にする' variant='ghost' onClick={enableAll} style={{padding:'3px 10px',fontSize:12,borderRadius:7}}>全ON</Btn>
-                      <Btn title='すべての検出を無効にする' variant='ghost' onClick={disableAll} style={{padding:'3px 10px',fontSize:12,borderRadius:7}}>全OFF</Btn>
+                  {showReviewHint && (
+                      <div className={s['ed-review-hint']} role="note">
+                          <span>スイッチがオンの項目がマスクされます。残したい情報はオフにしてください。項目をクリックすると本文の該当箇所へ移動します。</span>
+                          <button type="button" onClick={dismissReviewHint} aria-label="この案内を閉じる" title="この案内を閉じる" className={s['ed-review-hint-close']}>✕</button>
+                      </div>
+                  )}
+                  {isLite && <div style={{display:'flex',gap:6,marginTop:8}}>
+                      <Btn title='すべての検出を有効にする' aria-label='すべてON' variant='ghost' onClick={enableAll} style={{padding:'3px 10px',fontSize:12,borderRadius:7}}>すべてON</Btn>
+                      <Btn title='すべての検出を無効にする' aria-label='すべてOFF' variant='ghost' onClick={disableAll} style={{padding:'3px 10px',fontSize:12,borderRadius:7}}>すべてOFF</Btn>
                   </div>}
                   {!isLite && <div data-intro="side-settings" role="button" tabIndex={0} onClick={()=>setSideSettingsOpen(p=>!p)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setSideSettingsOpen(p=>!p);}}} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 12px',margin:'8px -18px 8px',cursor:'pointer',userSelect:'none',background:sideSettingsOpen?T.surface:'transparent',borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,transition:'background .15s'}}>
                       <span style={{fontSize:13,fontWeight:700,color:T.text,display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:16,lineHeight:1,transition:'transform .2s',transform:sideSettingsOpen?'rotate(90deg)':'rotate(0deg)',display:'inline-block'}}>&#9654;</span>マスキング設定</span>
@@ -6453,8 +6324,8 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           className='rp-cat-grid'
                           style={{
                               display: 'grid',
-                              gridTemplateColumns: '1fr 1fr',
-                              gap: '4px 12px',
+                              gridTemplateColumns: '1fr',
+                              gap: 4,
                           }}
                       >
                           {allCats.map((cat) => {
@@ -6605,7 +6476,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               borderRadius: 7,
                           }}
                       >
-                          全ON
+                          すべてON
                       </Btn>
                       <Btn
                           title='すべての検出を無効にする'
@@ -6617,7 +6488,7 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               borderRadius: 7,
                           }}
                       >
-                          全OFF
+                          すべてOFF
                       </Btn>
                   </div>
                   </>)}
@@ -6737,28 +6608,20 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                                                           推定
                                                       </Badge>
                                                   )}
-                                                  {item.confidence >= 0.9 && (
-                                                      <span
-                                                          style={{
-                                                              fontSize: 12,
-                                                              color: T.green,
-                                                          }}
-                                                      >
-                                                          [高]
-                                                      </span>
-                                                  )}
+                                                  {/* 確度は「要確認」のときだけ示す（高確度の印は情報量が無いので出さない） */}
                                                   {item.confidence &&
-                                                      item.confidence < 0.9 &&
-                                                      item.confidence >=
-                                                          0.75 && (
-                                                          <span
+                                                      item.confidence < 0.9 && (
+                                                          <Badge
+                                                              color={T.amber}
+                                                              bg={T.amberDim}
                                                               style={{
-                                                                  fontSize: 12,
-                                                                  color: T.amber,
+                                                                  fontSize: 11,
+                                                                  padding:
+                                                                      '0px 5px',
                                                               }}
                                                           >
-                                                              [中]
-                                                          </span>
+                                                              要確認
+                                                          </Badge>
                                                       )}
                                               </div>
                                               <div
@@ -6790,14 +6653,15 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                       <Btn
                           data-intro="go-format"
                           aria-label='次へ: 整える'
-                          title='A4プレビューでレイアウトを整える（AI整形・PDF編集もこちら）'
+                          title={isLite?'A4プレビューで仕上がりを確認する':'A4プレビューでレイアウトを整える（AI整形・PDF編集もこちら）'}
                           onClick={goFormat}
                           style={{ flex: 1, borderRadius: 10, fontSize: 13, background: T.accent }}
                       >
                           次へ: 整える
                       </Btn>
                       <Btn
-                          title='クリップボードにコピー'
+                          title='マスク済みテキストをクリップボードにコピー'
+                          aria-label='コピー'
                           variant='ghost'
                           onClick={handleCopy}
                           aria-live="polite"
@@ -6805,9 +6669,10 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                               borderRadius: 10,
                               padding: '11px 18px',
                               fontSize: 13,
+                              whiteSpace: 'nowrap',
                           }}
                       >
-                          {copied ? '\u2713' : 'Copy'}
+                          {copied ? '\u2713 コピー済み' : 'コピー'}
                       </Btn>
                   </div>
                   <div className={s['ed-btn-row']}>
@@ -6832,16 +6697,17 @@ function EditorScreen({data,onReset,apiKey,model,isLite}){
                           検出レポート
                       </Btn>}
                       <Btn
-                          title='ファイル選択画面に戻る'
+                          title='ファイル選択画面に戻る（現在の検出結果は破棄されます）'
+                          aria-label='最初からやり直す'
                           variant='ghost'
-                          onClick={onReset}
+                          onClick={()=>{if(window.confirm('最初からやり直しますか？現在の検出結果は破棄されます。'))onReset();}}
                           style={{
                               fontSize: 13,
                               padding: '9px 12px',
                               borderRadius: 8,
                           }}
                       >
-                          ホームへ戻る
+                          最初からやり直す
                       </Btn>
                   </div>
               </div>
@@ -7449,16 +7315,17 @@ export default function App(){
                                 : `${data.detections.filter((d) => d.enabled).length}件`}
                           </Badge>
                       )}
-                      {settings.aiDetect && (
-                          <Badge color={C.purple} bg={C.purpleDim}>
-                              AI
+                      {/* AI関連バッジは Pro のみ（Lite は AI を使わない） */}
+                      {!isLite && settings.aiDetect && (
+                          <Badge color={C.purple} bg={C.purpleDim} style={{cursor:'help'}} title='AI検出がオンです。設定でオフにできます'>
+                              AI検出 ON
                           </Badge>
                       )}
-                      {aiUsage && !settings.apiKey && (
+                      {!isLite && aiUsage && !settings.apiKey && (
                           <Badge color={aiUsage.remaining<=5?'#f59e0b':T.text3} bg={aiUsage.remaining<=5?'#f59e0b20':T.surfaceAlt}
-                              style={{cursor:'help'}}
+                              style={{cursor:'help',fontVariantNumeric:'tabular-nums'}}
                               title={`サーバー共用AI: ${aiUsage.used}/${aiUsage.limit}回使用済み${aiUsage.resetAt ? `（リセット: ${new Date(aiUsage.resetAt).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'})}）` : ''}\n自分のAPIキーを設定すると無制限に利用できます。`}>
-                              AI {aiUsage.used}/{aiUsage.limit}
+                              AI 残り{Math.max(0,aiUsage.remaining)}回
                               {aiUsage.resetAt>0 && aiUsage.used>0 && <span style={{opacity:0.7,marginLeft:4,fontSize:10}}>{(() => {const h=Math.max(0,Math.ceil((aiUsage.resetAt-Date.now())/3600000));return h>0?`${h}h後リセット`:'リセット済';})()}</span>}
                           </Badge>
                       )}
@@ -7501,7 +7368,7 @@ export default function App(){
                           className={s['app-settings-dot']}
                           style={{ background: curProv.color }}
                       />
-                      <span>{settings.aiProfile==='balanced'?'Auto':curModel?.label || '設定'}</span>
+                      <span>{isLite?'設定':(settings.aiProfile==='balanced'?'Auto':curModel?.label || '設定')}</span>
                       <svg
                           width='16'
                           height='16'
@@ -7516,7 +7383,7 @@ export default function App(){
                   </button>
               </div>
           </header>
-          <StepFlowBar current={flowStep} hasData={hasFlowData} analyzing={analyzing} canExport={canFlowExport} onStepClick={handleFlowStepClick}/>
+          <StepFlowBar current={flowStep} hasData={hasFlowData} analyzing={analyzing} canExport={canFlowExport} isLite={isLite} onStepClick={handleFlowStepClick}/>
           <main style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
           {(!isLite && batchMode) ? (
               <>
