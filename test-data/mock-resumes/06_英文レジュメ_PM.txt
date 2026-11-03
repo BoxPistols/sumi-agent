@@ -1,0 +1,80 @@
+KENJI TANAKA
+Project Manager | Agile Coach
+
+Email: kenji.tanaka@protonmail.com
+Phone: +81-90-5678-1234
+Address: 2-14-8 Roppongi, Minato-ku, Tokyo 106-0032, Japan
+LinkedIn: https://www.linkedin.com/in/kenji-tanaka-pm
+GitHub: https://github.com/kenji-tanaka
+
+---
+
+PROFESSIONAL SUMMARY
+
+Results-driven Project Manager with 12+ years of experience in software development projects ranging from $500K to $15M. Certified PMP and CSM with a track record of delivering complex enterprise systems on time and within budget. Strong expertise in Agile/Scrum methodologies, stakeholder management, and cross-functional team leadership across Japan and APAC region.
+
+---
+
+WORK EXPERIENCE
+
+SENIOR PROJECT MANAGER / AGILE COACH
+Rakuten Group, Inc. | Tokyo, Japan | Apr 2020 - Present
+Supervisor: Hiroshi Yamamoto (VP of Engineering) | h.yamamoto@rakuten.com
+
+Key Achievements:
+- Led digital transformation initiative for Rakuten Travel (budget: $8.5M, team: 45 engineers)
+  Migrated monolithic architecture to microservices (Kubernetes + AWS)
+  Achieved 99.95% uptime and 40% reduction in infrastructure costs
+- Established company-wide Agile Center of Excellence
+  Trained 120+ engineers across 15 teams in Scrum/Kanban practices
+  Reduced average sprint cycle time by 35%
+- Managed vendor relationships with Accenture, TCS, and local partners
+  Negotiated contracts saving $1.2M annually
+
+PROJECT MANAGER
+Nomura Research Institute (NRI) | Tokyo, Japan | Apr 2015 - Mar 2020
+Supervisor: Takeshi Suzuki (Department Director) | t.suzuki@nri.co.jp
+
+Key Achievements:
+- Delivered Mizuho Bank's next-generation online banking platform ($12M, 18-month timeline)
+  Coordinated 8 development teams (60+ engineers) across 3 countries
+- Implemented SAFe framework for large-scale portfolio management
+- Managed regulatory compliance (FISC, PCI-DSS) across all deliverables
+
+SYSTEMS ENGINEER
+Fujitsu Limited | Kawasaki, Japan | Apr 2012 - Mar 2015
+
+---
+
+EDUCATION
+
+MBA, Technology Management | Waseda University, Tokyo | 2018
+B.Eng., Computer Science | Tokyo Institute of Technology | 2012
+
+---
+
+CERTIFICATIONS
+
+- Project Management Professional (PMP) - PMI, 2017
+- Certified Scrum Master (CSM) - Scrum Alliance, 2019
+- AWS Solutions Architect Professional, 2021
+- ITIL v4 Foundation, 2020
+- JLPT N1 (Native Japanese Speaker)
+- TOEIC: 945
+
+---
+
+SKILLS
+
+Project Management: Waterfall, Agile (Scrum/Kanban), SAFe, PMBOK
+Tools: Jira, Confluence, MS Project, Miro, Slack, Notion
+Technical: AWS, Azure, Docker, Kubernetes, CI/CD pipelines
+Languages: Japanese (Native), English (Business Fluent)
+
+---
+
+REFERENCES
+
+Available upon request.
+Personal Reference: Prof. Akira Watanabe, Tokyo Institute of Technology
+Email: watanabe.akira@titech.ac.jp | Phone: 03-5734-XXXX

@@ -1,0 +1,159 @@
+import { test, expect } from '@playwright/test'
+import path from 'node:path'
+
+// 全テスト共通: ページロード前にツアー・ウェルカムモーダルを抑制する
+test.beforeEach(async ({ page }) => {
+  // addInitScript はページ遷移のたびに実行される
+  await page.addInitScript(() => {
+    localStorage.setItem('rp_onboarding_done', '1')
+    localStorage.setItem('rp_visited', '1')
+    localStorage.setItem('rp_tour_upload_done', '1')
+    localStorage.setItem('rp_tour_editor_done', '1')
+    localStorage.setItem('rp_tour_pro_done', '1')
+  })
+})
+
+// 万が一オーバーレイが残っている場合に JS で除去するヘルパー
+async function dismissTour(page: import('@playwright/test').Page) {
+  await page.evaluate(() => {
+    document
+      .querySelectorAll(
+        '.introjs-overlay, .introjs-tour, .introjs-helperLayer, .introjs-tooltipReferenceLayer, .introjs-fixedTooltip',
+      )
+      .forEach((el) => el.remove())
+  })
+}
+
+test.describe('TOP画面', () => {
+  test('見出しとドロップゾーンが表示される', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { name: /個人情報/ })).toBeVisible()
+    await expect(page.getByText('ファイルをドラッグ')).toBeVisible()
+  })
+
+  test('Lite/Pro 切替', async ({ page }) => {
+    await page.goto('/')
+    // エディション切替はradiogroup
+    const proRadio = page.getByRole('radio', { name: /Pro/ })
+    await proRadio.click()
+    // Pro切替後のツアーを除去
+    await dismissTour(page)
+    // Pro版には「URLから取り込む」タブがある
+    await expect(page.getByText('URLから取り込む')).toBeVisible()
+
+    // Liteに戻す
+    const liteRadio = page.getByRole('radio', { name: /Lite/ })
+    await liteRadio.click()
+    await expect(page.getByText('URLから取り込む')).not.toBeVisible()
+  })
+
+  test('テーマ切替', async ({ page }) => {
+    await page.goto('/')
+    const themeBtn = page.getByRole('button', { name: 'ダークモード切替' })
+    await themeBtn.click()
+    await page.waitForTimeout(300)
+    // 切り替え後もページが表示されていること
+    await expect(page.getByRole('heading', { name: /個人情報/ })).toBeVisible()
+  })
+})
+
+test.describe('ファイルアップロード', () => {
+  test('TXTファイルで検出結果が表示される', async ({ page }) => {
+    await page.goto('/')
+    const filePath = path.resolve('test-data/mock-resumes/01_職務経歴書_ITエンジニア.txt')
+    const input = page.locator('input[type="file"]')
+    await input.setInputFiles(filePath)
+
+    // 検出完了を待つ（EditorScreenに遷移）
+    await expect(page.getByText('検出結果')).toBeVisible({ timeout: 15000 })
+  })
+})
+
+test.describe('PreviewModal', () => {
+  test('プレビューモーダルの表示と最大化', async ({ page }) => {
+    await page.goto('/')
+    const filePath = path.resolve('test-data/mock-resumes/01_職務経歴書_ITエンジニア.txt')
+    const input = page.locator('input[type="file"]')
+    await input.setInputFiles(filePath)
+    await expect(page.getByText('検出結果')).toBeVisible({ timeout: 15000 })
+
+    // EditorScreen のツアーオーバーレイを除去
+    await dismissTour(page)
+
+    // 確認する → 整える（A4プレビュー画面）
+    await page.getByRole('button', { name: '次へ: 整える' }).click()
+    await expect(page.getByText('A4 プレビュー')).toBeVisible()
+
+    // 整える → 書き出す（エクスポートプレビューモーダル）
+    await page.getByRole('button', { name: '次へ: 書き出す' }).click()
+    await expect(page.locator('[role="dialog"]')).toBeVisible()
+
+    // 最大化ボタン（背後の整えるビューにも「縮小」ズームボタンがあるためダイアログ内にスコープ）
+    const dialog = page.getByRole('dialog')
+    const expandBtn = dialog.getByRole('button', { name: '最大化' })
+    await expect(expandBtn).toBeVisible()
+    await expandBtn.click()
+    await expect(dialog.getByRole('button', { name: '縮小' })).toBeVisible()
+  })
+})
+
+test.describe('初見ユーザー導線（サンプルで試す）', () => {
+  test('取り込みゾーンに主ボタン「ファイルを選択」がある', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('button', { name: 'ファイルを選択' })).toBeVisible()
+    await expect(page.getByText('または、ここにファイルをドラッグ＆ドロップ')).toBeVisible()
+  })
+
+  test('サンプル → 確認する（案内を閉じると記憶）→ 整える → 書き出す', async ({ page }) => {
+    await page.goto('/')
+
+    // ファイルがなくてもサンプルで流れを体験できる
+    await page.getByRole('button', { name: /経歴書サンプル（PDF）/ }).click()
+    await expect(page.getByText('検出結果')).toBeVisible({ timeout: 15000 })
+    await dismissTour(page)
+
+    // 初回案内: スイッチの意味を1文で説明し、閉じると記憶される
+    const note = page.getByRole('note')
+    await expect(note).toBeVisible()
+    await expect(note).toContainText('オンの項目がマスクされます')
+    await page.getByRole('button', { name: 'この案内を閉じる' }).click()
+    await expect(note).toHaveCount(0)
+    expect(await page.evaluate(() => localStorage.getItem('rp_hint_review_done'))).toBe('1')
+
+    // 件数が「n件をマスク」で読める
+    await expect(page.getByText(/\d+件をマスク/)).toBeVisible()
+
+    // 表示切替は文字ラベル付き
+    await expect(page.getByRole('button', { name: /^マスク後/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^差分/ })).toBeVisible()
+
+    // 整える → 書き出す
+    await page.getByRole('button', { name: '次へ: 整える' }).click()
+    await expect(page.getByText('A4 プレビュー')).toBeVisible()
+    await page.getByRole('button', { name: '次へ: 書き出す' }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+  })
+
+  test('Pro版の入力タブは平易な文言で tablist になっている', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('radio', { name: /Pro/ }).click()
+    await dismissTour(page)
+    const tablist = page.getByRole('tablist', { name: '取り込み方法' })
+    await expect(tablist.getByRole('tab', { name: 'ファイル' })).toBeVisible()
+    await expect(tablist.getByRole('tab', { name: 'URLから取り込む' })).toBeVisible()
+    await expect(tablist.getByRole('tab', { name: 'テキストを貼り付け' })).toBeVisible()
+    await expect(page.getByText('サンプルで試す', { exact: true })).toBeVisible()
+  })
+})
+
+test.describe('カスタムキーワード', () => {
+  test('保存済みのキーワードが再訪問時に復元される（Pro）', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('rp_edition', 'pro')
+      localStorage.setItem('rp_custom_keywords', JSON.stringify(['社内コードA']))
+    })
+    await page.goto('/')
+    await dismissTour(page)
+    await expect(page.getByText('社内コードA')).toBeVisible()
+  })
+})

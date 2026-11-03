@@ -1,0 +1,230 @@
+/* intro.js ダークテーマ対応 + レイアウト修正 */
+
+/* === ダークモード（デフォルト） === */
+
+.introjs-tooltip {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+  min-width: 320px !important;
+  max-width: 420px !important;
+  padding: 0 !important;
+}
+
+.introjs-tooltiptext {
+  padding: 20px 24px 12px !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.introjs-tooltip-title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  margin-bottom: 4px !important;
+  width: auto;
+}
+
+.introjs-tooltipbuttons {
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 12px 20px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+.introjs-button {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 8px !important;
+  padding: 7px 16px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-shadow: none !important;
+  cursor: pointer !important;
+  transition: all 0.15s !important;
+}
+
+.introjs-button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+}
+
+.introjs-button:focus {
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.4) !important;
+}
+
+/* 次へ/完了: グラデーション両端で白文字 4.5:1 以上を満たす紫を使う
+   （#a78bfa=2.72:1 / #8b5cf6=4.23:1 はいずれも不可。#7c3aed=5.70:1 / #6d28d9=7.10:1） */
+.introjs-nextbutton,
+.introjs-donebutton {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+.introjs-nextbutton:hover,
+.introjs-donebutton:hover {
+  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+  color: #fff !important;
+}
+
+/* スキップボタン: 絶対配置 + 切れ防止 */
+.introjs-skipbutton {
+  position: absolute !important;
+  top: 8px !important;
+  right: 6px !important;
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  z-index: 1 !important;
+  display: block;
+  width: auto;
+  line-height: 1.5;
+}
+
+.introjs-skipbutton:hover {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* ステップカウンター（例: 7 / 12）— 進捗バーの上に右寄せで表示 */
+.introjs-stepcounter {
+  padding: 0 20px 4px !important;
+  text-align: right !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+.introjs-progress {
+  background: rgba(255, 255, 255, 0.1) !important;
+  height: 3px !important;
+  margin: 0 20px 4px !important;
+  border-radius: 2px !important;
+}
+
+.introjs-progressbar {
+  background: linear-gradient(90deg, #8b5cf6, #a78bfa) !important;
+  border-radius: 2px !important;
+}
+
+.introjs-helperLayer {
+  border-radius: 10px !important;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65) !important;
+}
+
+.introjs-arrow {
+  border-color: transparent !important;
+}
+
+.introjs-arrow.top {
+  border-bottom-color: #1e293b !important;
+}
+
+.introjs-arrow.bottom {
+  border-top-color: #1e293b !important;
+}
+
+.introjs-arrow.left {
+  border-right-color: #1e293b !important;
+}
+
+.introjs-arrow.right {
+  border-left-color: #1e293b !important;
+}
+
+/* === ライトモード（data-theme="light" のみ） === */
+
+[data-theme='light'] .introjs-tooltip {
+  background: #fff !important;
+  color: #334155 !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme='light'] .introjs-tooltiptext {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .introjs-tooltip-title {
+  color: #0f172a !important;
+}
+
+[data-theme='light'] .introjs-tooltipbuttons {
+  border-top-color: #e2e8f0 !important;
+}
+
+[data-theme='light'] .introjs-button {
+  border-color: #d1d5db !important;
+  color: #475569 !important;
+}
+
+[data-theme='light'] .introjs-button:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* 次へ/完了はプライマリのまま維持する。
+   [data-theme='light'] .introjs-button と同詳細度のため、必ずこの後に置く。
+   白文字 on #7c3aed = 5.70:1 / on #6d28d9 = 7.10:1（AA 合格） */
+[data-theme='light'] .introjs-nextbutton,
+[data-theme='light'] .introjs-donebutton {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
+[data-theme='light'] .introjs-nextbutton:hover,
+[data-theme='light'] .introjs-donebutton:hover {
+  background: linear-gradient(135deg, #6d28d9, #5b21b6) !important;
+  color: #fff !important;
+}
+
+[data-theme='light'] .introjs-skipbutton {
+  color: #94a3b8 !important;
+}
+
+[data-theme='light'] .introjs-skipbutton:hover {
+  color: #475569 !important;
+}
+
+[data-theme='light'] .introjs-stepcounter {
+  color: #57534e !important;
+}
+
+[data-theme='light'] .introjs-progress {
+  background: #e2e8f0 !important;
+}
+
+[data-theme='light'] .introjs-helperLayer {
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme='light'] .introjs-arrow.top {
+  border-bottom-color: #fff !important;
+}
+
+[data-theme='light'] .introjs-arrow.bottom {
+  border-top-color: #fff !important;
+}
+
+[data-theme='light'] .introjs-arrow.left {
+  border-right-color: #fff !important;
+}
+
+[data-theme='light'] .introjs-arrow.right {
+  border-left-color: #fff !important;
+}

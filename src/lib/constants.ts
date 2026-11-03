@@ -1,0 +1,193 @@
+// ═══ Constants & Configuration ═══
+
+export const C = {
+  accent: '#1C1917',
+  accentDim: 'rgba(28,25,23,0.08)',
+  red: '#DC2626',
+  redDim: 'rgba(220,38,38,0.1)',
+  green: '#059669',
+  greenDim: 'rgba(5,150,105,0.1)',
+  amber: '#D97706',
+  amberDim: 'rgba(217,119,6,0.1)',
+  purple: '#9B6DFF',
+  purpleDim: 'rgba(155,109,255,0.1)',
+  cyan: '#22D3EE',
+  cyanDim: 'rgba(34,211,238,0.1)',
+  sumi: '#1C1917',
+  washi: '#FAF9F6',
+  stamp: '#DC2626',
+  font: "'Noto Sans JP','DM Sans',system-ui,sans-serif",
+  mono: "'JetBrains Mono','Fira Code',monospace",
+} as const
+
+export interface AIModel {
+  id: string
+  label: string
+  desc: string
+  tier: number
+  needsUserKey?: boolean
+}
+
+export interface AIProvider {
+  id: string
+  label: string
+  icon: string
+  color: string
+  needsKey: boolean
+  models: AIModel[]
+  defaultModel: string
+}
+
+// Geminiは2.5 Flashが新規の利用者に404を返すため外した。保存済みのgoogleはmigrateProviderIdでopenaiへ戻る
+export const AI_PROVIDERS: AIProvider[] = [
+  {
+    id: 'openai',
+    label: 'OpenAI',
+    icon: 'O',
+    color: '#10A37F',
+    needsKey: false,
+    models: [{ id: 'gpt-6-luna', label: 'GPT-6 Luna', desc: '高速・高精度（推奨）', tier: 1 }],
+    defaultModel: 'gpt-6-luna',
+  },
+  {
+    id: 'local',
+    label: 'ローカルAI',
+    icon: 'L',
+    color: '#8B5CF6',
+    needsKey: false,
+    models: [{ id: 'local-auto', label: '自動検出', desc: 'ローカルサーバーに接続', tier: 1 }],
+    defaultModel: 'local-auto',
+  },
+]
+
+export const AI_MODELS = AI_PROVIDERS.flatMap((p) =>
+  p.models.map((m) => ({ ...m, provider: p.id })),
+)
+
+/** 廃止済みプロバイダ（保存値）を現行のものへ移行する */
+export const DEFAULT_PROVIDER = 'openai'
+export const DEFAULT_MODEL = 'gpt-6-luna'
+
+export function migrateProviderId(savedProvider: string | null | undefined): string {
+  if (!savedProvider) return DEFAULT_PROVIDER
+  return AI_PROVIDERS.some((p) => p.id === savedProvider) ? savedProvider : DEFAULT_PROVIDER
+}
+
+export function getProviderForModel(modelId: string): string {
+  if (modelId === 'local-auto' || modelId.startsWith('local-')) return 'local'
+  for (const p of AI_PROVIDERS) {
+    if (p.models.some((m) => m.id === modelId)) return p.id
+  }
+  return 'openai'
+}
+
+export interface CategoryMeta {
+  label: string
+  color: string
+  bg: string
+}
+
+export const CATEGORIES: Record<string, CategoryMeta> = {
+  name: { label: '氏名', color: C.red, bg: C.redDim },
+  contact: { label: '連絡先', color: C.accent, bg: C.accentDim },
+  address: { label: '住所・地名', color: C.amber, bg: C.amberDim },
+  personal: { label: '個人情報', color: C.purple, bg: C.purpleDim },
+  web: { label: 'URL', color: C.cyan, bg: C.cyanDim },
+  organization: { label: '組織名', color: '#8490A8', bg: 'rgba(132,144,168,0.1)' },
+  custom: { label: 'カスタム', color: '#E879A8', bg: 'rgba(232,121,168,0.1)' },
+  photo: { label: '顔写真', color: C.red, bg: C.redDim },
+}
+
+export const DEFAULT_MASK: Record<string, boolean> = {
+  name: true,
+  contact: true,
+  address: true,
+  personal: true,
+  web: true,
+  organization: false,
+  custom: true,
+  keepPrefecture: true,
+  nameInitial: false,
+}
+
+export interface MaskPreset {
+  id: string
+  label: string
+  desc: string
+  level: number
+  mask: Record<string, boolean>
+}
+
+export const MASK_PRESETS: MaskPreset[] = [
+  {
+    id: 'basic',
+    label: '基本',
+    desc: '氏名 + 連絡先のみ',
+    level: 1,
+    mask: {
+      name: true,
+      contact: true,
+      address: false,
+      personal: false,
+      web: false,
+      organization: false,
+      custom: true,
+      keepPrefecture: true,
+      nameInitial: false,
+    },
+  },
+  {
+    id: 'std',
+    label: '標準',
+    desc: '+ 住所・年月日・URL',
+    level: 2,
+    mask: {
+      name: true,
+      contact: true,
+      address: true,
+      personal: true,
+      web: true,
+      organization: false,
+      custom: true,
+      keepPrefecture: true,
+      nameInitial: false,
+    },
+  },
+  {
+    id: 'strict',
+    label: '厳格',
+    desc: '組織名含む全項目',
+    level: 3,
+    mask: {
+      name: true,
+      contact: true,
+      address: true,
+      personal: true,
+      web: true,
+      organization: true,
+      custom: true,
+      keepPrefecture: false,
+      nameInitial: false,
+    },
+  },
+]
+
+export const EXPORT_FORMATS = [
+  { id: 'txt', label: 'Text', ext: '.txt', icon: 'T' },
+  { id: 'md', label: 'Markdown', ext: '.md', icon: 'M' },
+  { id: 'csv', label: 'CSV', ext: '.csv', icon: 'C' },
+  { id: 'xlsx', label: 'Excel', ext: '.xlsx', icon: 'X' },
+  { id: 'pdf', label: 'PDF', ext: '.pdf', icon: 'P' },
+  { id: 'docx', label: 'Word', ext: '.docx', icon: 'W' },
+] as const
+
+// SPA sites that can't be scraped
+export const SPA_DOMAINS = [
+  'canva.com',
+  'figma.com',
+  'notion.so',
+  'docs.google.com',
+  'drive.google.com',
+  'adobe.com',
+  'miro.com',
+]

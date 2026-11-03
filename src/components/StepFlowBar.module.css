@@ -1,0 +1,124 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--rp-border);
+  background: var(--rp-bg2);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rp-text3);
+  cursor: default;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.step[data-status='current'] {
+  color: var(--rp-accent);
+}
+
+.step[data-status='done'] {
+  color: #059669;
+}
+
+.step[data-clickable='true'] {
+  cursor: pointer;
+}
+
+.step[data-clickable='true']:hover {
+  background: var(--rp-surfaceAlt);
+}
+
+.num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1.5px solid currentcolor;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.step[data-status='current'] .num {
+  background: var(--rp-accent);
+  color: var(--rp-bg);
+  border-color: var(--rp-accent);
+}
+
+.step[data-status='done'] .num {
+  background: rgba(5, 150, 105, 0.12);
+}
+
+.sep {
+  color: var(--rp-text3);
+  opacity: 0.5;
+  flex-shrink: 0;
+  font-size: 11px;
+  user-select: none;
+}
+
+.hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--rp-text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.hintLabel {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--rp-text3);
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--rp-surfaceAlt);
+}
+
+.hintText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .hint {
+    display: none;
+  }
+
+  .bar {
+    padding: 0 10px;
+    gap: 4px;
+  }
+
+  .step {
+    padding: 4px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .step[data-status='upcoming'] .label,
+  .step[data-status='done'] .label {
+    display: none;
+  }
+}

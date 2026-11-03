@@ -1,0 +1,85 @@
+{
+  "name": "sumi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sumi - 経歴書の個人情報 自動検出・マスキング",
+  "scripts": {
+    "predev": "rm -rf .next",
+    "dev": "portless sumi next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "fix": "pnpm lint:fix && pnpm format:write",
+    "prepare": "husky",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.427",
+    "@remotion/player": "^4.0.427",
+    "intro.js": "^8.3.2",
+    "intro.js-react": "^1.0.0",
+    "jszip": "^3.10.1",
+    "mammoth": "^1.8.0",
+    "next": "^15.2.0",
+    "papaparse": "^5.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.427",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.0.0",
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^22.0.0",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.1.4",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.2.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "portless": "^0.4.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18",
+    "storybook": "^10.2.12",
+    "@storybook/nextjs-vite": "^10.2.12",
+    "@chromatic-com/storybook": "^5.0.1",
+    "@storybook/addon-a11y": "^10.2.12",
+    "@storybook/addon-docs": "^10.2.12",
+    "@storybook/addon-onboarding": "^10.2.12",
+    "vite": "^7.3.1",
+    "eslint-plugin-storybook": "^10.2.12"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BoxPistols/sumi-agent.git"
+  },
+  "homepage": "https://sumi-agent.vercel.app",
+  "license": "MIT",
+  "author": "BoxPistols",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{json,md,css,html}": [
+      "prettier --write"
+    ]
+  }
+}

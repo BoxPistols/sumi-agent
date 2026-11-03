@@ -1,0 +1,160 @@
+/**
+ * アドバイザー Auto モデル選択 + コスト管理
+ *
+ * モデルラインナップは GPT-6 Luna に一本化。
+ * assessComplexity は将来の多段ルーティング復活とコスト予測のために残す。
+ * セッション/日次のコスト追跡とアラートを管理する。
+ */
+
+// ── コスト定義（円 / 1往復の概算） ──
+export const MODEL_COSTS: Record<string, { costYen: number; label: string; tier: 'luna' }> = {
+  'gpt-6-luna': { costYen: 0.4, label: 'GPT-6 Luna', tier: 'luna' },
+}
+
+// ── 予算しきい値（円） ──
+export const BUDGET = {
+  perRoundTrip: 1.0, // 1往復あたり上限
+  perTaskCycle: 5.0, // 1タスクサイクル上限
+  perDayAlert: 50.0, // 日次アラートライン
+} as const
+
+// ── 複雑度判定 ──
+type Complexity = 'low' | 'high'
+
+/** プリセットIDごとの複雑度 */
+const PRESET_COMPLEXITY: Record<string, Complexity> = {
+  review: 'high', // 全体構成の分析 → 論理思考が必要
+  strengths: 'high', // 潜在的な強みの発見 → 推論力が必要
+  rewrite: 'high', // 記述改善 → 具体的な提案力が必要
+  'rewrite-full': 'high', // 全文リライト → 高い推論力が必要
+  'job-match': 'high', // 求人票マッチング → 2文書の照合分析
+  questions: 'low', // 項目列挙 → 定量的タスク
+  matching: 'high', // 適性分析 → 推論力が必要
+}
+
+/** ヒューリスティクスによる複雑度判定 */
+export function assessComplexity(params: {
+  userMessage: string
+  presetId?: string
+  messageCount: number
+  hasJobDescription: boolean
+  contextLength: number
+}): Complexity {
+  const { userMessage, presetId, messageCount, hasJobDescription } = params
+
+  // プリセット指定がある場合はそれに従う
+  if (presetId && PRESET_COMPLEXITY[presetId]) {
+    return PRESET_COMPLEXITY[presetId]
+  }
+
+  // 求人票付き → high（2文書照合）
+  if (hasJobDescription) return 'high'
+
+  // 初回メッセージ（経歴書全体の分析） → high
+  if (messageCount === 0) return 'high'
+
+  // 長い質問（200文字超） → high
+  if (userMessage.length > 200) return 'high'
+
+  // 論理思考を要するキーワード
+  const complexKeywords = [
+    '分析',
+    '比較',
+    '評価',
+    '改善',
+    '提案',
+    '戦略',
+    '長所',
+    '短所',
+    '強み',
+    '弱み',
+    '課題',
+    '理由',
+    'なぜ',
+    'どのように',
+    '具体的',
+    'マッチ',
+    '適性',
+    'ギャップ',
+    'アドバイス',
+    '推薦',
+    'レビュー',
+  ]
+  if (complexKeywords.some((kw) => userMessage.includes(kw))) return 'high'
+
+  // それ以外 → low（フォローアップ、簡単な質問）
+  return 'low'
+}
+
+/** 複雑度に応じてモデルを選択（現在のラインナップは GPT-6 Luna 一本） */
+export function selectModel(complexity: Complexity): string {
+  // 複雑度は将来の多段ルーティング復活に備えて受け取るが、現在は分岐しない
+  void complexity
+  return 'gpt-6-luna'
+}
+
+// ── コスト追跡 ──
+const LS_COST_KEY = 'rp_advisor_cost'
+
+interface CostRecord {
+  date: string // YYYY-MM-DD
+  dailyTotal: number // 日次累計（円）
+  sessionTotal: number // セッション累計（円）
+  callCount: number // 呼び出し回数
+}
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+/** 現在のコスト記録を取得 */
+export function getCostRecord(): CostRecord {
+  try {
+    const raw = localStorage.getItem(LS_COST_KEY)
+    if (!raw) return { date: today(), dailyTotal: 0, sessionTotal: 0, callCount: 0 }
+    const record: CostRecord = JSON.parse(raw)
+    // 日付が変わったらリセット
+    if (record.date !== today()) {
+      return { date: today(), dailyTotal: 0, sessionTotal: 0, callCount: 0 }
+    }
+    return record
+  } catch {
+    return { date: today(), dailyTotal: 0, sessionTotal: 0, callCount: 0 }
+  }
+}
+
+/** コストを記録 */
+export function recordCost(modelId: string): CostRecord {
+  const cost = MODEL_COSTS[modelId]?.costYen || 0.1
+  const record = getCostRecord()
+  record.dailyTotal += cost
+  record.sessionTotal += cost
+  record.callCount += 1
+  try {
+    localStorage.setItem(LS_COST_KEY, JSON.stringify(record))
+  } catch {
+    /* ignore */
+  }
+  return record
+}
+
+/** セッションコストをリセット（新しいファイル読み込み時等） */
+export function resetSessionCost(): void {
+  const record = getCostRecord()
+  record.sessionTotal = 0
+  try {
+    localStorage.setItem(LS_COST_KEY, JSON.stringify(record))
+  } catch {
+    /* ignore */
+  }
+}
+
+export type CostAlert = 'none' | 'session-warn' | 'daily-alert' | 'daily-warn'
+
+/** アラートレベルを判定 */
+export function checkCostAlert(record: CostRecord): CostAlert {
+  if (record.dailyTotal >= BUDGET.perDayAlert) return 'daily-warn'
+  if (record.dailyTotal >= BUDGET.perDayAlert * 0.8) return 'daily-alert'
+  if (record.sessionTotal >= BUDGET.perTaskCycle * 0.8) return 'session-warn'
+  return 'none'
+}

@@ -1,0 +1,299 @@
+/**
+ * intro.js ステップ定義
+ *
+ * Sumi のオンボーディングガイドツアーのステップを管理する。
+ * 各ステップは data-intro 属性を持つ要素にアタッチされる。
+ */
+
+export interface IntroStep {
+  element: string
+  title: string
+  intro: string
+  position?: 'top' | 'bottom' | 'left' | 'right'
+}
+
+/** ステップフローバー紹介（全ツアー共通の先頭ステップ） */
+const STEP_FLOW_INTRO: IntroStep = {
+  element: '[data-intro="step-flow"]',
+  title: '4ステップで完了',
+  intro:
+    'Sumiの作業は「1 取り込む → 2 確認する → 3 整える → 4 書き出す」の4ステップだけ。今いるステップと、いまやることが常にここに表示されます。',
+  position: 'bottom',
+}
+
+/**
+ * Lite版 UploadScreen ステップ
+ */
+export const UPLOAD_STEPS_LITE: IntroStep[] = [
+  STEP_FLOW_INTRO,
+  {
+    element: '[data-intro="upload-zone"]',
+    title: 'ファイルアップロード',
+    intro:
+      '「ファイルを選択」を押すか、ここにファイルをドラッグ＆ドロップ。PDF、Word、Excelなど多数の形式に対応しています。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="mask-presets"]',
+    title: 'マスクする項目',
+    intro:
+      '「基本」「標準」「厳格」の3段階。迷ったら「標準」のままでOK。あとから確認画面でも個別に変えられます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="sample-demo"]',
+    title: 'サンプルで試す',
+    intro: 'まずはサンプルで試してみましょう。実際の検出・マスキング結果をすぐに確認できます。',
+    position: 'top',
+  },
+  {
+    element: '[data-intro="edition-toggle"]',
+    title: 'Lite / Pro 切替',
+    intro: 'Pro版に切り替えるとAI検出、URL取込、バッチ処理などが使えます。',
+    position: 'bottom',
+  },
+]
+
+/**
+ * Pro版 UploadScreen ステップ
+ */
+export const UPLOAD_STEPS_PRO: IntroStep[] = [
+  STEP_FLOW_INTRO,
+  {
+    element: '[data-intro="upload-zone"]',
+    title: 'ファイルアップロード',
+    intro: '「ファイルを選択」またはドラッグ＆ドロップ。複数ファイルを選ぶと一括で処理できます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="input-tabs"]',
+    title: '入力モード切替',
+    intro: 'ファイル以外にURL取込やテキスト貼付にも対応しています。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="mask-presets"]',
+    title: 'マスクする項目',
+    intro: '基本・標準・厳格の3段階。迷ったら「標準」のままでOK。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="category-toggles"]',
+    title: 'カテゴリ別制御',
+    intro: '氏名・連絡先・住所など、カテゴリごとにマスキングを制御できます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="detail-options"]',
+    title: '詳細オプション',
+    intro: '都道府県を残す、イニシャル化などの細かい設定。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="custom-keywords"]',
+    title: 'カスタムキーワード',
+    intro: '任意の文字列を追加でマスキング対象に指定できます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="settings-button"]',
+    title: '設定',
+    intro: 'AI検出の設定やAPIキーの管理はこちらから。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="sample-files"]',
+    title: 'サンプルで試す',
+    intro: '手元にファイルがなくても、サンプルで検出から書き出しまでの流れを体験できます。',
+    position: 'top',
+  },
+]
+
+/**
+ * Lite版 EditorScreen ステップ
+ */
+export const EDITOR_STEPS_LITE: IntroStep[] = [
+  {
+    element: '[data-intro="step-flow"]',
+    title: 'ステップ2: 確認する',
+    intro:
+      '検出結果の確認画面です。確認が済んだら「次へ: 整える」でA4プレビューに進み、最後に「4 書き出す」でエクスポートします。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="view-tabs"]',
+    title: '表示モード',
+    intro: '「マスク後」で置き換え後のテキスト、「差分」で変更前後を並べて比較できます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="category-filter"]',
+    title: 'カテゴリごとにマスク',
+    intro: '種類ごとにまとめてON/OFF。不要なカテゴリはここで一度に外せます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="detection-list"]',
+    title: '検出結果リスト',
+    intro:
+      '検出された個人情報の一覧。スイッチがオンの項目がマスクされます。残したい情報はオフにしてください。',
+    position: 'left',
+  },
+  {
+    element: '[data-intro="go-format"]',
+    title: '次へ: 整える',
+    intro:
+      '確認が済んだらこのボタンでA4プレビューへ。仕上がりを確認してから、テキスト・Markdown・CSV・Excel・PDF・Wordの6形式で書き出せます。',
+    position: 'top',
+  },
+]
+
+/**
+ * Pro版 EditorScreen ステップ
+ */
+export const EDITOR_STEPS_PRO: IntroStep[] = [
+  {
+    element: '[data-intro="step-flow"]',
+    title: 'ステップ2: 確認する',
+    intro:
+      '検出結果の確認画面です。確認が済んだら「次へ: 整える」でA4プレビューに進み、最後に「4 書き出す」でエクスポートします。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="view-tabs"]',
+    title: '表示モード',
+    intro: '「マスク後」「差分」に加え、AI処理結果との比較も確認できます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="mask-toggle"]',
+    title: 'マスク / 元文 切替',
+    intro: 'マスク済みテキストと元のテキストをワンクリックで切り替えて比較できます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="edit-button"]',
+    title: 'テキスト編集',
+    intro: 'マスキング結果を直接編集できます。A4プレビューにリアルタイム反映されます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="category-filter"]',
+    title: 'カテゴリごとにマスク',
+    intro: '種類ごとにまとめてON/OFF。不要なカテゴリはここで一度に外せます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="detection-list"]',
+    title: '検出結果リスト',
+    intro:
+      '検出された個人情報の一覧。スイッチがオンの項目がマスクされます。残したい情報はオフにしてください。',
+    position: 'left',
+  },
+  {
+    element: '[data-intro="side-settings"]',
+    title: 'マスキング設定',
+    intro: 'プリセット変更やカスタムキーワード追加など、エディター上で設定を調整できます。',
+    position: 'left',
+  },
+  {
+    element: '[data-intro="advisor-tab"]',
+    title: '経歴書アドバイザー',
+    intro: 'AIが経歴書をレビューし、強みの発見・改善提案・求人票マッチングを支援します。',
+    position: 'left',
+  },
+  {
+    element: '[data-intro="go-format"]',
+    title: '次へ: 整える',
+    intro:
+      '確認が済んだらこのボタンでA4プレビューへ。テキスト直接編集・AI再フォーマット（推薦書/スキルシート等）もそこで行い、最後に6形式（Text / Markdown / CSV / Excel / PDF / Word）で書き出せます。',
+    position: 'top',
+  },
+  {
+    element: '[data-intro="detection-report"]',
+    title: '検出レポート',
+    intro: '検出結果の詳細をCSV形式でレポート出力。監査や記録用に利用できます。',
+    position: 'top',
+  },
+]
+
+/**
+ * PreviewModal ステップ（エクスポートプレビュー初回表示時）
+ */
+export const PREVIEW_MODAL_STEPS: IntroStep[] = [
+  {
+    element: '[data-intro="preview-tabs"]',
+    title: '表示切替',
+    intro:
+      '「レイアウト」で書式付きプレビュー、「テキスト」でプレーンテキスト、「編集」で直接編集できます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="export-formats"]',
+    title: '出力形式',
+    intro:
+      'Text・Markdown・CSV・Excel・PDF（印刷）・Wordの6形式から選択。形式を切り替えるとプレビューも変わります。',
+    position: 'top',
+  },
+  {
+    element: '[data-intro="export-actions"]',
+    title: '保存 / コピー',
+    intro: '選択した形式でファイル保存、またはクリップボードにコピーできます。',
+    position: 'top',
+  },
+]
+
+/**
+ * Pro切替時ステップ（Lite→Pro切替直後に表示）
+ */
+export const PRO_SWITCH_STEPS: IntroStep[] = [
+  {
+    element: '[data-intro="header-edition-toggle"]',
+    title: 'Pro版に切り替えました',
+    intro: 'すべての機能が利用可能です。いつでもLiteに戻せます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="input-tabs"]',
+    title: 'URL取込 / テキスト貼付',
+    intro: 'ファイル以外にURLやテキスト直接入力にも対応しています。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="category-toggles"]',
+    title: 'カテゴリ別制御',
+    intro: '検出カテゴリを個別にON/OFFできます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="custom-keywords"]',
+    title: 'カスタムキーワード',
+    intro: '任意の文字列をマスキング対象に追加できます。',
+    position: 'bottom',
+  },
+  {
+    element: '[data-intro="settings-button"]',
+    title: 'AI設定',
+    intro: 'AI検出プロバイダ（OpenAI / ローカルAI）の設定やAPIキーの管理。',
+    position: 'bottom',
+  },
+]
+
+/** intro.js 共通オプション */
+export const INTRO_OPTIONS = {
+  nextLabel: '次へ',
+  prevLabel: '戻る',
+  doneLabel: '完了',
+  skipLabel: 'スキップ',
+  showProgress: true,
+  showBullets: false,
+  exitOnOverlayClick: true,
+  scrollToElement: true,
+  disableInteraction: false,
+} as const
+
+/** localStorage キー */
+export const LS_ONBOARDING_DONE = 'rp_onboarding_done'
+export const LS_TOUR_UPLOAD_DONE = 'rp_tour_upload_done'
+export const LS_TOUR_EDITOR_DONE = 'rp_tour_editor_done'
+export const LS_TOUR_PRO_DONE = 'rp_tour_pro_done'
