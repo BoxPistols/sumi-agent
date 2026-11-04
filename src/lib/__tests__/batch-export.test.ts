@@ -27,7 +27,7 @@ function result(name: string, text: string): AnalysisResult {
         type: 'phone',
         label: '電話',
         category: 'contact',
-        value: '090-1234-5678',
+        value: '090-0234-5678',
         source: 'regex',
         confidence: 0.9,
         enabled: false,
@@ -59,7 +59,7 @@ function entry(
   }
 }
 
-const TEXT = 'メール：taro@example.com\n電話：090-1234-5678'
+const TEXT = 'メール：taro@example.com\n電話：090-0234-5678'
 
 describe('buildBatchSummaryCsv', () => {
   it('完了したファイルだけを BOM 付き CSV に並べ、マスク数は有効な検出だけ数える', () => {
@@ -86,6 +86,6 @@ describe('buildBatchZip', () => {
     ])
     const txt = await zip.file('resume_redacted.txt')!.async('string')
     expect(txt).not.toContain('taro@example.com')
-    expect(txt).toContain('090-1234-5678')
+    expect(txt).toContain('090-0234-5678')
   })
 })

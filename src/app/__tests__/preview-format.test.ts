@@ -100,13 +100,13 @@ describe('buildAnnotations', () => {
   })
 
   it('splits text around a single detection', () => {
-    const dets = [makeDet('1', 'example@test.com', 'email', 'contact')]
-    const text = '連絡先: example@test.com まで'
+    const dets = [makeDet('1', 'example@example.com', 'email', 'contact')]
+    const text = '連絡先: example@example.com まで'
     const result = ann(text, dets, {})
     expect(result).toHaveLength(3)
     expect(result[0]).toEqual({ type: 'text', text: '連絡先: ' })
     expect(result[1].type).toBe('det')
-    expect(result[1].text).toBe('example@test.com')
+    expect(result[1].text).toBe('example@example.com')
     expect(result[1].det.id).toBe('1')
     expect(result[2]).toEqual({ type: 'text', text: ' まで' })
   })
@@ -114,14 +114,14 @@ describe('buildAnnotations', () => {
   it('handles multiple non-overlapping detections', () => {
     const dets = [
       makeDet('1', '田中太郎', 'name_dict', 'name'),
-      makeDet('2', '090-1234-5678', 'phone', 'contact'),
+      makeDet('2', '090-0234-5678', 'phone', 'contact'),
     ]
-    const text = '氏名: 田中太郎\n電話: 090-1234-5678'
+    const text = '氏名: 田中太郎\n電話: 090-0234-5678'
     const result = ann(text, dets, {})
     const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(2)
     expect(detSegs[0].text).toBe('田中太郎')
-    expect(detSegs[1].text).toBe('090-1234-5678')
+    expect(detSegs[1].text).toBe('090-0234-5678')
   })
 
   it('deduplicates overlapping detections (longer value wins)', () => {
@@ -139,8 +139,8 @@ describe('buildAnnotations', () => {
   })
 
   it('returns masked text when showRedacted is true', () => {
-    const dets = [makeDet('1', 'test@mail.com', 'email', 'contact', true)]
-    const text = '連絡先: test@mail.com'
+    const dets = [makeDet('1', 'test@example.com', 'email', 'contact', true)]
+    const text = '連絡先: test@example.com'
     const result = ann(text, dets, { showRedacted: true })
     const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
@@ -200,14 +200,14 @@ describe('buildAnnotations', () => {
   })
 
   it('enabled:false detection is not masked even with showRedacted', () => {
-    const dets = [makeDet('1', 'test@mail.com', 'email', 'contact', false)]
-    const text = '連絡先: test@mail.com'
+    const dets = [makeDet('1', 'test@example.com', 'email', 'contact', false)]
+    const text = '連絡先: test@example.com'
     const result = ann(text, dets, { showRedacted: true })
     const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
     expect(detSegs[0].masked).toBe(false)
     expect(detSegs[0].disabledDet).toBe(true)
-    expect(detSegs[0].text).toBe('test@mail.com')
+    expect(detSegs[0].text).toBe('test@example.com')
   })
 
   it('keepPrefecture preserves prefecture in address mask', () => {
@@ -247,8 +247,8 @@ describe('buildAnnotations', () => {
   })
 
   it('nameInitial falls back to placeholder for non-name category', () => {
-    const dets = [makeDet('1', 'test@mail.com', 'email', 'contact')]
-    const text = '連絡先: test@mail.com'
+    const dets = [makeDet('1', 'test@example.com', 'email', 'contact')]
+    const text = '連絡先: test@example.com'
     const result = ann(text, dets, { showRedacted: true, nameInitial: true })
     const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(1)
@@ -268,9 +268,9 @@ describe('buildAnnotations', () => {
   it('mixed enabled and disabled detections', () => {
     const dets = [
       makeDet('1', '田中太郎', 'name_dict', 'name', true),
-      makeDet('2', '090-1234-5678', 'phone', 'contact', false),
+      makeDet('2', '090-0234-5678', 'phone', 'contact', false),
     ]
-    const text = '氏名: 田中太郎\n電話: 090-1234-5678'
+    const text = '氏名: 田中太郎\n電話: 090-0234-5678'
     const result = ann(text, dets, { showRedacted: true })
     const detSegs = result.filter((s: Seg) => s.type === 'det')
     expect(detSegs).toHaveLength(2)
@@ -280,6 +280,6 @@ describe('buildAnnotations', () => {
     // 無効な検出は元テキスト + disabledDet
     expect(detSegs[1].masked).toBe(false)
     expect(detSegs[1].disabledDet).toBe(true)
-    expect(detSegs[1].text).toBe('090-1234-5678')
+    expect(detSegs[1].text).toBe('090-0234-5678')
   })
 })

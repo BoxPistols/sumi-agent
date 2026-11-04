@@ -31,7 +31,7 @@ describe('normalizeText', () => {
   })
 
   it('handles mixed content', () => {
-    expect(normalizeText('電話：０９０−１２３４−５６７８')).toBe('電話：090−1234−5678')
+    expect(normalizeText('電話：０９０−０２３４−５６７８')).toBe('電話：090−0234−5678')
   })
 })
 
@@ -119,17 +119,17 @@ describe('detectRegex', () => {
   })
 
   it('detects URLs', () => {
-    const dets = detectRegex('ポートフォリオ：https://tanaka-portfolio.vercel.app/works')
+    const dets = detectRegex('ポートフォリオ：https://tanaka-portfolio.example.com/works')
     const urls = dets.filter((d) => d.type === 'url')
     expect(urls).toHaveLength(1)
-    expect(urls[0].value).toContain('https://tanaka-portfolio.vercel.app')
+    expect(urls[0].value).toContain('https://tanaka-portfolio.example.com')
   })
 
   it('detects phone numbers', () => {
-    const dets = detectRegex('電話番号：090-1234-5678')
+    const dets = detectRegex('電話番号：090-0234-5678')
     const phones = dets.filter((d) => d.type === 'phone')
     expect(phones).toHaveLength(1)
-    expect(phones[0].value).toBe('090-1234-5678')
+    expect(phones[0].value).toBe('090-0234-5678')
   })
 
   it('does not false-positive phone on year ranges', () => {
@@ -321,7 +321,7 @@ describe('SNS detection', () => {
 // ═══ detectAll ═══
 describe('detectAll', () => {
   it('combines regex and name detection, deduplicating', () => {
-    const text = `氏名：田中 太郎\nフリガナ：タナカ タロウ\n電話：090-1234-5678\nメール：tanaka@example.com`
+    const text = `氏名：田中 太郎\nフリガナ：タナカ タロウ\n電話：090-0234-5678\nメール：tanaka@example.com`
     const dets = detectAll(text)
     const categories = new Set(dets.map((d) => d.category))
     expect(categories.has('name')).toBe(true)
@@ -332,7 +332,7 @@ describe('detectAll', () => {
   })
 
   it('detects PII from sample resume text', () => {
-    const text = `職務経歴書\n\n氏名：田中 太郎\nフリガナ：タナカ タロウ\n生年月日：1990年4月15日\n住所：東京都渋谷区神宮前3-14-5 メゾンド原宿 402号室\n〒150-0001\n電話番号：090-1234-5678\nメール：tanaka.taro@example.com\nGitHub：https://github.com/tanaka-taro-dev`
+    const text = `職務経歴書\n\n氏名：田中 太郎\nフリガナ：タナカ タロウ\n生年月日：1990年4月15日\n住所：東京都渋谷区神宮前3-14-5 メゾンド原宿 402号室\n〒150-0001\n電話番号：090-0234-5678\nメール：tanaka.taro@example.com\nGitHub：https://github.com/tanaka-taro-dev`
     const dets = detectAll(text)
     expect(dets.length).toBeGreaterThanOrEqual(5) // name, kana, birthday, address, postal, phone, email, url
     const types = new Set(dets.map((d) => d.type))

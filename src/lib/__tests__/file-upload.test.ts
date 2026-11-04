@@ -60,7 +60,7 @@ describe('TXTファイル読み込み', () => {
     const text = readFile('01_職務経歴書_ITエンジニア.txt').toString('utf-8')
     expect(text).toContain('山田')
     expect(text).toContain('yamada.taro@example.com')
-    expect(text).toContain('090-1234-5678')
+    expect(text).toContain('090-0234-5678')
   })
 })
 
@@ -87,7 +87,7 @@ describe('CSVファイル読み込み', () => {
     // 10名分のデータ
     expect(joined).toContain('高橋翔太')
     expect(joined).toContain('井上')
-    expect(joined).toContain('@company.co.jp')
+    expect(joined).toContain('@example.co.jp')
     expect(rows.length).toBeGreaterThanOrEqual(11) // ヘッダ + 10名
   })
 })
@@ -114,8 +114,8 @@ describe('XLSXファイル読み込み', () => {
       if (cl) text += `--- Sheet: ${sn} ---\n${cl}\n\n`
     }
     expect(text).toContain('高橋翔太')
-    expect(text).toContain('045-123-4567')
-    expect(text).toContain('@company.co.jp')
+    expect(text).toContain('045-023-4567')
+    expect(text).toContain('@example.co.jp')
   })
 })
 
@@ -160,8 +160,8 @@ describe('Markdownファイル読み込み', () => {
     const text = readFile('03_職務経歴書_デザイナー.md').toString('utf-8')
     expect(text).toMatch(/^##\s/m) // Markdown見出し
     expect(text).toContain('朝霧')
-    expect(text).toContain('070-2345-6789')
-    expect(text).toContain('asagiri.haruka@icloud.com')
+    expect(text).toContain('070-0345-6789')
+    expect(text).toContain('asagiri.haruka@example.net')
   })
 })
 
@@ -197,7 +197,7 @@ describe('JSONファイル読み込み', () => {
 
     const extracted = extract(obj)
     expect(extracted).toContain('池田 悠人')
-    expect(extracted).toContain('080-5678-9012')
+    expect(extracted).toContain('080-0678-9012')
     expect(extracted).toContain('ikeda.yuto@example.com')
     expect(extracted).toContain('75万円/月')
   })
@@ -229,8 +229,8 @@ describe('RTFファイル読み込み', () => {
 
     // RTFのUnicodeエスケープ経由で日本語テキストが復元される
     expect(result).toContain('職務経歴書')
-    expect(result).toContain('090-3456-7890')
-    expect(result).toContain('takahashi.shota@outlook.jp')
+    expect(result).toContain('090-0456-7890')
+    expect(result).toContain('takahashi.shota@example.jp')
   })
 })
 
@@ -270,8 +270,8 @@ describe('クロスフォーマット一致テスト', () => {
     // 同じPIIが両方に含まれる
     expect(txtText).toContain('yamada.taro@example.com')
     expect(htmlText).toContain('yamada.taro@example.com')
-    expect(txtText).toContain('090-1234-5678')
-    expect(htmlText).toContain('090-1234-5678')
+    expect(txtText).toContain('090-0234-5678')
+    expect(htmlText).toContain('090-0234-5678')
   })
 
   it('15_社員名簿: CSVとXLSXから同じデータが抽出される', () => {
@@ -300,8 +300,8 @@ describe('クロスフォーマット一致テスト', () => {
     // 両方に同じ個人情報
     expect(txtText).toContain('池田 悠人')
     expect(obj.rawText).toContain('池田 悠人')
-    expect(txtText).toContain('080-5678-9012')
-    expect(obj.rawText).toContain('080-5678-9012')
+    expect(txtText).toContain('080-0678-9012')
+    expect(obj.rawText).toContain('080-0678-9012')
   })
 })
 

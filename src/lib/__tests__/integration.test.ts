@@ -37,7 +37,7 @@ describe('統合テスト: 検出カバレッジ', () => {
     })
     it('電話番号を検出', () => {
       const phones = dets.filter((d) => d.type === 'phone')
-      expect(phones.some((d) => d.value === '090-1234-5678')).toBe(true)
+      expect(phones.some((d) => d.value === '090-0234-5678')).toBe(true)
     })
     it('住所を検出', () => {
       const addrs = dets.filter((d) => d.category === 'address')
@@ -85,7 +85,7 @@ describe('統合テスト: 検出カバレッジ', () => {
 
     it('英文メールを検出', () => {
       const emails = dets.filter((d) => d.type === 'email')
-      expect(emails.some((d) => d.value === 'kenji.tanaka@protonmail.com')).toBe(true)
+      expect(emails.some((d) => d.value === 'kenji.tanaka@example.org')).toBe(true)
     })
     it('LinkedIn URLを検出', () => {
       const urls = dets.filter((d) => d.category === 'web')
@@ -100,7 +100,9 @@ describe('統合テスト: 検出カバレッジ', () => {
     })
 
     it('メール・電話を検出', () => {
-      expect(dets.some((d) => d.type === 'email' && d.value === 'nguyen.thuy@gmail.com')).toBe(true)
+      expect(dets.some((d) => d.type === 'email' && d.value === 'nguyen.thuy@example.com')).toBe(
+        true,
+      )
       expect(dets.some((d) => d.type === 'phone')).toBe(true)
     })
     it('住所を検出', () => {
@@ -144,7 +146,7 @@ describe('統合テスト: 検出カバレッジ', () => {
     })
     it('緊急連絡先の電話番号を検出', () => {
       const phones = dets.filter((d) => d.type === 'phone')
-      expect(phones.some((d) => d.value === '090-4567-8901')).toBe(true)
+      expect(phones.some((d) => d.value === '090-0567-8901')).toBe(true)
     })
   })
 })
@@ -251,7 +253,7 @@ describe('統合テスト: マスキング適用', () => {
     const text = loadMock('01_職務経歴書_ITエンジニア.txt')
     const dets = detectAll(text)
     const masked = applyRedaction(text, dets)
-    expect(masked).not.toContain('090-1234-5678')
+    expect(masked).not.toContain('090-0234-5678')
     expect(masked).toContain('[電話番号非公開]')
   })
 

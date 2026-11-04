@@ -218,7 +218,7 @@ const Slide2Japanese: React.FC = () => (
       />
       <ExampleRow
         label="全角/半角"
-        examples={['090-1234-5678', '０９０−１２３４−５６７８']}
+        examples={['090-0234-5678', '０９０−０２３４−５６７８']}
         delay={42}
         color={ACCENT}
       />

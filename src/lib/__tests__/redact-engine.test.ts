@@ -38,7 +38,7 @@ const RESUME = [
   '生年月日：1990年4月15日',
   '〒150-0001',
   '住所：東京都渋谷区神宮前3-14-5',
-  '電話番号：090-1234-5678',
+  '電話番号：090-0234-5678',
   'メール：hanako@example.com',
 ].join('\n')
 
@@ -62,7 +62,7 @@ describe('detectAll', () => {
   it('経歴書の断片から氏名・電話・メール・郵便番号・住所・生年月日を検出する', () => {
     expect(summarize(detectAll(RESUME))).toEqual([
       'email|hanako@example.com',
-      'phone|090-1234-5678',
+      'phone|090-0234-5678',
       'postal|〒150-0001',
       'birthday|1990年4月15日',
       'address|東京都渋谷区神宮前3-14-5',
@@ -85,7 +85,7 @@ describe('detectAll', () => {
   })
 
   it('全角で書かれた電話番号も正規化してから検出する', () => {
-    expect(summarize(detectAll('連絡先：０３１２３４５６７８'))).toEqual(['phone|0312345678'])
+    expect(summarize(detectAll('連絡先：０３０２３４５６７８'))).toEqual(['phone|0302345678'])
   })
 
   it('辞書に載った姓名をラベルなしでも検出する', () => {
@@ -112,11 +112,11 @@ describe('detectAll', () => {
 // ═══ 年号・日付の偽陽性フィルタ ═══
 describe('detectRegex の偽陽性フィルタ', () => {
   it('ラベル付きの電話番号は検出する（基準ケース）', () => {
-    expect(summarize(detectRegex('TEL 03-1234-5678'))).toEqual(['phone|03-1234-5678'])
+    expect(summarize(detectRegex('TEL 03-0234-5678'))).toEqual(['phone|03-0234-5678'])
   })
 
   it('直後に「2020〜現在」のような年範囲がある番号は捨てる', () => {
-    expect(detectRegex('TEL 03-1234-5678 2020〜現在')).toEqual([])
+    expect(detectRegex('TEL 03-0234-5678 2020〜現在')).toEqual([])
   })
 
   it('年で始まる職歴行の番号は捨てるが、電話ラベルが直前にあれば残す', () => {
@@ -226,9 +226,9 @@ describe('applyRedaction', () => {
   it('enabled:false の検出は置換しない', () => {
     const ds = [
       det({ type: 'email', category: 'contact', value: 'a@example.com', enabled: false }),
-      det({ type: 'phone', category: 'contact', value: '090-1111-2222' }),
+      det({ type: 'phone', category: 'contact', value: '090-0111-2222' }),
     ]
-    expect(applyRedaction('a@example.com / 090-1111-2222', ds)).toBe(
+    expect(applyRedaction('a@example.com / 090-0111-2222', ds)).toBe(
       'a@example.com / [電話番号非公開]',
     )
   })
@@ -308,10 +308,10 @@ describe('buildNonOverlappingMatches', () => {
 
 // ═══ buildAnnotations ═══
 describe('buildAnnotations', () => {
-  const text = '氏名：田中太郎 TEL 090-1234-5678'
+  const text = '氏名：田中太郎 TEL 090-0234-5678'
   const ds = [
     det({ id: 'n', type: 'name_dict', category: 'name', value: '田中太郎' }),
-    det({ id: 'p', type: 'phone', category: 'contact', value: '090-1234-5678', enabled: false }),
+    det({ id: 'p', type: 'phone', category: 'contact', value: '090-0234-5678', enabled: false }),
   ]
 
   it('検出のないときはテキスト 1 セグメント', () => {
@@ -324,7 +324,7 @@ describe('buildAnnotations', () => {
       { type: 'text', text: '氏名：' },
       { type: 'det', text: '田中太郎', det: ds[0], masked: false, disabledDet: false },
       { type: 'text', text: ' TEL ' },
-      { type: 'det', text: '090-1234-5678', det: ds[1], masked: false, disabledDet: true },
+      { type: 'det', text: '090-0234-5678', det: ds[1], masked: false, disabledDet: true },
     ])
   })
 
@@ -337,6 +337,6 @@ describe('buildAnnotations', () => {
       det: ds[0],
       masked: true,
     })
-    expect(segs[3]).toMatchObject({ text: '090-1234-5678', masked: false, disabledDet: true })
+    expect(segs[3]).toMatchObject({ text: '090-0234-5678', masked: false, disabledDet: true })
   })
 })
