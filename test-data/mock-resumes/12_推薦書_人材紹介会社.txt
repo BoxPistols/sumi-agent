@@ -3,7 +3,7 @@
 推薦日：2024年7月15日
 推薦元：株式会社キャリアブリッジ
 担当コンサルタント：吉田 恵美
-連絡先：yoshida.emi@careerbridge.co.jp / 03-1234-5678
+連絡先：yoshida.emi@example.co.jp / 03-0234-5678
 所在地：東京都港区赤坂2-14-27 国際新赤坂ビル東館3F
 
 推薦先：貴社 採用ご担当者 様
@@ -48,7 +48,7 @@ DB：PostgreSQL, Redis, DynamoDB, Elasticsearch
 注意事項：
 - 現職への在籍確認は内定確定後にお願いいたします
 - 他社選考状況：2社並行（最終面接段階 1社）
-- 候補者連絡先：ishii.takumi@protonmail.com / 080-3456-7890
+- 候補者連絡先：ishii.takumi@example.org / 080-0456-7890
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

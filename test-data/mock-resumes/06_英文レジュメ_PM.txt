@@ -1,8 +1,8 @@
 KENJI TANAKA
 Project Manager | Agile Coach
 
-Email: kenji.tanaka@protonmail.com
-Phone: +81-90-5678-1234
+Email: kenji.tanaka@example.org
+Phone: +81-90-0678-1234
 Address: 2-14-8 Roppongi, Minato-ku, Tokyo 106-0032, Japan
 LinkedIn: https://www.linkedin.com/in/kenji-tanaka-pm
 GitHub: https://github.com/kenji-tanaka
@@ -19,7 +19,7 @@ WORK EXPERIENCE
 
 SENIOR PROJECT MANAGER / AGILE COACH
 Rakuten Group, Inc. | Tokyo, Japan | Apr 2020 - Present
-Supervisor: Hiroshi Yamamoto (VP of Engineering) | h.yamamoto@rakuten.com
+Supervisor: Hiroshi Yamamoto (VP of Engineering) | h.yamamoto@example.com
 
 Key Achievements:
 - Led digital transformation initiative for Rakuten Travel (budget: $8.5M, team: 45 engineers)
@@ -33,7 +33,7 @@ Key Achievements:
 
 PROJECT MANAGER
 Nomura Research Institute (NRI) | Tokyo, Japan | Apr 2015 - Mar 2020
-Supervisor: Takeshi Suzuki (Department Director) | t.suzuki@nri.co.jp
+Supervisor: Takeshi Suzuki (Department Director) | t.suzuki@example.co.jp
 
 Key Achievements:
 - Delivered Mizuho Bank's next-generation online banking platform ($12M, 18-month timeline)
@@ -77,4 +77,4 @@ REFERENCES
 
 Available upon request.
 Personal Reference: Prof. Akira Watanabe, Tokyo Institute of Technology
-Email: watanabe.akira@titech.ac.jp | Phone: 03-5734-XXXX
+Email: watanabe.akira@example.ac.jp | Phone: 03-5734-XXXX

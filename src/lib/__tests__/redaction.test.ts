@@ -25,8 +25,8 @@ describe('applyRedaction', () => {
   })
 
   it('replaces phone numbers', () => {
-    const text = '電話：090-1234-5678'
-    const dets = [makeDet({ type: 'phone', category: 'contact', value: '090-1234-5678' })]
+    const text = '電話：090-0234-5678'
+    const dets = [makeDet({ type: 'phone', category: 'contact', value: '090-0234-5678' })]
     const result = applyRedaction(text, dets)
     expect(result).toBe('電話：[電話番号非公開]')
   })
@@ -39,21 +39,21 @@ describe('applyRedaction', () => {
   })
 
   it('replaces multiple detections', () => {
-    const text = '田中太郎 090-1234-5678 tanaka@test.com'
+    const text = '田中太郎 090-0234-5678 tanaka@example.com'
     const dets = [
       makeDet({ type: 'name_dict', category: 'name', value: '田中太郎' }),
-      makeDet({ type: 'phone', category: 'contact', value: '090-1234-5678' }),
-      makeDet({ type: 'email', category: 'contact', value: 'tanaka@test.com' }),
+      makeDet({ type: 'phone', category: 'contact', value: '090-0234-5678' }),
+      makeDet({ type: 'email', category: 'contact', value: 'tanaka@example.com' }),
     ]
     const result = applyRedaction(text, dets)
     expect(result).toBe('[氏名非公開] [電話番号非公開] [メール非公開]')
   })
 
   it('skips disabled detections', () => {
-    const text = '田中太郎 090-1234-5678'
+    const text = '田中太郎 090-0234-5678'
     const dets = [
       makeDet({ type: 'name_dict', category: 'name', value: '田中太郎', enabled: false }),
-      makeDet({ type: 'phone', category: 'contact', value: '090-1234-5678' }),
+      makeDet({ type: 'phone', category: 'contact', value: '090-0234-5678' }),
     ]
     const result = applyRedaction(text, dets)
     expect(result).toContain('田中太郎') // name not redacted
@@ -61,10 +61,10 @@ describe('applyRedaction', () => {
   })
 
   it('replaces longer values first to avoid partial matches', () => {
-    const text = '住所：東京都渋谷区神宮前3-14-5\n電話：03-1234-5678'
+    const text = '住所：東京都渋谷区神宮前3-14-5\n電話：03-0234-5678'
     const dets = [
       makeDet({ type: 'address', category: 'address', value: '東京都渋谷区神宮前3-14-5' }),
-      makeDet({ type: 'phone', category: 'contact', value: '03-1234-5678' }),
+      makeDet({ type: 'phone', category: 'contact', value: '03-0234-5678' }),
     ]
     const result = applyRedaction(text, dets)
     expect(result).toContain('[住所非公開]')

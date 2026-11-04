@@ -6,8 +6,8 @@
 国籍：ベトナム
 生年月日：1994年1月20日
 住所：〒169-0075 東京都新宿区高田馬場1-28-10 三慶ビル5F-B
-電話：070-9012-3456
-メール：nguyen.thuy@gmail.com
+電話：070-0012-3456
+メール：nguyen.thuy@example.com
 Facebook：https://www.facebook.com/nguyen.thuy.tokyo
 パスポート番号：C1234567
 
@@ -19,7 +19,7 @@ Facebook：https://www.facebook.com/nguyen.thuy.tokyo
 ◆ 株式会社グローバルテックブリッジ（2021年4月 - 現在）
   役職：ブリッジSE / オフショア開発コーディネーター
   所在地：東京都渋谷区道玄坂1-12-1 渋谷マークシティ ウエスト13F
-  上司：石川 太一（開発部門長）ishikawa@gtbridge.co.jp
+  上司：石川 太一（開発部門長）ishikawa@example.co.jp
   月給：35万円
 
   主な業務：
@@ -69,6 +69,6 @@ Facebook：https://www.facebook.com/nguyen.thuy.tokyo
 ビザスポンサーシップ：必要（在留資格更新のため）
 勤務地：東京都内
 
-緊急連絡先：グエン・ヴァン・ナム（兄）080-7777-8888
+緊急連絡先：グエン・ヴァン・ナム（兄）080-0777-8888
 
 以上

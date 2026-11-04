@@ -3,9 +3,9 @@ CREATIVE PORTFOLIO & CAREER SHEET
 氏名：森田　彩花（もりた　あやか）
 生年月日：1991年4月3日
 住所：東京都世田谷区三軒茶屋2-11-22 ルネサンス三軒茶屋705
-電話：090-6543-2109
-メール：morita.ayaka@me.com
-Portfolio：https://ayaka-morita.com
+電話：090-0543-2109
+メール：morita.ayaka@example.net
+Portfolio：https://ayaka-morita.example.com
 Instagram：https://instagram.com/ayaka_creates（フォロワー 8,500人）
 X(Twitter)：https://x.com/ayaka_design
 Vimeo：https://vimeo.com/ayakamorita
@@ -21,12 +21,12 @@ Vimeo：https://vimeo.com/ayakamorita
   役職：アートディレクター
   所在地：東京都港区赤坂5-3-1 赤坂Bizタワー
   クリエイティブディレクター：斎藤 俊輔
-  連絡先：saito.shunsuke@hakuhodo.co.jp
+  連絡先：saito.shunsuke@example.co.jp
 
   主な担当案件：
   - サントリー「ほろよい」2023年春キャンペーン ビジュアル制作
     グラフィック + TVCM絵コンテ
-    クライアント担当：小野 美紀（ono.miki@suntory.co.jp）
+    クライアント担当：小野 美紀（ono.miki@example.co.jp）
   - トヨタ「bZ4X」ローンチキャンペーン（2022年）
     デジタル広告 + OOH
     カンヌライオンズ 2023 Design部門 ブロンズ受賞

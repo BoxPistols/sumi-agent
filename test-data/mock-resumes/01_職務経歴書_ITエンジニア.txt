@@ -4,9 +4,9 @@
 フリガナ：ヤマダタロウ
 生年月日：1990年4月15日（34歳）
 住所：〒150-0001 東京都渋谷区神宮前3-14-5 メゾンド原宿 402号室
-電話番号：090-1234-5678
+電話番号：090-0234-5678
 メール：yamada.taro@example.com
-ポートフォリオ：https://yamada-portfolio.vercel.app/works
+ポートフォリオ：https://yamada-portfolio.example.com/works
 GitHub：https://github.com/yamada-taro-dev
 LinkedIn：https://www.linkedin.com/in/taro-yamada-tokyo
 
@@ -19,7 +19,7 @@ Webアプリケーション開発に10年従事。フロントエンドからバ
 役職：シニアフロントエンドエンジニア / テックリード
 所在地：東京都港区六本木1-8-7 六本木ヒルズ タワー15F
 上司：鈴木 健太（開発部長）
-連絡先：suzuki.kenta@techfrontier.co.jp
+連絡先：suzuki.kenta@example.co.jp
 
 プロジェクト実績：
 - 大規模ECサイトのフロントエンド刷新（React / TypeScript / Next.js）
@@ -28,13 +28,13 @@ Webアプリケーション開発に10年従事。フロントエンドからバ
   - チーム: 8名（FE 4名、BE 2名、デザイナー 2名）
 - デザインシステムの構築・運用（Storybook / Figma連携）
   - 50+コンポーネントを標準化、開発効率30%向上
-参考URL：https://techfrontier.co.jp/about
+参考URL：https://example.co.jp/about
 
 【株式会社デジタルクリエイト】2015年4月 - 2020年3月
 役職：Webエンジニア
 所在地：大阪府大阪市北区梅田2-5-10
 担当上司：佐藤 由美子（プロジェクトマネージャー）
-連絡先：sato.yumiko@digitalcreate.co.jp
+連絡先：sato.yumiko@example.co.jp
 
 プロジェクト実績：
 - 社内業務管理システムのフルスクラッチ開発（Vue.js / Laravel）

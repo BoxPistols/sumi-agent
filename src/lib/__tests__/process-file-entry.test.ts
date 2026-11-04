@@ -19,7 +19,7 @@ vi.mock('@/lib/ai/tasks', async (importOriginal) => {
 
 const { processFileEntry } = await import('../process-file-entry')
 
-const RESUME = '氏名：山田 太郎\nメール：taro@example.com\n電話：090-1234-5678\n'
+const RESUME = '氏名：山田 太郎\nメール：taro@example.com\n電話：090-0234-5678\n'
 const file = new File([RESUME], 'resume.pdf')
 
 function sparsePdf(): ParsedFile {
@@ -64,7 +64,7 @@ describe('processFileEntry', () => {
     expect(aiCleanupText).not.toHaveBeenCalled()
     expect(detectWithAI).not.toHaveBeenCalled()
     expect(r.detections.map((d) => d.value)).toEqual(
-      expect.arrayContaining(['taro@example.com', '090-1234-5678']),
+      expect.arrayContaining(['taro@example.com', '090-0234-5678']),
     )
   })
 

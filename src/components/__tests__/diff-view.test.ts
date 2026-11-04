@@ -13,7 +13,7 @@ import { DiffView, type DiffViewProps } from '../redact/DiffView'
 const render = (props: Partial<DiffViewProps> = {}) =>
   renderToStaticMarkup(
     createElement(DiffView, {
-      original: '山田太郎\n東京都\nメモ\n090-1234-5678',
+      original: '山田太郎\n東京都\nメモ\n090-0234-5678',
       modified: '[氏名非公開]\n東京都\nメモ\n[電話番号非公開]',
       ...props,
     }),
