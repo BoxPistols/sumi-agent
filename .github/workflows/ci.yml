@@ -39,7 +39,8 @@ jobs:
         run: pnpm test
 
   e2e:
-    runs-on: ubuntu-latest
+    # ubuntu-latest が 26.04 に切り替わり、Playwright 1.58 が依存パッケージを入れられなくなったため固定する
+    runs-on: ubuntu-24.04
     needs: check
 
     steps:
