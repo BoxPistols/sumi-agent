@@ -16,6 +16,8 @@ export const WelcomeVideoModal: React.FC<WelcomeVideoModalProps> = ({ onClose, o
   const playerRef = useRef<PlayerRef>(null)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPlaying, setIsPlaying] = useState(true)
+  // 自動再生は消音で始める（ブラウザの自動再生制限と、突然音が鳴るのを避けるため）
+  const [isMuted, setIsMuted] = useState(true)
 
   useEffect(() => {
     const player = playerRef.current
@@ -47,6 +49,24 @@ export const WelcomeVideoModal: React.FC<WelcomeVideoModalProps> = ({ onClose, o
     }
     setIsPlaying(!isPlaying)
   }, [isPlaying])
+
+  const toggleMute = useCallback(() => {
+    const player = playerRef.current
+    if (!player) return
+    if (player.isMuted()) {
+      player.unmute()
+      if (!player.isPlaying()) {
+        player.play()
+        setIsPlaying(true)
+      }
+      setIsMuted(false)
+    } else {
+      player.mute()
+      setIsMuted(true)
+    }
+  }, [])
+
+  const muteLabel = isMuted ? 'BGMを出す' : 'BGMを消す'
 
   const handleComplete = () => {
     onClose()
@@ -89,9 +109,56 @@ export const WelcomeVideoModal: React.FC<WelcomeVideoModalProps> = ({ onClose, o
             compositionHeight={500}
             fps={30}
             autoPlay
+            initiallyMuted
             style={{ width: '100%', aspectRatio: '800/500' }}
             controls={false}
           />
+          {/* 消音で自動再生するので、音を出す操作は映像の上の定位置に置く */}
+          <button
+            type="button"
+            // 動画クリック（再生/一時停止）に伝わらないようにする
+            onClick={(e) => {
+              e.stopPropagation()
+              toggleMute()
+            }}
+            aria-label={muteLabel}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              zIndex: 1,
+              minHeight: 44,
+              whiteSpace: 'nowrap',
+              background: 'rgba(15,23,42,0.78)',
+              border: '1px solid rgba(255,255,255,0.24)',
+              color: 'rgba(255,255,255,0.85)',
+              padding: '0 14px',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentcolor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="M11 5 6 9H2v6h4l5 4V5z" />
+              {isMuted ? (
+                <path d="m23 9-6 6M17 9l6 6" />
+              ) : (
+                <path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14" />
+              )}
+            </svg>
+            {muteLabel}
+          </button>
           {/* 再生/一時停止オーバーレイ */}
           {!isPlaying && (
             <div

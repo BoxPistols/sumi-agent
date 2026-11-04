@@ -2,6 +2,7 @@
 
 import {
   AbsoluteFill,
+  Html5Audio,
   Sequence,
   useCurrentFrame,
   interpolate,
@@ -480,9 +481,27 @@ const TOTAL_SLIDES = 5
 
 export const COMPOSITION_DURATION = SLIDE_DURATION * TOTAL_SLIDES // 750フレーム = 25秒
 
+// portfolio-videos/scripts/bgm/generate.py で合成したオリジナル曲（sumi-agent プリセット、-23 LUFS 前後）
+const BGM_SRC = '/welcome-bgm.m4a'
+const BGM_FADE_IN = 30
+const BGM_FADE_OUT = 45
+
+const WelcomeBgm: React.FC = () => {
+  const frame = useCurrentFrame()
+  // 場面の切り替えで音が途切れないよう、全体に 1 本だけ敷いて最初と最後だけ絞る
+  const volume = interpolate(
+    frame,
+    [0, BGM_FADE_IN, COMPOSITION_DURATION - BGM_FADE_OUT, COMPOSITION_DURATION - 1],
+    [0, 1, 1, 0],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+  )
+  return <Html5Audio src={BGM_SRC} volume={volume} />
+}
+
 export const WelcomeComposition: React.FC = () => {
   return (
     <AbsoluteFill>
+      <WelcomeBgm />
       <Sequence from={0} durationInFrames={SLIDE_DURATION}>
         <Slide1Problem />
       </Sequence>
