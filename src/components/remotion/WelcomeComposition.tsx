@@ -481,7 +481,7 @@ const TOTAL_SLIDES = 5
 
 export const COMPOSITION_DURATION = SLIDE_DURATION * TOTAL_SLIDES // 750フレーム = 25秒
 
-// portfolio-videos/scripts/bgm/generate.py で合成したオリジナル曲（sumi-agent プリセット、-23 LUFS 前後）
+// portfolio-videos/scripts/bgm で MIDI から作り合成したオリジナル曲（sumi-agent 用のミニマルなテックハウス、ハ短調・125BPM、-19.5 LUFS）
 const BGM_SRC = '/welcome-bgm.m4a'
 const BGM_FADE_IN = 30
 const BGM_FADE_OUT = 45
