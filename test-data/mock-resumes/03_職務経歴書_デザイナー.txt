@@ -54,9 +54,9 @@ Marketing: Google Analytics, SEO, ABテスト
 
 ■ ポートフォリオ
 Web: https://asagiri-design.example.com
-Behance: https://www.behance.net/asagiri-haruka
-Dribbble: https://dribbble.com/asagiri
-note: https://note.com/asagiri_design
+Behance: https://www.behance.net/sample-asagiri-0x
+Dribbble: https://dribbble.com/sample_asagiri_0x
+note: https://note.com/sample_asagiri_0x
 
 ■ 資格
 - 色彩検定2級（2018年取得）

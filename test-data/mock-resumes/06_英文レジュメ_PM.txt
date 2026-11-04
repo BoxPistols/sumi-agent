@@ -4,8 +4,8 @@ Project Manager | Agile Coach
 Email: kenji.tanaka@example.org
 Phone: +81-90-0678-1234
 Address: 2-14-8 Roppongi, Minato-ku, Tokyo 106-0032, Japan
-LinkedIn: https://www.linkedin.com/in/kenji-tanaka-pm
-GitHub: https://github.com/kenji-tanaka
+LinkedIn: https://www.linkedin.com/in/sample-kenji-0x
+GitHub: https://github.com/sample-kenji-0x
 
 ---
 

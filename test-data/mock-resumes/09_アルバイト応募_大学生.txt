@@ -37,7 +37,7 @@ LINE ID：ren_suzuki_03
 ■ 自己PR
 スターバックスでの接客経験を通じて、コミュニケーション能力と正確な業務遂行力を身につけました。大学のプログラミングサークルでは部長を務め、ハッカソンで最優秀賞を受賞した経験があります。
 
-GitHub：https://github.com/ren-suzuki
+GitHub：https://github.com/sample-ren-0x
 個人ブログ：https://ren-tech-blog.example.com
 
 ■ 希望条件
