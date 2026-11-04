@@ -20,7 +20,7 @@ export const SAMPLES: Record<SampleKey, SampleDocument> = {
     name: 'sample_resume.pdf',
     format: 'PDF',
     pageCount: 2,
-    text: `--- Page 1 ---\n職務経歴書\n\n氏名：田中 太郎\nフリガナ：タナカ タロウ\n生年月日：1990年4月15日\n住所：東京都渋谷区神宮前3-14-5 メゾンド原宿 402号室\n〒150-0001\n電話番号：090-0234-5678\nメール：tanaka.taro@example.com\nポートフォリオ：https://tanaka-portfolio.example.com/works\nGitHub：https://github.com/tanaka-taro-dev\n\n職務要約\nWebアプリケーション開発に10年従事。フロントエンドからバックエンドまで幅広い経験を持つフルスタックエンジニア。\n\n--- Page 2 ---\n職務経歴\n\n株式会社テックフロンティア（2020年4月 - 現在）\n役職：シニアフロントエンドエンジニア / テックリード\n所在地：東京都港区六本木1-8-7\n上司：鈴木 健太（開発部長）\nプロジェクト概要：\n- 大規模ECサイトのフロントエンド刷新（React / TypeScript / Next.js）\n- デザインシステムの構築・運用（Storybook / Figma連携）\n参考URL：https://example.co.jp/about\n\n株式会社デジタルクリエイト（2015年4月 - 2020年3月）\n役職：Webエンジニア\n所在地：大阪府大阪市北区梅田2-5-10\n担当：佐藤 由美子（プロジェクトマネージャー）\n連絡先メール：sato.yumiko@example.co.jp\n\n資格\n- 基本情報技術者試験（2014年取得）\n- AWS Solutions Architect Associate（2019年取得）\nマイナンバー：1234 5678 9012\n\n以上`,
+    text: `--- Page 1 ---\n職務経歴書\n\n氏名：田中 太郎\nフリガナ：タナカ タロウ\n生年月日：1990年4月15日\n住所：東京都渋谷区神宮前3-14-5 メゾンド原宿 402号室\n〒150-0001\n電話番号：090-0234-5678\nメール：tanaka.taro@example.com\nポートフォリオ：https://tanaka-portfolio.example.com/works\nGitHub：https://github.com/sample-tanaka-0x\n\n職務要約\nWebアプリケーション開発に10年従事。フロントエンドからバックエンドまで幅広い経験を持つフルスタックエンジニア。\n\n--- Page 2 ---\n職務経歴\n\n株式会社テックフロンティア（2020年4月 - 現在）\n役職：シニアフロントエンドエンジニア / テックリード\n所在地：東京都港区六本木1-8-7\n上司：鈴木 健太（開発部長）\nプロジェクト概要：\n- 大規模ECサイトのフロントエンド刷新（React / TypeScript / Next.js）\n- デザインシステムの構築・運用（Storybook / Figma連携）\n参考URL：https://example.co.jp/about\n\n株式会社デジタルクリエイト（2015年4月 - 2020年3月）\n役職：Webエンジニア\n所在地：大阪府大阪市北区梅田2-5-10\n担当：佐藤 由美子（プロジェクトマネージャー）\n連絡先メール：sato.yumiko@example.co.jp\n\n資格\n- 基本情報技術者試験（2014年取得）\n- AWS Solutions Architect Associate（2019年取得）\nマイナンバー：1234 5678 9012\n\n以上`,
   },
   xlsx: {
     name: 'sample_employee_list.xlsx',
@@ -38,6 +38,6 @@ export const SAMPLES: Record<SampleKey, SampleDocument> = {
     name: 'sample_career.txt',
     format: 'Text (utf-8)',
     pageCount: null,
-    text: `職務経歴書\n\n基本情報\n氏名：佐々木 直樹\n生年月日：昭和63年5月20日\n現住所：東京都新宿区西新宿2-8-1 都庁前マンション305号\n〒163-0001\n電話：03-0344-5566\n携帯：090-0788-9900\nE-mail：sasaki.naoki@example.net\nLinkedIn：https://www.linkedin.com/in/naoki-sasaki-tokyo\n\n経歴詳細\n\n(1) 株式会社グローバルテック 2019年1月 - 現在\n所在地：東京都千代田区丸の内1-9-2\n直属上司：山口 慎一（CTO）\n社内ブログ：https://tech.example.co.jp/blog/sasaki\n\n(2) 合同会社クラウドワークス 2014年4月 - 2018年12月\n所在地：大阪府大阪市北区中之島3-2-18\nプロジェクト責任者：中村 和也\n\n(3) 有限会社ウェブデザインラボ 2009年4月 - 2014年3月\n所在地：京都府京都市下京区四条烏丸1-5-3\n連絡先: weblab-hr@example.co.jp\n\nスキル\n言語: TypeScript, Python, Go, SQL\nFW: React, Next.js, FastAPI, Echo\n\n以上\nマイナンバー：9876 5432 1098`,
+    text: `職務経歴書\n\n基本情報\n氏名：佐々木 直樹\n生年月日：昭和63年5月20日\n現住所：東京都新宿区西新宿2-8-1 都庁前マンション305号\n〒163-0001\n電話：03-0344-5566\n携帯：090-0788-9900\nE-mail：sasaki.naoki@example.net\nLinkedIn：https://www.linkedin.com/in/sample-sasaki-0x\n\n経歴詳細\n\n(1) 株式会社グローバルテック 2019年1月 - 現在\n所在地：東京都千代田区丸の内1-9-2\n直属上司：山口 慎一（CTO）\n社内ブログ：https://tech.example.co.jp/blog/sasaki\n\n(2) 合同会社クラウドワークス 2014年4月 - 2018年12月\n所在地：大阪府大阪市北区中之島3-2-18\nプロジェクト責任者：中村 和也\n\n(3) 有限会社ウェブデザインラボ 2009年4月 - 2014年3月\n所在地：京都府京都市下京区四条烏丸1-5-3\n連絡先: weblab-hr@example.co.jp\n\nスキル\n言語: TypeScript, Python, Go, SQL\nFW: React, Next.js, FastAPI, Echo\n\n以上\nマイナンバー：9876 5432 1098`,
   },
 }

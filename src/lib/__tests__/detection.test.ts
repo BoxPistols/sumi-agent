@@ -253,8 +253,8 @@ describe('SNS detection', () => {
   })
 
   it('detects GitHub accounts without @', () => {
-    const dets = detectRegex('GitHub: tanaka-taro-dev')
-    expect(dets.some((d) => d.type === 'sns_github' && d.value === 'tanaka-taro-dev')).toBe(true)
+    const dets = detectRegex('GitHub: sample-tanaka-0x')
+    expect(dets.some((d) => d.type === 'sns_github' && d.value === 'sample-tanaka-0x')).toBe(true)
   })
 
   it('detects LinkedIn accounts', () => {
@@ -332,7 +332,7 @@ describe('detectAll', () => {
   })
 
   it('detects PII from sample resume text', () => {
-    const text = `職務経歴書\n\n氏名：田中 太郎\nフリガナ：タナカ タロウ\n生年月日：1990年4月15日\n住所：東京都渋谷区神宮前3-14-5 メゾンド原宿 402号室\n〒150-0001\n電話番号：090-0234-5678\nメール：tanaka.taro@example.com\nGitHub：https://github.com/tanaka-taro-dev`
+    const text = `職務経歴書\n\n氏名：田中 太郎\nフリガナ：タナカ タロウ\n生年月日：1990年4月15日\n住所：東京都渋谷区神宮前3-14-5 メゾンド原宿 402号室\n〒150-0001\n電話番号：090-0234-5678\nメール：tanaka.taro@example.com\nGitHub：https://github.com/sample-tanaka-0x`
     const dets = detectAll(text)
     expect(dets.length).toBeGreaterThanOrEqual(5) // name, kana, birthday, address, postal, phone, email, url
     const types = new Set(dets.map((d) => d.type))

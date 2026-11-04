@@ -7,8 +7,8 @@
 電話番号：090-0234-5678
 メール：yamada.taro@example.com
 ポートフォリオ：https://yamada-portfolio.example.com/works
-GitHub：https://github.com/yamada-taro-dev
-LinkedIn：https://www.linkedin.com/in/taro-yamada-tokyo
+GitHub：https://github.com/sample-yamada-0x
+LinkedIn：https://www.linkedin.com/in/sample-yamada-0x
 
 ■ 職務要約
 Webアプリケーション開発に10年従事。フロントエンドからバックエンドまで幅広い経験を持つフルスタックエンジニア。React/TypeScript/Next.jsを中心にモダンなフロントエンド開発をリード。大規模ECサイトのリアーキテクチャやデザインシステム構築に実績あり。
